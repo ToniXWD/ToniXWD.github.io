@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 实现的功能描述 在task.rs中的TaskControlBlock结构体增加了sys_call_times数组, 用于记录当前task中各个系统调用的次数 每次执行系统调用时, 将全局变量TASK_MANAGER中当前任务current_task对应的TaskControlBlock结构体的系统调用记录自增 为TaskManager实现get_sys_call_times方法, 获取当前任务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="chapter3练习">
+<meta property="og:url" content="http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="1 实现的功能描述 在task.rs中的TaskControlBlock结构体增加了sys_call_times数组, 用于记录当前task中各个系统调用的次数 每次执行系统调用时, 将全局变量TASK_MANAGER中当前任务current_task对应的TaskControlBlock结构体的系统调用记录自增 为TaskManager实现get_sys_call_times方法, 获取当前任务">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-12-19T14:54:06.000Z">
+<meta property="article:modified_time" content="2023-12-21T13:47:16.338Z">
+<meta property="article:author" content="ToniXWD">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>chapter3练习</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&text=chapter3练习"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&is_video=false&description=chapter3练习"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=chapter3练习&body=Check out this article: http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&name=chapter3练习&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&t=chapter3练习"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%8A%9F%E8%83%BD%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 实现的功能描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 简答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 简答作业第一部分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 简答作业第二部分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-L40%EF%BC%9A%E5%88%9A%E8%BF%9B%E5%85%A5-restore-%E6%97%B6%EF%BC%8Ca0-%E4%BB%A3%E8%A1%A8%E4%BA%86%E4%BB%80%E4%B9%88%E5%80%BC%E3%80%82%E8%AF%B7%E6%8C%87%E5%87%BA-restore-%E7%9A%84%E4%B8%A4%E7%A7%8D%E4%BD%BF%E7%94%A8%E6%83%85%E6%99%AF%E3%80%82"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-L43-L48%EF%BC%9A%E8%BF%99%E5%87%A0%E8%A1%8C%E6%B1%87%E7%BC%96%E4%BB%A3%E7%A0%81%E7%89%B9%E6%AE%8A%E5%A4%84%E7%90%86%E4%BA%86%E5%93%AA%E4%BA%9B%E5%AF%84%E5%AD%98%E5%99%A8%EF%BC%9F%E8%BF%99%E4%BA%9B%E5%AF%84%E5%AD%98%E5%99%A8%E7%9A%84%E7%9A%84%E5%80%BC%E5%AF%B9%E4%BA%8E%E8%BF%9B%E5%85%A5%E7%94%A8%E6%88%B7%E6%80%81%E6%9C%89%E4%BD%95%E6%84%8F%E4%B9%89%EF%BC%9F%E8%AF%B7%E5%88%86%E5%88%AB%E8%A7%A3%E9%87%8A%E3%80%82"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-L50-L56%EF%BC%9A%E4%B8%BA%E4%BD%95%E8%B7%B3%E8%BF%87%E4%BA%86-x2-%E5%92%8C-x4%EF%BC%9F"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 L50-L56：为何跳过了 x2 和 x4？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-L60%EF%BC%9A%E8%AF%A5%E6%8C%87%E4%BB%A4%E4%B9%8B%E5%90%8E%EF%BC%8Csp-%E5%92%8C-sscratch-%E4%B8%AD%E7%9A%84%E5%80%BC%E5%88%86%E5%88%AB%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-5-restore%EF%BC%9A%E4%B8%AD%E5%8F%91%E7%94%9F%E7%8A%B6%E6%80%81%E5%88%87%E6%8D%A2%E5%9C%A8%E5%93%AA%E4%B8%80%E6%9D%A1%E6%8C%87%E4%BB%A4%EF%BC%9F%E4%B8%BA%E4%BD%95%E8%AF%A5%E6%8C%87%E4%BB%A4%E6%89%A7%E8%A1%8C%E4%B9%8B%E5%90%8E%E4%BC%9A%E8%BF%9B%E5%85%A5%E7%94%A8%E6%88%B7%E6%80%81%EF%BC%9F"><span class="toc-number">2.2.5.</span> <span class="toc-text">2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-6-L13%EF%BC%9A%E8%AF%A5%E6%8C%87%E4%BB%A4%E4%B9%8B%E5%90%8E%EF%BC%8Csp-%E5%92%8C-sscratch-%E4%B8%AD%E7%9A%84%E5%80%BC%E5%88%86%E5%88%AB%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F"><span class="toc-number">2.2.6.</span> <span class="toc-text">2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-7-%E4%BB%8E-U-%E6%80%81%E8%BF%9B%E5%85%A5-S-%E6%80%81%E6%98%AF%E5%93%AA%E4%B8%80%E6%9D%A1%E6%8C%87%E4%BB%A4%E5%8F%91%E7%94%9F%E7%9A%84%EF%BC%9F"><span class="toc-number">2.2.7.</span> <span class="toc-text">2.2.7 从 U 态进入 S 态是哪一条指令发生的？</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        chapter3练习
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-19T14:54:06.000Z" class="dt-published" itemprop="datePublished">2023-12-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/">清华大学开源操作系统训练营</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-实现的功能描述"><a href="#1-实现的功能描述" class="headerlink" title="1 实现的功能描述"></a>1 实现的功能描述</h1><ol>
+<li>在<code>task.rs</code>中的<code>TaskControlBlock</code>结构体增加了<code>sys_call_times</code>数组, 用于记录当前<code>task</code>中各个系统调用的次数</li>
+<li>每次执行系统调用时, 将全局变量<code>TASK_MANAGER</code>中当前任务<code>current_task</code>对应的<code>TaskControlBlock</code>结构体的系统调用记录自增</li>
+<li>为<code>TaskManager</code>实现<code>get_sys_call_times</code>方法, 获取当前任务<code>current_task</code>对应的<code>TaskControlBlock</code>结构体的系统调用数组的拷贝</li>
+<li>完成<code>process.rs</code>的<code>sys_task_info</code>, 调用<code>get_sys_call_times</code>和<code>get_time_ms</code>获取<code>TaskInfo</code>结构体的<code>syscall_times</code>和<code>time</code>部分, <code>status</code>部分设为<code>Running</code></li>
+</ol>
+<h1 id="2-简答作业"><a href="#2-简答作业" class="headerlink" title="2 简答作业"></a>2 简答作业</h1><h2 id="2-1-简答作业第一部分"><a href="#2-1-简答作业第一部分" class="headerlink" title="2.1 简答作业第一部分"></a>2.1 简答作业第一部分</h2><p>正确进入 U 态后，程序的特征还应有：使用 S 态特权指令，访问 S 态寄存器后会报错。 请同学们可以自行测试这些内容 (运行 Rust 三个 bad 测例 (ch2b_bad_*.rs) ， 注意在编译时至少需要指定 LOG&#x3D;ERROR 才能观察到内核的报错信息) ， 描述程序出错行为，同时注意注明你使用的 sbi 及其版本。</p>
+<p>Rustsbi 版本为: 0.2.0-alpha.2</p>
+<p>出现报错: </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[kernel] PageFault <span class="keyword">in</span> application, bad addr = 0x0, bad instruction = 0x804003c4, kernel killed it.</span><br><span class="line">[kernel] IllegalInstruction <span class="keyword">in</span> application, kernel killed it.</span><br><span class="line">[kernel] IllegalInstruction <span class="keyword">in</span> application, kernel killed it.</span><br></pre></td></tr></table></figure>
+
+<p><code>ch2b_bad_address.rs</code> 由于除0错误触发异常退出<br><code>ch2b_bad_instructions.rs</code> 在用户态非法使用指令<code>sret</code><br><code>ch2b_bad_register.rs</code> 在用户态非法使用指令<code>csrr</code></p>
+<h2 id="2-2-简答作业第二部分"><a href="#2-2-简答作业第二部分" class="headerlink" title="2.2 简答作业第二部分"></a>2.2 简答作业第二部分</h2><p>深入理解 trap.S 中两个函数 __alltraps 和 __restore 的作用，并回答如下问题:</p>
+<h3 id="2-2-1-L40：刚进入-restore-时，a0-代表了什么值。请指出-restore-的两种使用情景。"><a href="#2-2-1-L40：刚进入-restore-时，a0-代表了什么值。请指出-restore-的两种使用情景。" class="headerlink" title="2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。"></a>2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。</h3><blockquote>
+<ol>
+<li>刚进入 __restore 时，a0 代表了系统调用的第一个参数</li>
+<li>__restore 的作用包括:</li>
+</ol>
+<ul>
+<li>从系统调用和异常返回时, 恢复要返回的用户态的上下文信息</li>
+<li>任务切换时, 恢复要切换的任务的上下文信息</li>
+</ul>
+</blockquote>
+<h3 id="2-2-2-L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。"><a href="#2-2-2-L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。" class="headerlink" title="2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。"></a>2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ld t0, 32*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sstatus 寄存器的值, 将其读取到 t0</span></span><br><span class="line">ld t1, 33*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sepc 寄存器的值, 将其读取到 t1</span></span><br><span class="line">ld t2, 2*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sscratch 寄存器的值, 将其读取到 t2</span></span><br><span class="line">csrw sstatus, t0 <span class="comment"># 将 t0中原 sstatus 寄存器的值读取到 sstatus</span></span><br><span class="line">csrw sepc, t1 <span class="comment"># 将 t0中原 sepc 寄存器的值读取到 sepc</span></span><br><span class="line">csrw sscratch, t2 <span class="comment"># 将 t0中原 sscratch 寄存器的值读取到 sscratch</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-3-L50-L56：为何跳过了-x2-和-x4？"><a href="#2-2-3-L50-L56：为何跳过了-x2-和-x4？" class="headerlink" title="2.2.3 L50-L56：为何跳过了 x2 和 x4？"></a>2.2.3 L50-L56：为何跳过了 x2 和 x4？</h3><ol>
+<li>跳过<code>x2</code>是因为<code>x2</code>对应的用户栈指针保存到了sscratch寄存器, 不需要从内核栈中进行恢复</li>
+<li>跳过<code>x4</code>是因为并没有使用它, 所以无需恢复</li>
+</ol>
+<h3 id="2-2-4-L60：该指令之后，sp-和-sscratch-中的值分别有什么意义？"><a href="#2-2-4-L60：该指令之后，sp-和-sscratch-中的值分别有什么意义？" class="headerlink" title="2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？"></a>2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？</h3><p><code>sp</code>指向用户栈, <code>sscratch</code>指向内核栈</p>
+<h3 id="2-2-5-restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？"><a href="#2-2-5-restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？" class="headerlink" title="2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？"></a>2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？</h3><p><code>sret</code>后发生了状态切换, 执行该指令后, PC设置为 <code>sepc</code> 寄存器的值。<code>sepc</code> 存储着产生中断或异常前的指令地址，因此这实现了到原始代码的返回。</p>
+<h3 id="2-2-6-L13：该指令之后，sp-和-sscratch-中的值分别有什么意义？"><a href="#2-2-6-L13：该指令之后，sp-和-sscratch-中的值分别有什么意义？" class="headerlink" title="2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？"></a>2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrrw sp, sscratch, sp</span><br></pre></td></tr></table></figure>
+<p><code>sp</code>, <code>sscratch</code>寄存器的内容被交换, <code>sp</code>保存了原<code>sscratch</code>中的内核栈指针, <code>sscratch</code>保存了原<code>sp</code>中的用户栈栈指针</p>
+<h3 id="2-2-7-从-U-态进入-S-态是哪一条指令发生的？"><a href="#2-2-7-从-U-态进入-S-态是哪一条指令发生的？" class="headerlink" title="2.2.7 从 U 态进入 S 态是哪一条指令发生的？"></a>2.2.7 从 U 态进入 S 态是哪一条指令发生的？</h3><p><code>ecall</code>指令</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%AE%9E%E7%8E%B0%E7%9A%84%E5%8A%9F%E8%83%BD%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 实现的功能描述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 简答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A%E7%AC%AC%E4%B8%80%E9%83%A8%E5%88%86"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 简答作业第一部分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A%E7%AC%AC%E4%BA%8C%E9%83%A8%E5%88%86"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 简答作业第二部分</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-L40%EF%BC%9A%E5%88%9A%E8%BF%9B%E5%85%A5-restore-%E6%97%B6%EF%BC%8Ca0-%E4%BB%A3%E8%A1%A8%E4%BA%86%E4%BB%80%E4%B9%88%E5%80%BC%E3%80%82%E8%AF%B7%E6%8C%87%E5%87%BA-restore-%E7%9A%84%E4%B8%A4%E7%A7%8D%E4%BD%BF%E7%94%A8%E6%83%85%E6%99%AF%E3%80%82"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-L43-L48%EF%BC%9A%E8%BF%99%E5%87%A0%E8%A1%8C%E6%B1%87%E7%BC%96%E4%BB%A3%E7%A0%81%E7%89%B9%E6%AE%8A%E5%A4%84%E7%90%86%E4%BA%86%E5%93%AA%E4%BA%9B%E5%AF%84%E5%AD%98%E5%99%A8%EF%BC%9F%E8%BF%99%E4%BA%9B%E5%AF%84%E5%AD%98%E5%99%A8%E7%9A%84%E7%9A%84%E5%80%BC%E5%AF%B9%E4%BA%8E%E8%BF%9B%E5%85%A5%E7%94%A8%E6%88%B7%E6%80%81%E6%9C%89%E4%BD%95%E6%84%8F%E4%B9%89%EF%BC%9F%E8%AF%B7%E5%88%86%E5%88%AB%E8%A7%A3%E9%87%8A%E3%80%82"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-L50-L56%EF%BC%9A%E4%B8%BA%E4%BD%95%E8%B7%B3%E8%BF%87%E4%BA%86-x2-%E5%92%8C-x4%EF%BC%9F"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 L50-L56：为何跳过了 x2 和 x4？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-L60%EF%BC%9A%E8%AF%A5%E6%8C%87%E4%BB%A4%E4%B9%8B%E5%90%8E%EF%BC%8Csp-%E5%92%8C-sscratch-%E4%B8%AD%E7%9A%84%E5%80%BC%E5%88%86%E5%88%AB%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-5-restore%EF%BC%9A%E4%B8%AD%E5%8F%91%E7%94%9F%E7%8A%B6%E6%80%81%E5%88%87%E6%8D%A2%E5%9C%A8%E5%93%AA%E4%B8%80%E6%9D%A1%E6%8C%87%E4%BB%A4%EF%BC%9F%E4%B8%BA%E4%BD%95%E8%AF%A5%E6%8C%87%E4%BB%A4%E6%89%A7%E8%A1%8C%E4%B9%8B%E5%90%8E%E4%BC%9A%E8%BF%9B%E5%85%A5%E7%94%A8%E6%88%B7%E6%80%81%EF%BC%9F"><span class="toc-number">2.2.5.</span> <span class="toc-text">2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-6-L13%EF%BC%9A%E8%AF%A5%E6%8C%87%E4%BB%A4%E4%B9%8B%E5%90%8E%EF%BC%8Csp-%E5%92%8C-sscratch-%E4%B8%AD%E7%9A%84%E5%80%BC%E5%88%86%E5%88%AB%E6%9C%89%E4%BB%80%E4%B9%88%E6%84%8F%E4%B9%89%EF%BC%9F"><span class="toc-number">2.2.6.</span> <span class="toc-text">2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-7-%E4%BB%8E-U-%E6%80%81%E8%BF%9B%E5%85%A5-S-%E6%80%81%E6%98%AF%E5%93%AA%E4%B8%80%E6%9D%A1%E6%8C%87%E4%BB%A4%E5%8F%91%E7%94%9F%E7%9A%84%EF%BC%9F"><span class="toc-number">2.2.7.</span> <span class="toc-text">2.2.7 从 U 态进入 S 态是哪一条指令发生的？</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&text=chapter3练习"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&is_video=false&description=chapter3练习"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=chapter3练习&body=Check out this article: http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&title=chapter3练习"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&name=chapter3练习&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/&t=chapter3练习"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'https://github.com/ToniXWD/ToniXWD.github.io.git';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

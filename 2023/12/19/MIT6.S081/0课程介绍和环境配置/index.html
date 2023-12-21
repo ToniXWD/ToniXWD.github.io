@@ -1,108 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang=zh>
 <head>
-  <meta charset="utf-8">
-  
-  
-  <title>MIT6.S081 0: 环境配置 | Hexo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="1 课程简介MIT6.S081 Operating System Engineering 是麻省理工学院的 PDOS 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 基于 RISCV 架构实现的类Unix OS xv6, 基本上每一部分的内容都有对应的xv6 lab, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍">
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 课程简介MIT6.S081 Operating System Engineering 是麻省理工学院的 PDOS 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 基于 RISCV 架构实现的类Unix OS xv6, 基本上每一部分的内容都有对应的xv6 lab, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.S081 0: 环境配置">
 <meta property="og:url" content="http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 课程简介MIT6.S081 Operating System Engineering 是麻省理工学院的 PDOS 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 基于 RISCV 架构实现的类Unix OS xv6, 基本上每一部分的内容都有对应的xv6 lab, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍">
-<meta property="og:locale" content="en_US">
+<meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171319261-381956758.png">
 <meta property="og:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171908673-376811973.png">
 <meta property="og:image" content="http://example.com/gdb-qemu.png">
 <meta property="og:image" content="http://example.com/gdb-uvmalloc.png">
 <meta property="article:published_time" content="2023-12-19T13:56:47.000Z">
 <meta property="article:modified_time" content="2023-12-21T13:45:40.653Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:author" content="ToniXWD">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171319261-381956758.png">
-  
-    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
-  
-  
-    <link rel="shortcut icon" href="/favicon.png">
-  
-  
-  
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.S081 0: 环境配置</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
 <link rel="stylesheet" href="/css/style.css">
 
-  
+    <!-- persian styles -->
     
-<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
 
-  
-  
-<meta name="generator" content="Hexo 7.0.0"></head>
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&text=MIT6.S081 0: 环境配置"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&is_video=false&description=MIT6.S081 0: 环境配置"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.S081 0: 环境配置&body=Check out this article: http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&name=MIT6.S081 0: 环境配置&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&t=MIT6.S081 0: 环境配置"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
 
-<body>
-  <div id="container">
-    <div id="wrap">
-      <header id="header">
-  <div id="banner"></div>
-  <div id="header-outer" class="outer">
-    <div id="header-title" class="inner">
-      <h1 id="logo-wrap">
-        <a href="/" id="logo">Hexo</a>
-      </h1>
-      
     </div>
-    <div id="header-inner" class="inner">
-      <nav id="main-nav">
-        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
-        
-          <a class="main-nav-link" href="/">Home</a>
-        
-          <a class="main-nav-link" href="/archives">Archives</a>
-        
-      </nav>
-      <nav id="sub-nav">
-        
-        
-          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
-        
-        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
-      </nav>
-      <div id="search-form-wrap">
-        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E8%AF%BE%E7%A8%8B%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 课程简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%B5%84%E6%BA%90%E6%B1%87%E6%80%BB"><span class="toc-number">2.</span> <span class="toc-text">2 资源汇总</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="toc-number">3.</span> <span class="toc-text">3 环境配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-wsl2%E5%AE%89%E8%A3%85Ubuntu22-04"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 wsl2安装Ubuntu22.04</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%90%AF%E7%94%A8Linux%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 启用Linux子系统功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-BIOS%E5%BC%80%E5%90%AFCPU%E8%99%9A%E6%8B%9F%E5%8C%96%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 BIOS开启CPU虚拟化功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-3-%E5%AE%89%E8%A3%85wsl2"><span class="toc-number">3.1.3.</span> <span class="toc-text">3.1.3 安装wsl2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-4-Ubuntu%E6%8D%A2%E6%BA%90"><span class="toc-number">3.1.4.</span> <span class="toc-text">3.1.4 Ubuntu换源</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%89%E8%A3%85riscv%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%B7%A5%E5%85%B7%E5%92%8Cqemu"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 安装riscv交叉编译工具和qemu</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%AE%89%E8%A3%85riscv%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%B7%A5%E5%85%B7"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 安装riscv交叉编译工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85qemu"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 编译安装qemu</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%AE%89%E8%A3%85gdb"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 安装gdb</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%881-%E5%AE%89%E8%A3%85%E5%AE%8C%E6%95%B4%E7%9A%84-riscv-gnu-toolchain"><span class="toc-number">3.3.1.</span> <span class="toc-text">方案1: 安装完整的 riscv-gnu-toolchain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%882-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85-riscv64-unknown-elf-gdb"><span class="toc-number">3.3.2.</span> <span class="toc-text">方案2: 编译安装 riscv64-unknown-elf-gdb</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%85%8B%E9%9A%86%E4%BB%93%E5%BA%93"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 克隆仓库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%BF%90%E8%A1%8C%E5%89%8D%E8%AE%BE%E7%BD%AEgdbinit"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 第一次运行前设置gdbinit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%90%AF%E5%8A%A8qemu%E8%B0%83%E8%AF%95"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 启动qemu调试</span></a></li></ol></li></ol>
       </div>
-    </div>
-  </div>
-</header>
+    
+  </span>
+</div>
 
-      <div class="outer">
-        <section id="main"><article id="post-MIT6.S081/0课程介绍和环境配置" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" class="article-date">
-  <time class="dt-published" datetime="2023-12-19T13:56:47.000Z" itemprop="datePublished">2023-12-19</time>
-</a>
     
-  <div class="article-category">
-    <a class="article-category-link" href="/categories/MIT6-S081/">MIT6.S081</a>
-  </div>
-
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
+    <div class="content index py4 ">
         
-  
-    <h1 class="p-name article-title" itemprop="headline name">
-      MIT6.S081 0: 环境配置
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.S081 0: 环境配置
     </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-19T13:56:47.000Z" class="dt-published" itemprop="datePublished">2023-12-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/MIT6-S081/">MIT6.S081</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
   
 
-      </header>
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h1 id="1-课程简介"><a href="#1-课程简介" class="headerlink" title="1 课程简介"></a>1 课程简介</h1><p>MIT6.S081 Operating System Engineering 是麻省理工学院的 <code>PDOS</code> 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 <code>基于 RISCV 架构实现的类Unix OS xv6</code>, 基本上每一部分的内容都有对应的<code>xv6 lab</code>, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍<code>xv6</code>的设计架构, 并结合了与通用操作系统的比较和相应前沿技术的简单介绍。</p>
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-课程简介"><a href="#1-课程简介" class="headerlink" title="1 课程简介"></a>1 课程简介</h1><p>MIT6.S081 Operating System Engineering 是麻省理工学院的 <code>PDOS</code> 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 <code>基于 RISCV 架构实现的类Unix OS xv6</code>, 基本上每一部分的内容都有对应的<code>xv6 lab</code>, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍<code>xv6</code>的设计架构, 并结合了与通用操作系统的比较和相应前沿技术的简单介绍。</p>
 <h1 id="2-资源汇总"><a href="#2-资源汇总" class="headerlink" title="2 资源汇总"></a>2 资源汇总</h1><ol>
 <li>课程官网：<br>2020秋： <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/schedule.html">https://pdos.csail.mit.edu/6.828/2020/schedule.html</a><br>2021秋： <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2021/schedule.html">https://pdos.csail.mit.edu/6.828/2021/schedule.html</a></li>
 <li>中文参考文献<br>课程内容翻译（2020秋）： <a target="_blank" rel="noopener" href="https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/">https://mit-public-courses-cn-translatio.gitbook.io/mit6-s081/</a><br>xv6中文文档（版本较旧）： <a target="_blank" rel="noopener" href="https://th0ar.gitbooks.io/xv6-chinese/content/index.html">https://th0ar.gitbooks.io/xv6-chinese/content/index.html</a></li>
@@ -160,124 +221,169 @@
 <p>进行断点调试, 例如指定函数<code>uvmalloc</code>断点:<br><img src="/gdb-uvmalloc.png" alt="gdb-uvmalloc"></p>
 <p>可以看出, 运行<code>ls</code>程序后, 程序停留在了<code>uvmalloc</code>函数的入口处, 证明了gdb调试功能正常。</p>
 
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" data-id="clqf9is4g0000jku82sus7z3s" data-title="MIT6.S081 0: 环境配置" class="article-share-link"><span class="fa fa-share">Share</span></a>
-      
-      
-      
-    </footer>
   </div>
-  
-    
-<nav id="article-nav">
-  
-    <a href="/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          chapter3练习
-        
-      </div>
-    </a>
-  
-  
-</nav>
-
-  
 </article>
 
 
-</section>
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
         
-          <aside id="sidebar">
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Categories</h3>
-    <div class="widget">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/MIT6-S081/">MIT6.S081</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/">清华大学开源操作系统训练营</a></li></ul>
-    </div>
-  </div>
+          <div id="footer-post-container">
+  <div id="footer-post">
 
-
-  
-    
-
-  
-    
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
-    <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li></ul>
-    </div>
-  </div>
-
-
-  
-    
-  <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
-    <div class="widget">
+    <div id="nav-footer" style="display: none">
       <ul>
         
-          <li>
-            <a href="/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/">chapter3练习</a>
-          </li>
+          <li><a href="/">首页</a></li>
         
-          <li>
-            <a href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/">MIT6.S081 0: 环境配置</a>
-          </li>
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
         
       </ul>
     </div>
-  </div>
 
-  
-</aside>
-        
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E8%AF%BE%E7%A8%8B%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 课程简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%B5%84%E6%BA%90%E6%B1%87%E6%80%BB"><span class="toc-number">2.</span> <span class="toc-text">2 资源汇总</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="toc-number">3.</span> <span class="toc-text">3 环境配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-wsl2%E5%AE%89%E8%A3%85Ubuntu22-04"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 wsl2安装Ubuntu22.04</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%90%AF%E7%94%A8Linux%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 启用Linux子系统功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-BIOS%E5%BC%80%E5%90%AFCPU%E8%99%9A%E6%8B%9F%E5%8C%96%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 BIOS开启CPU虚拟化功能</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-3-%E5%AE%89%E8%A3%85wsl2"><span class="toc-number">3.1.3.</span> <span class="toc-text">3.1.3 安装wsl2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-4-Ubuntu%E6%8D%A2%E6%BA%90"><span class="toc-number">3.1.4.</span> <span class="toc-text">3.1.4 Ubuntu换源</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%89%E8%A3%85riscv%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%B7%A5%E5%85%B7%E5%92%8Cqemu"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 安装riscv交叉编译工具和qemu</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%AE%89%E8%A3%85riscv%E4%BA%A4%E5%8F%89%E7%BC%96%E8%AF%91%E5%B7%A5%E5%85%B7"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 安装riscv交叉编译工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85qemu"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 编译安装qemu</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%AE%89%E8%A3%85gdb"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 安装gdb</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%881-%E5%AE%89%E8%A3%85%E5%AE%8C%E6%95%B4%E7%9A%84-riscv-gnu-toolchain"><span class="toc-number">3.3.1.</span> <span class="toc-text">方案1: 安装完整的 riscv-gnu-toolchain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%B9%E6%A1%882-%E7%BC%96%E8%AF%91%E5%AE%89%E8%A3%85-riscv64-unknown-elf-gdb"><span class="toc-number">3.3.2.</span> <span class="toc-text">方案2: 编译安装 riscv64-unknown-elf-gdb</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%85%8B%E9%9A%86%E4%BB%93%E5%BA%93"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 克隆仓库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%AC%AC%E4%B8%80%E6%AC%A1%E8%BF%90%E8%A1%8C%E5%89%8D%E8%AE%BE%E7%BD%AEgdbinit"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 第一次运行前设置gdbinit</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%90%AF%E5%8A%A8qemu%E8%B0%83%E8%AF%95"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 启动qemu调试</span></a></li></ol></li></ol>
       </div>
-      <footer id="footer">
-  
-  <div class="outer">
-    <div id="footer-info" class="inner">
-      
-      &copy; 2023 John Doe<br>
-      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&text=MIT6.S081 0: 环境配置"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&is_video=false&description=MIT6.S081 0: 环境配置"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.S081 0: 环境配置&body=Check out this article: http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&title=MIT6.S081 0: 环境配置"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&name=MIT6.S081 0: 环境配置&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/&t=MIT6.S081 0: 环境配置"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
     </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
   </div>
 </footer>
 
     </div>
-    <nav id="mobile-nav">
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
   
-    <a href="/" class="mobile-nav-link">Home</a>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
   
-    <a href="/archives" class="mobile-nav-link">Archives</a>
-  
-</nav>
-    
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
 
 
-<script src="/js/jquery-3.6.4.min.js"></script>
+<script src="/js/main.js"></script>
 
+<!-- search -->
 
+<!-- Baidu Analytics -->
 
-  
-<script src="/fancybox/jquery.fancybox.min.js"></script>
+<!-- Cloudflare Analytics -->
 
+<!-- Disqus Comments -->
 
+<!-- utterances Comments -->
 
+    <script type="text/javascript">
+      var utterances_repo = 'https://github.com/ToniXWD/ToniXWD.github.io.git';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
 
-<script src="/js/script.js"></script>
+      (function(){
+          var script = document.createElement('script');
 
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
 
-
-
-
-  </div>
 </body>
 </html>
