@@ -13,15 +13,15 @@
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 课程简介MIT6.S081 Operating System Engineering 是麻省理工学院的 PDOS 实验室开设的面向MIT本科生的操作系统课程, 课程前身为MIT6.828。课程主题是介绍 基于 RISCV 架构实现的类Unix OS xv6, 基本上每一部分的内容都有对应的xv6 lab, 涉及页表、中断、内存管理、线程调度、锁、文件系统等OS的基本内容。课程附有专门的教材介绍">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171319261-381956758.png">
-<meta property="og:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171908673-376811973.png">
-<meta property="og:image" content="http://example.com/gdb-qemu.png">
-<meta property="og:image" content="http://example.com/gdb-uvmalloc.png">
+<meta property="og:image" content="http://example.com/images/enable_win_func.png">
+<meta property="og:image" content="http://example.com/images/enable-virtualization.png">
+<meta property="og:image" content="http://example.com/images/gdb-qemu.png">
+<meta property="og:image" content="http://example.com/images/gdb-uvmalloc.png">
 <meta property="article:published_time" content="2023-12-19T13:56:47.000Z">
-<meta property="article:modified_time" content="2023-12-21T13:45:40.653Z">
+<meta property="article:modified_time" content="2023-12-21T17:25:55.299Z">
 <meta property="article:author" content="ToniXWD">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171319261-381956758.png">
+<meta name="twitter:image" content="http://example.com/images/enable_win_func.png">
     
     
       
@@ -171,8 +171,8 @@
 </ol>
 <h1 id="3-环境配置"><a href="#3-环境配置" class="headerlink" title="3 环境配置"></a>3 环境配置</h1><p>官网的环境配置参考为： <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.828/2020/tools.html">https://pdos.csail.mit.edu/6.828/2020/tools.html</a><br>我的方案是在 <code>Windows11 wsl2</code> 中进行环境配置</p>
 <h2 id="3-1-wsl2安装Ubuntu22-04"><a href="#3-1-wsl2安装Ubuntu22-04" class="headerlink" title="3.1 wsl2安装Ubuntu22.04"></a>3.1 wsl2安装Ubuntu22.04</h2><p>wsl2的安装参考 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/wsl/">微软官方文档</a></p>
-<h3 id="3-1-1-启用Linux子系统功能"><a href="#3-1-1-启用Linux子系统功能" class="headerlink" title="3.1.1 启用Linux子系统功能"></a>3.1.1 启用Linux子系统功能</h3><p>系统搜索<strong>启用或关闭Windows功能</strong>，如下图开启功能<br><br><br><img src="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171319261-381956758.png" width=400px><br><br></p>
-<h3 id="3-1-2-BIOS开启CPU虚拟化功能"><a href="#3-1-2-BIOS开启CPU虚拟化功能" class="headerlink" title="3.1.2 BIOS开启CPU虚拟化功能"></a>3.1.2 BIOS开启CPU虚拟化功能</h3><p>不同的主板厂商BIOS界面设置不同，大体上的位置可参考下图<br><br><br><img src="https://img2023.cnblogs.com/blog/3166095/202308/3166095-20230810171908673-376811973.png" width=400px><br><br></p>
+<h3 id="3-1-1-启用Linux子系统功能"><a href="#3-1-1-启用Linux子系统功能" class="headerlink" title="3.1.1 启用Linux子系统功能"></a>3.1.1 启用Linux子系统功能</h3><p>系统搜索<strong>启用或关闭Windows功能</strong>，如下图开启功能<br><img src="/../../images/enable_win_func.png" alt="en../imagesble_win_func"></p>
+<h3 id="3-1-2-BIOS开启CPU虚拟化功能"><a href="#3-1-2-BIOS开启CPU虚拟化功能" class="headerlink" title="3.1.2 BIOS开启CPU虚拟化功能"></a>3.1.2 BIOS开启CPU虚拟化功能</h3><p>不同的主板厂商BIOS界面设置不同，大体上的位置可参考下图<br><img src="/../../images/enable-virtualization.png" alt="enable-virtualization"></p>
 <h3 id="3-1-3-安装wsl2"><a href="#3-1-3-安装wsl2" class="headerlink" title="3.1.3 安装wsl2"></a>3.1.3 安装wsl2</h3><p>最好以管理员模式打开powershell，输入如下命令进行安装</p>
 <figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"> wsl <span class="literal">-l</span> <span class="literal">-o</span></span><br><span class="line"><span class="comment"># 改命令会搜索可在线安装的发行版</span></span><br></pre></td></tr></table></figure>
 <p>默认安装Ubuntu20.04</p>
@@ -217,8 +217,8 @@
 <p>在另一个终端的xv6仓库下:</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ riscv64-unknown-elf-gdb</span><br></pre></td></tr></table></figure>
 
-<p>结果如图所示<br><img src="/gdb-qemu.png" alt="gdb-qemu"></p>
-<p>进行断点调试, 例如指定函数<code>uvmalloc</code>断点:<br><img src="/gdb-uvmalloc.png" alt="gdb-uvmalloc"></p>
+<p>结果如图所示<br><img src="/../../images/gdb-qemu.png" alt="gdb-qemu"></p>
+<p>进行断点调试, 例如指定函数<code>uvmalloc</code>断点:<br><img src="/../../images/gdb-uvmalloc.png" alt="gdb-uvmalloc"></p>
 <p>可以看出, 运行<code>ls</code>程序后, 程序停留在了<code>uvmalloc</code>函数的入口处, 证明了gdb调试功能正常。</p>
 
   </div>
