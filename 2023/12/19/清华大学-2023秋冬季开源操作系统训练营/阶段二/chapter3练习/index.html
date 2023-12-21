@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>chapter3练习 | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="1 实现的功能描述 在task.rs中的TaskControlBlock结构体增加了sys_call_times数组, 用于记录当前task中各个系统调用的次数 每次执行系统调用时, 将全局变量TASK_MANAGER中当前任务current_task对应的TaskControlBlock结构体的系统调用记录自增 为TaskManager实现get_sys_call_times方法, 获取当前任务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="chapter3练习">
+<meta property="og:url" content="http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="1 实现的功能描述 在task.rs中的TaskControlBlock结构体增加了sys_call_times数组, 用于记录当前task中各个系统调用的次数 每次执行系统调用时, 将全局变量TASK_MANAGER中当前任务current_task对应的TaskControlBlock结构体的系统调用记录自增 为TaskManager实现get_sys_call_times方法, 获取当前任务">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-12-19T14:54:06.000Z">
+<meta property="article:modified_time" content="2023-12-21T13:47:16.338Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<meta name="generator" content="Hexo 7.0.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS Feed"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="Search"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://example.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-清华大学-2023秋冬季开源操作系统训练营/阶段二/chapter3练习" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/" class="article-date">
+  <time class="dt-published" datetime="2023-12-19T14:54:06.000Z" itemprop="datePublished">2023-12-19</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/">清华大学开源操作系统训练营</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      chapter3练习
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="1-实现的功能描述"><a href="#1-实现的功能描述" class="headerlink" title="1 实现的功能描述"></a>1 实现的功能描述</h1><ol>
+<li>在<code>task.rs</code>中的<code>TaskControlBlock</code>结构体增加了<code>sys_call_times</code>数组, 用于记录当前<code>task</code>中各个系统调用的次数</li>
+<li>每次执行系统调用时, 将全局变量<code>TASK_MANAGER</code>中当前任务<code>current_task</code>对应的<code>TaskControlBlock</code>结构体的系统调用记录自增</li>
+<li>为<code>TaskManager</code>实现<code>get_sys_call_times</code>方法, 获取当前任务<code>current_task</code>对应的<code>TaskControlBlock</code>结构体的系统调用数组的拷贝</li>
+<li>完成<code>process.rs</code>的<code>sys_task_info</code>, 调用<code>get_sys_call_times</code>和<code>get_time_ms</code>获取<code>TaskInfo</code>结构体的<code>syscall_times</code>和<code>time</code>部分, <code>status</code>部分设为<code>Running</code></li>
+</ol>
+<h1 id="2-简答作业"><a href="#2-简答作业" class="headerlink" title="2 简答作业"></a>2 简答作业</h1><h2 id="2-1-简答作业第一部分"><a href="#2-1-简答作业第一部分" class="headerlink" title="2.1 简答作业第一部分"></a>2.1 简答作业第一部分</h2><p>正确进入 U 态后，程序的特征还应有：使用 S 态特权指令，访问 S 态寄存器后会报错。 请同学们可以自行测试这些内容 (运行 Rust 三个 bad 测例 (ch2b_bad_*.rs) ， 注意在编译时至少需要指定 LOG&#x3D;ERROR 才能观察到内核的报错信息) ， 描述程序出错行为，同时注意注明你使用的 sbi 及其版本。</p>
+<p>Rustsbi 版本为: 0.2.0-alpha.2</p>
+<p>出现报错: </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[kernel] PageFault <span class="keyword">in</span> application, bad addr = 0x0, bad instruction = 0x804003c4, kernel killed it.</span><br><span class="line">[kernel] IllegalInstruction <span class="keyword">in</span> application, kernel killed it.</span><br><span class="line">[kernel] IllegalInstruction <span class="keyword">in</span> application, kernel killed it.</span><br></pre></td></tr></table></figure>
+
+<p><code>ch2b_bad_address.rs</code> 由于除0错误触发异常退出<br><code>ch2b_bad_instructions.rs</code> 在用户态非法使用指令<code>sret</code><br><code>ch2b_bad_register.rs</code> 在用户态非法使用指令<code>csrr</code></p>
+<h2 id="2-2-简答作业第二部分"><a href="#2-2-简答作业第二部分" class="headerlink" title="2.2 简答作业第二部分"></a>2.2 简答作业第二部分</h2><p>深入理解 trap.S 中两个函数 __alltraps 和 __restore 的作用，并回答如下问题:</p>
+<h3 id="2-2-1-L40：刚进入-restore-时，a0-代表了什么值。请指出-restore-的两种使用情景。"><a href="#2-2-1-L40：刚进入-restore-时，a0-代表了什么值。请指出-restore-的两种使用情景。" class="headerlink" title="2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。"></a>2.2.1 L40：刚进入 __restore 时，a0 代表了什么值。请指出 __restore 的两种使用情景。</h3><blockquote>
+<ol>
+<li>刚进入 __restore 时，a0 代表了系统调用的第一个参数</li>
+<li>__restore 的作用包括:</li>
+</ol>
+<ul>
+<li>从系统调用和异常返回时, 恢复要返回的用户态的上下文信息</li>
+<li>任务切换时, 恢复要切换的任务的上下文信息</li>
+</ul>
+</blockquote>
+<h3 id="2-2-2-L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。"><a href="#2-2-2-L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。" class="headerlink" title="2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。"></a>2.2.2 L43-L48：这几行汇编代码特殊处理了哪些寄存器？这些寄存器的的值对于进入用户态有何意义？请分别解释。</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">ld t0, 32*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sstatus 寄存器的值, 将其读取到 t0</span></span><br><span class="line">ld t1, 33*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sepc 寄存器的值, 将其读取到 t1</span></span><br><span class="line">ld t2, 2*8(sp) <span class="comment"># 内核栈 32*8(sp) 处存储了原 sscratch 寄存器的值, 将其读取到 t2</span></span><br><span class="line">csrw sstatus, t0 <span class="comment"># 将 t0中原 sstatus 寄存器的值读取到 sstatus</span></span><br><span class="line">csrw sepc, t1 <span class="comment"># 将 t0中原 sepc 寄存器的值读取到 sepc</span></span><br><span class="line">csrw sscratch, t2 <span class="comment"># 将 t0中原 sscratch 寄存器的值读取到 sscratch</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-3-L50-L56：为何跳过了-x2-和-x4？"><a href="#2-2-3-L50-L56：为何跳过了-x2-和-x4？" class="headerlink" title="2.2.3 L50-L56：为何跳过了 x2 和 x4？"></a>2.2.3 L50-L56：为何跳过了 x2 和 x4？</h3><ol>
+<li>跳过<code>x2</code>是因为<code>x2</code>对应的用户栈指针保存到了sscratch寄存器, 不需要从内核栈中进行恢复</li>
+<li>跳过<code>x4</code>是因为并没有使用它, 所以无需恢复</li>
+</ol>
+<h3 id="2-2-4-L60：该指令之后，sp-和-sscratch-中的值分别有什么意义？"><a href="#2-2-4-L60：该指令之后，sp-和-sscratch-中的值分别有什么意义？" class="headerlink" title="2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？"></a>2.2.4 L60：该指令之后，sp 和 sscratch 中的值分别有什么意义？</h3><p><code>sp</code>指向用户栈, <code>sscratch</code>指向内核栈</p>
+<h3 id="2-2-5-restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？"><a href="#2-2-5-restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？" class="headerlink" title="2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？"></a>2.2.5 __restore：中发生状态切换在哪一条指令？为何该指令执行之后会进入用户态？</h3><p><code>sret</code>后发生了状态切换, 执行该指令后, PC设置为 <code>sepc</code> 寄存器的值。<code>sepc</code> 存储着产生中断或异常前的指令地址，因此这实现了到原始代码的返回。</p>
+<h3 id="2-2-6-L13：该指令之后，sp-和-sscratch-中的值分别有什么意义？"><a href="#2-2-6-L13：该指令之后，sp-和-sscratch-中的值分别有什么意义？" class="headerlink" title="2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？"></a>2.2.6 L13：该指令之后，sp 和 sscratch 中的值分别有什么意义？</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">csrrw sp, sscratch, sp</span><br></pre></td></tr></table></figure>
+<p><code>sp</code>, <code>sscratch</code>寄存器的内容被交换, <code>sp</code>保存了原<code>sscratch</code>中的内核栈指针, <code>sscratch</code>保存了原<code>sp</code>中的用户栈栈指针</p>
+<h3 id="2-2-7-从-U-态进入-S-态是哪一条指令发生的？"><a href="#2-2-7-从-U-态进入-S-态是哪一条指令发生的？" class="headerlink" title="2.2.7 从 U 态进入 S 态是哪一条指令发生的？"></a>2.2.7 从 U 态进入 S 态是哪一条指令发生的？</h3><p><code>ecall</code>指令</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://example.com/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/" data-id="clqf9is4p0003jku80n8r17ht" data-title="chapter3练习" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">MIT6.S081 0: 环境配置</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Categories</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/MIT6-S081/">MIT6.S081</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/">清华大学开源操作系统训练营</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2023/12/19/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/chapter3%E7%BB%83%E4%B9%A0/">chapter3练习</a>
+          </li>
+        
+          <li>
+            <a href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/">MIT6.S081 0: 环境配置</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2023 John Doe<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
