@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab2&#x2F;intro.html 1.编程作业1.1 跟随文档修改内核跟随文档编写代码即可, 其实给出的bootloader已经是被修改成适配rCore的版本了, 不需要进行自己的修改, 此处简单说明文档中没有直接给出的代码修改部分:  思路 bootloader其实就是我们lab1中修改栈布局">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2023开源操作系统训练营三阶段 proj2 练习2">
+<meta property="og:url" content="http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab2&#x2F;intro.html 1.编程作业1.1 跟随文档修改内核跟随文档编写代码即可, 其实给出的bootloader已经是被修改成适配rCore的版本了, 不需要进行自己的修改, 此处简单说明文档中没有直接给出的代码修改部分:  思路 bootloader其实就是我们lab1中修改栈布局">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/lab1-result.png">
+<meta property="article:published_time" content="2023-12-14T15:34:29.000Z">
+<meta property="article:modified_time" content="2023-12-23T15:52:44.315Z">
+<meta property="article:author" content="ToniXWD">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/lab1-result.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>2023开源操作系统训练营三阶段 proj2 练习2</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&text=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习2&body=Check out this article: http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&name=2023开源操作系统训练营三阶段 proj2 练习2&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&t=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1.编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E8%B7%9F%E9%9A%8F%E6%96%87%E6%A1%A3%E4%BF%AE%E6%94%B9%E5%86%85%E6%A0%B8"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 跟随文档修改内核</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%B7%BB%E5%8A%A0%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E4%BD%BFhellostd-%E6%AD%A3%E5%B8%B8%E8%BF%90%E8%A1%8C"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 添加系统调用使hellostd 正常运行</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E5%AE%8C%E6%88%90ioctl"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 完成ioctl</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E5%AE%8C%E6%88%90writev"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 完成writev</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E5%AE%9E%E7%8E%B0exit-group"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 实现exit_group</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-4-%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.2.4 结果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        2023开源操作系统训练营三阶段 proj2 练习2
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-14T15:34:29.000Z" class="dt-published" itemprop="datePublished">2023-12-14</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><strong>练习实验书</strong>: <a target="_blank" rel="noopener" href="https://scpointer.github.io/rcore2oscomp/docs/lab2/intro.html">https://scpointer.github.io/rcore2oscomp/docs/lab2/intro.html</a></p>
+<h1 id="1-编程作业"><a href="#1-编程作业" class="headerlink" title="1.编程作业"></a>1.编程作业</h1><h2 id="1-1-跟随文档修改内核"><a href="#1-1-跟随文档修改内核" class="headerlink" title="1.1 跟随文档修改内核"></a>1.1 跟随文档修改内核</h2><p>跟随文档编写代码即可, 其实给出的<code>bootloader</code>已经是被修改成适配<code>rCore</code>的版本了, 不需要进行自己的修改, 此处简单说明文档中没有直接给出的代码修改部分:</p>
+<ul>
+<li>思路<blockquote>
+<p><code>bootloader</code>其实就是我们<code>lab1</code>中修改栈布局的完善版本, 只需要将我们在<code>lab1</code>中自己修改的代码换成对<code>bootloader</code>的函数调用即可</p>
+</blockquote>
+</li>
+<li>具体步骤</li>
+</ul>
+<ol>
+<li>调用<code>ElfLoader::new</code>和<code>init_stack</code>完成栈的内存初始化</li>
+<li>将返回的栈底值填充<code>trap_cx</code>, 注意<code>app_init_context</code>也需要填充</li>
+</ol>
+<h2 id="1-2-添加系统调用使hellostd-正常运行"><a href="#1-2-添加系统调用使hellostd-正常运行" class="headerlink" title="1.2 添加系统调用使hellostd 正常运行"></a>1.2 添加系统调用使<code>hellostd </code>正常运行</h2><h3 id="1-2-1-完成ioctl"><a href="#1-2-1-完成ioctl" class="headerlink" title="1.2.1 完成ioctl"></a>1.2.1 完成ioctl</h3><p>通过文档修改后首先输出的是:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Unsupported syscall_id: 29</span><br></pre></td></tr></table></figure>
+<p>查阅<a target="_blank" rel="noopener" href="https://jborza.com/post/2021-05-11-riscv-linux-syscalls/">此处</a>可知缺少系统调用<code>ioctl</code>的实现</p>
+<ol>
+<li><code>ioctl</code>是什么?<blockquote>
+<p>ioctl（Input&#x2F;Output Control）是一个在Unix和Unix-like系统上的系统调用，用于控制设备的底层参数。它允许用户程序通过文件描述符对设备进行各种控制操作</p>
+</blockquote>
+</li>
+<li>原型和使用方式</li>
+</ol>
+<ul>
+<li>原型  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">ioctl</span><span class="params">(<span class="type">int</span> fd, <span class="type">unsigned</span> <span class="type">long</span> request, ...)</span>;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">fd: 打开的文件描述符，指向需要进行控制的设备。</span></span><br><span class="line"><span class="comment">request: 一个表示控制请求的无符号长整型。这个参数指定了具体的操作，如设置参数、获取状态等。</span></span><br><span class="line"><span class="comment">...: 零个或多个可选的参数，取决于具体的控制请求。</span></span><br><span class="line"><span class="comment">*/</span></span><br></pre></td></tr></table></figure></li>
+<li><code>Linux</code>下使用案例:  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">winsize</span> <span class="title">ws</span>;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 获取终端窗口大小</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">winsize</span> <span class="title">ws</span>;</span></span><br><span class="line"><span class="keyword">if</span> (ioctl(STDOUT_FILENO, TIOCGWINSZ, &amp;ws) == <span class="number">-1</span>) &#123;</span><br><span class="line">    perror(<span class="string">&quot;ioctl(TIOCGWINSZ) error&quot;</span>);</span><br><span class="line">    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li>实现方式<br>可以看出, <code>rCore</code>并不支持以上类似的功能, 一次该系统调用只需要返回 <code>0</code> 即可</li>
+</ol>
+<h3 id="1-2-2-完成writev"><a href="#1-2-2-完成writev" class="headerlink" title="1.2.2 完成writev"></a>1.2.2 完成writev</h3><p>上一步完成后, 运行输出:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Unsupported syscall_id: 66</span><br></pre></td></tr></table></figure>
+<p>查阅<a target="_blank" rel="noopener" href="https://jborza.com/post/2021-05-11-riscv-linux-syscalls/">此处</a>可知缺少系统调用<code>writev</code>的实现</p>
+<ol>
+<li><p><code>writev</code>是什么?<br>如果熟悉<code>Linux</code>系统编程的话对这个系统调用很熟悉, 其被<code>writev</code>函数调用, 起作用就是将多个不连续的缓冲区打包一次进行写入, <code>readv</code>的思路也是一样的。其意义在于减少系统调用的开销。</p>
+</li>
+<li><p>原型和使用方式</p>
+</li>
+</ol>
+<ul>
+<li>原型  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ssize_t</span> <span class="title function_">writev</span><span class="params">(<span class="type">int</span> fd, <span class="type">const</span> <span class="keyword">struct</span> iovec *iov, <span class="type">int</span> iovcnt)</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">iovec</span> &#123;</span></span><br><span class="line"><span class="type">void</span>  *iov_base; <span class="comment">// 缓冲区的起始地址</span></span><br><span class="line"><span class="type">size_t</span> iov_len;  <span class="comment">// 缓冲区的长度</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></li>
+<li><code>Linux</code>下使用案例  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义两个缓冲区</span></span><br><span class="line"><span class="type">char</span> buffer1[] = <span class="string">&quot;Hello, &quot;</span>;</span><br><span class="line"><span class="type">char</span> buffer2[] = <span class="string">&quot;writev!\n&quot;</span>;</span><br><span class="line"><span class="comment">// 定义iovec结构数组</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">iovec</span> <span class="title">iov</span>[2];</span></span><br><span class="line">iov[<span class="number">0</span>].iov_base = buffer1;</span><br><span class="line">iov[<span class="number">0</span>].iov_len = <span class="built_in">strlen</span>(buffer1);</span><br><span class="line">iov[<span class="number">1</span>].iov_base = buffer2;</span><br><span class="line">iov[<span class="number">1</span>].iov_len = <span class="built_in">strlen</span>(buffer2);</span><br><span class="line"><span class="comment">// 打开文件描述符</span></span><br><span class="line"><span class="type">int</span> fd = open(<span class="string">&quot;output.txt&quot;</span>, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);</span><br><span class="line"><span class="comment">// 使用writev写入数据</span></span><br><span class="line"><span class="type">ssize_t</span> bytes_written = writev(fd, iov, <span class="number">2</span>);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li>实现方式</li>
+</ol>
+<ul>
+<li>思路<br>由于已经实现了<code>sys_write</code>, 而<code>sys_writev</code>就是将多个缓冲区打包在一起.因此只需要连续调用<code>sys_write</code>即可</li>
+<li>具体步骤<ol>
+<li>循环获取每一个<code>iov</code>的地址, 需要通过<code>translated_refmut</code>转化</li>
+<li>每一个<code>iov</code>地址的第一个参数是缓冲区地址, 第二个参数是缓冲区长度, 同样通过<code>translated_refmut</code>转化</li>
+<li>获取到上2个参数后调用<code>sys_write</code></li>
+<li>若<code>sys_write</code>返回-1, 则直接返回, 否则对<code>sys_write</code>进行累加并在循环结束后返回<blockquote>
+<p>PS<br>此处我的视线是直接操作指针, 但如果后续还需实现更多有关<code>iovec</code>的系统调用时, 最后单独定义一个结构体, 并对该结构体实现相应的读写方法</p>
+</blockquote>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="1-2-3-实现exit-group"><a href="#1-2-3-实现exit-group" class="headerlink" title="1.2.3 实现exit_group"></a>1.2.3 实现exit_group</h3><p>上一步完成后, 运行输出:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Unsupported syscall_id: 94</span><br></pre></td></tr></table></figure>
+<p>查阅<a target="_blank" rel="noopener" href="https://jborza.com/post/2021-05-11-riscv-linux-syscalls/">此处</a>可知缺少系统调用<code>exit_group</code>的实现</p>
+<ol>
+<li><code>exit_group</code>是什么?<br>exit_group 是一个系统调用，它会终止所有线程和进程，并返回一个退出状态。它与 exit 的区别在于它会终止整个进程组，而不仅仅是调用线程或进程。</li>
+<li>原型和使用方式</li>
+</ol>
+<ul>
+<li>原型  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exit_group</span><span class="params">(<span class="type">int</span> status)</span>;</span><br></pre></td></tr></table></figure></li>
+<li>使用方式  <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;linux/unistd.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// ... 进程的其他工作 ...</span></span><br><span class="line"></span><br><span class="line">    exit_group(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这段代码不会执行，因为 exit_group 已经终止了整个进程</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li>实现方式<br>显而易见, 由于<code>rCore</code>不支持进程组, 因此只需要转移给<code>exit</code>即可</li>
+</ol>
+<h3 id="1-2-4-结果"><a href="#1-2-4-结果" class="headerlink" title="1.2.4 结果"></a>1.2.4 结果</h3><p>完成以上修改后, 运行<code>hellostd</code>, 得到如下结果:<br><br><img src="/../../../images/lab1-result.png" alt="img"><br></p>
+<h1 id="2-问答作业"><a href="#2-问答作业" class="headerlink" title="2 问答作业"></a>2 问答作业</h1><ol>
+<li>查询标志位定义。<blockquote>
+<p>标准的 waitpid 调用的结构是 pid_t waitpid(pid_t pid, int *_Nullable wstatus, int options);。其中的 options 参数分别有哪些可能（只要列出不需要解释），用 int 的 32 个 bit 如何表示？</p>
+</blockquote>
+</li>
+</ol>
+<ul>
+<li><strong><code>options</code>包括</strong>:</li>
+<li><code>WNOHANG</code>：如果没有任何子进程终止或停止，<code>waitpid</code> 立即返回而不阻塞。如果指定了这个选项，且子进程的状态没有发生变化，<code>waitpid</code> 返回 0。</li>
+<li><code>WUNTRACED</code>：等待任何已经停止的子进程返回。停止是指子进程收到了一个暂停信号（通常是 <code>SIGSTOP</code>）而进入了停止状态。</li>
+<li><code>WCONTINUED</code>：等待任何已经继续执行的子进程返回。继续执行是指子进程从停止状态转为运行状态。</li>
+<li><code>WSTOPPED</code>：它是一个被废弃的宏，不应该在新的代码中使用。使用 <code>WIFSTOPPED</code> 替代。</li>
+<li><code>WEXITED</code>：如果子进程正常终止，<code>waitpid</code> 返回。可以与 <code>WIFEXITED</code> 结合使用。</li>
+<li><code>WEXITSTATUS</code>：用于获取正常终止的子进程的退出状态，需与 <code>WIFEXITED</code> 结合使用。</li>
+<li><code>WIFEXITED</code>：如果子进程正常终止，返回一个非零值。可以与 <code>WEXITSTATUS</code> 结合使用。</li>
+<li><code>WIFSIGNALED</code>：如果子进程因为信号而终止，返回一个非零值。</li>
+<li><code>WIFSTOPPED</code>：如果子进程当前处于停止状态，返回一个非零值。可以与 <code>WSTOPSIG</code> 结合使用。</li>
+<li><code>WIFCONTINUED</code>：如果子进程继续运行，返回一个非零值。</li>
+<li><code>WSTOPSIG</code>：用于获取导致子进程停止的信号编号，需与 <code>WIFSTOPPED</code> 结合使用。</li>
+</ul>
+<blockquote>
+<p>用 int 的 32 个 bit 如何表示?</p>
+</blockquote>
+<p>由于其对应的整型只有一个位被设置为1, 因此可以通过按位或（<code>|</code>）操作组合</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1.编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E8%B7%9F%E9%9A%8F%E6%96%87%E6%A1%A3%E4%BF%AE%E6%94%B9%E5%86%85%E6%A0%B8"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 跟随文档修改内核</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%B7%BB%E5%8A%A0%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E4%BD%BFhellostd-%E6%AD%A3%E5%B8%B8%E8%BF%90%E8%A1%8C"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 添加系统调用使hellostd 正常运行</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E5%AE%8C%E6%88%90ioctl"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 完成ioctl</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E5%AE%8C%E6%88%90writev"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 完成writev</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E5%AE%9E%E7%8E%B0exit-group"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 实现exit_group</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-4-%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.2.4 结果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&text=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习2&body=Check out this article: http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&title=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&name=2023开源操作系统训练营三阶段 proj2 练习2&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/&t=2023开源操作系统训练营三阶段 proj2 练习2"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab3&#x2F;intro.html 1 编程作业1.1 实验3.1 修改代码，使得 busybox ls bin&#x2F;abc 正常输出 bin&#x2F;abc。  1.1.1 对拍结果 在syscall中使用error!输出日志后运行结果如下:  123456789101112131415">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2023开源操作系统训练营三阶段 proj2 练习3">
+<meta property="og:url" content="http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab3&#x2F;intro.html 1 编程作业1.1 实验3.1 修改代码，使得 busybox ls bin&#x2F;abc 正常输出 bin&#x2F;abc。  1.1.1 对拍结果 在syscall中使用error!输出日志后运行结果如下:  123456789101112131415">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/lab3_1.png">
+<meta property="og:image" content="http://example.com/images/3-1%E5%AF%B9%E6%8B%8D3-2.png">
+<meta property="og:image" content="http://example.com/images/lab3_2.png">
+<meta property="article:published_time" content="2023-12-15T12:42:15.000Z">
+<meta property="article:modified_time" content="2023-12-23T15:53:22.847Z">
+<meta property="article:author" content="ToniXWD">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/lab3_1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>2023开源操作系统训练营三阶段 proj2 练习3</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2023/12/19/MIT6.S081/0%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E5%92%8C%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&text=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习3&body=Check out this article: http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&name=2023开源操作系统训练营三阶段 proj2 练习3&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&t=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1 编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%AE%9E%E9%AA%8C3-1"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 实验3.1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-1-%E5%AF%B9%E6%8B%8D%E7%BB%93%E6%9E%9C"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1.1 对拍结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-2-%E5%AE%9A%E4%BD%8D%E5%B9%B6%E4%BF%AE%E6%94%B9%E9%94%99%E8%AF%AF%E2%80%94%E6%9C%AA%E5%AE%8C%E6%88%90rename%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.1.2 定位并修改错误—未完成rename系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-3-%E5%AE%9A%E4%BD%8D%E5%B9%B6%E4%BF%AE%E6%94%B9%E9%94%99%E8%AF%AF%E2%80%94%E5%AE%8C%E6%88%90%E7%BC%BA%E5%A4%B1%E7%9A%84rename%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.1.3 定位并修改错误—完成缺失的rename系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-4-%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.1.4 输出结果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%AE%9E%E9%AA%8C3-2"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 实验3.2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E5%AF%B9%E6%8B%8D%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 对拍结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E5%AF%B9%E6%8B%8D%E5%88%86%E6%9E%90"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 对拍分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 输出结果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%80%9D%E8%80%83%E9%A2%981"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 思考题1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%80%9D%E8%80%83%E9%A2%982"><span class="toc-number">2.2.</span> <span class="toc-text">2.3 思考题2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%80%9D%E8%80%83%E9%A2%983"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 思考题3</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        2023开源操作系统训练营三阶段 proj2 练习3
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-15T12:42:15.000Z" class="dt-published" itemprop="datePublished">2023-12-15</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><strong>练习实验书</strong>: <a target="_blank" rel="noopener" href="https://scpointer.github.io/rcore2oscomp/docs/lab3/intro.html">https://scpointer.github.io/rcore2oscomp/docs/lab3/intro.html</a></p>
+<h1 id="1-编程作业"><a href="#1-编程作业" class="headerlink" title="1 编程作业"></a>1 编程作业</h1><h2 id="1-1-实验3-1"><a href="#1-1-实验3-1" class="headerlink" title="1.1 实验3.1"></a>1.1 实验3.1</h2><blockquote>
+<p>修改代码，使得 busybox ls bin&#x2F;abc 正常输出 bin&#x2F;abc。</p>
+</blockquote>
+<h3 id="1-1-1-对拍结果"><a href="#1-1-1-对拍结果" class="headerlink" title="1.1.1 对拍结果"></a>1.1.1 对拍结果</h3><ul>
+<li>在<code>syscall</code>中使用<code>error!</code>输出日志后运行结果如下:  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line">==================================================== busybox <span class="built_in">touch</span> abc ====================================================</span><br><span class="line"></span><br><span class="line">[ 60.140455 0:6 syscall_entry::syscall:38] [syscall] <span class="built_in">id</span> = SET_TID_ADDRESS, args = [1457172, 248, 0, 18446744073708088664, 1, 1], entry</span><br><span class="line">[ 60.172291 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 96, args = [1457172, 248, 0, 18446744073708088664, 1, 1], <span class="built_in">return</span> 6</span><br><span class="line">[ 60.195900 0:6 syscall_entry::syscall:38] [syscall] <span class="built_in">id</span> = GETUID, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], entry</span><br><span class="line">[ 60.221776 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 174, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], <span class="built_in">return</span> 0</span><br><span class="line">[ 60.239349 0:6 syscall_entry::syscall:29] [syscall] <span class="built_in">id</span> = UTIMENSAT, args = [18446744073709551516, 1073741384, 0, 0, 0, 0], entry</span><br><span class="line">[ 62.010726 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 88, args = [18446744073709551516, 1073741384, 0, 0, 0, 0], <span class="built_in">return</span> 0</span><br><span class="line">[ 62.028929 0:6 syscall_entry::syscall:38] [syscall] <span class="built_in">id</span> = EXIT_GROUP, args = [0, 0, 0, 0, 0, 0], entry</span><br><span class="line"></span><br><span class="line">==================================================== busybox <span class="built_in">mv</span> abc bin/ ====================================================</span><br><span class="line"></span><br><span class="line">[ 80.708070 0:6 syscall_entry::syscall:38] [syscall] <span class="built_in">id</span> = SET_TID_ADDRESS, args = [1457172, 248, 0, 18446744073708088664, 1, 1], entry</span><br><span class="line">[ 80.723000 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 96, args = [1457172, 248, 0, 18446744073708088664, 1, 1], <span class="built_in">return</span> 6</span><br><span class="line">[ 80.743645 0:6 syscall_entry::syscall:38] [syscall] <span class="built_in">id</span> = GETUID, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], entry</span><br><span class="line">[ 80.754384 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 174, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], <span class="built_in">return</span> 0</span><br><span class="line">[ 80.775450 0:6 syscall_entry::syscall:29] [syscall] <span class="built_in">id</span> = FSTATAT, args = [18446744073709551516, 1073741382, 1073740160, 0, 1073741382, 18446744073709551516], entry</span><br><span class="line">[ 80.806092 0:6 fatfs::<span class="built_in">dir</span>:140] Is a directory</span><br><span class="line">[ 80.834425 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 79, args = [18446744073709551516, 1073741382, 1073740160, 0, 1073741382, 18446744073709551516], <span class="built_in">return</span> 0</span><br><span class="line">[ 80.856809 0:6 syscall_entry::syscall:21] [syscall] <span class="built_in">id</span> = BRK, args = [0, 64, 1458528, 0, 1457024, 4096], entry</span><br><span class="line">[ 80.865595 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 214, args = [0, 64, 1458528, 0, 1457024, 4096], <span class="built_in">return</span> 1067450368</span><br><span class="line">[ 80.876861 0:6 syscall_entry::syscall:21] [syscall] <span class="built_in">id</span> = MMAP, args = [0, 4096, 3, 34, 18446744073709551615, 0], entry</span><br><span class="line">[ 80.893941 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 222, args = [0, 4096, 3, 34, 18446744073709551615, 0], <span class="built_in">return</span> 4096</span><br><span class="line">[ 80.917225 0:6 syscall_entry::syscall:29] [syscall] <span class="built_in">id</span> = FSTATAT, args = [18446744073709551516, 4128, 1073740160, 0, 4128, 18446744073709551516], entry</span><br><span class="line">[ 81.021491 0:6 syscall_entry::syscall:47] [syscall] <span class="built_in">id</span> = 79, args = [18446744073709551516, 4128, 1073740160, 0, 4128, 18446744073709551516], <span class="built_in">return</span> -64</span><br><span class="line">[ 81.042344 0:6 syscall_entry::syscall:29] [syscall] <span class="built_in">id</span> = WRITE, args = [2, 1073740112, 47, 0, 0, 0], entry</span><br><span class="line"><span class="built_in">mv</span>: can<span class="string">&#x27;t stat &#x27;</span>bin/abc<span class="string">&#x27;: No error information</span></span><br><span class="line"><span class="string">[ 81.059920 0:6 syscall_entry::syscall:47] [syscall] id = 64, args = [2, 1073740112, 47, 0, 0, 0], return 47</span></span><br><span class="line"><span class="string">[ 81.072551 0:6 syscall_entry::syscall:38] [syscall] id = EXIT_GROUP, args = [1, 0, 0, 1459576, 0, 1], entry</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">==================================================== busybox ls bin/abc ====================================================</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">[ 99.668975 0:6 syscall_entry::syscall:38] [syscall] id = SET_TID_ADDRESS, args = [1457172, 248, 0, 18446744073708088664, 1, 1], entry</span></span><br><span class="line"><span class="string">[ 99.684396 0:6 syscall_entry::syscall:47] [syscall] id = 96, args = [1457172, 248, 0, 18446744073708088664, 1, 1], return 6</span></span><br><span class="line"><span class="string">[ 99.703854 0:6 syscall_entry::syscall:38] [syscall] id = GETUID, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], entry</span></span><br><span class="line"><span class="string">[ 99.720334 0:6 syscall_entry::syscall:47] [syscall] id = 174, args = [1073741394, 47, 1073741394, 98, 1073741394, 1073741394], return 0</span></span><br><span class="line"><span class="string">[ 99.743118 0:6 syscall_entry::syscall:38] [syscall] id = CLOCK_GET_TIME, args = [0, 1073740640, 24, 24, 1457480, 0], entry</span></span><br><span class="line"><span class="string">[ 99.756191 0:6 syscall_entry::syscall:47] [syscall] id = 113, args = [0, 1073740640, 24, 24, 1457480, 0], return 0</span></span><br><span class="line"><span class="string">[ 99.773509 0:6 syscall_entry::syscall:29] [syscall] id = IOCTL, args = [0, 21523, 1073740584, 18446744073709551578, 1457480, 1073740528], entry</span></span><br><span class="line"><span class="string">[ 99.792659 0:6 syscall_entry::syscall:47] [syscall] id = 29, args = [0, 21523, 1073740584, 18446744073709551578, 1457480, 1073740528], return 0</span></span><br><span class="line"><span class="string">[ 99.815217 0:6 syscall_entry::syscall:29] [syscall] id = IOCTL, args = [1, 21523, 1073740648, 2, 0, 1332386], entry</span></span><br><span class="line"><span class="string">[ 99.824071 0:6 syscall_entry::syscall:47] [syscall] id = 29, args = [1, 21523, 1073740648, 2, 0, 1332386], return 0</span></span><br><span class="line"><span class="string">[ 99.836051 0:6 syscall_entry::syscall:29] [syscall] id = IOCTL, args = [1, 21523, 1073740648, 68, 2, 0], entry</span></span><br><span class="line"><span class="string">[ 99.849454 0:6 syscall_entry::syscall:47] [syscall] id = 29, args = [1, 21523, 1073740648, 68, 2, 0], return 0</span></span><br><span class="line"><span class="string">[ 99.863974 0:6 syscall_entry::syscall:21] [syscall] id = BRK, args = [0, 160, 1458528, 0, 1457024, 4096], entry</span></span><br><span class="line"><span class="string">[ 99.879705 0:6 syscall_entry::syscall:47] [syscall] id = 214, args = [0, 160, 1458528, 0, 1457024, 4096], return 1067450368</span></span><br><span class="line"><span class="string">[ 99.895548 0:6 syscall_entry::syscall:21] [syscall] id = MMAP, args = [0, 4096, 3, 34, 18446744073709551615, 0], entry</span></span><br><span class="line"><span class="string">[ 99.903246 0:6 syscall_entry::syscall:47] [syscall] id = 222, args = [0, 4096, 3, 34, 18446744073709551615, 0], return 4096</span></span><br><span class="line"><span class="string">[ 99.919318 0:6 syscall_entry::syscall:29] [syscall] id = FSTATAT, args = [18446744073709551516, 1073741383, 1073740256, 0, 1073741383, 18446744073709551516], entry</span></span><br><span class="line"><span class="string">[100.011304 0:6 syscall_entry::syscall:47] [syscall] id = 79, args = [18446744073709551516, 1073741383, 1073740256, 0, 1073741383, 18446744073709551516], return -64</span></span><br><span class="line"><span class="string">[100.042643 0:6 syscall_entry::syscall:29] [syscall] id = WRITE, args = [2, 1073740208, 34, 0, 0, 0], entry</span></span><br><span class="line"><span class="string">ls: bin/abc: No error information</span></span><br><span class="line"><span class="string">[100.070083 0:6 syscall_entry::syscall:47] [syscall] id = 64, args = [2, 1073740208, 34, 0, 0, 0], return 34</span></span><br><span class="line"><span class="string">[100.090969 0:6 syscall_entry::syscall:38] [syscall] id = EXIT_GROUP, args = [1, 0, 0, 1459576, 0, 1], entry</span></span><br></pre></td></tr></table></figure></li>
+<li>在<code>Linux</code>系统中在相同的位置执行相同的命令, <code>strace</code>输出如下(这里只给出<code>mv abc bin/</code>的结果):  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line">ioctl(0, TCGETS, &#123;B38400 opost isig icanon <span class="built_in">echo</span> ...&#125;) = 0</span><br><span class="line"><span class="built_in">stat</span>(<span class="string">&quot;bin/&quot;</span>, &#123;st_mode=S_IFDIR|0755, st_size=4096, ...&#125;) = 0</span><br><span class="line">lstat(<span class="string">&quot;abc&quot;</span>, &#123;st_mode=S_IFREG|0644, st_size=0, ...&#125;) = 0</span><br><span class="line">lstat(<span class="string">&quot;bin/abc&quot;</span>, 0x7fffbdb041a0)        = -1 ENOENT (No such file or directory)</span><br><span class="line">rename(<span class="string">&quot;abc&quot;</span>, <span class="string">&quot;bin/abc&quot;</span>)                = 0</span><br><span class="line">lseek(0, 0, SEEK_CUR)                   = -1 ESPIPE (Illegal seek)</span><br><span class="line">close(0)                                = 0</span><br><span class="line">close(1)                                = 0</span><br><span class="line">close(2)                                = 0</span><br><span class="line">exit_group(0)                           = ?</span><br><span class="line">+++ exited with 0 +++</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="1-1-2-定位并修改错误—未完成rename系统调用"><a href="#1-1-2-定位并修改错误—未完成rename系统调用" class="headerlink" title="1.1.2 定位并修改错误—未完成rename系统调用"></a>1.1.2 定位并修改错误—未完成<code>rename</code>系统调用</h3><p><code>strace</code>输出的内容很多, 这里我们只需要关注<code>rename</code>系统调用前后的内容即可, 其区别总结如下:</p>
+<ol>
+<li><code>strace</code>输出内容包括<code>rename</code>系统调用, 而我们的<code>Starry</code>没有输出响应的系统调用<br> 这意味着执行<code>rename</code>系统调用前发生了错误, 因此关注前一个系统调用<code>lstat</code></li>
+<li><code>FSTATAT</code>返回类型不匹配<br>分析可知, <code>lstat</code>和<code>FSTATAT</code>应该是<code>rename</code>系统调用的前置, <code>strace</code>中其返回值为<code>-1 ENOENT</code>, 而在<code>Starry</code>中返回值为<code>-64</code><br>查阅<code>ulib/axstarry/syscall_utils/src/lib.rs</code>和<code>target/debug/build/axerrno-011bdf3cce8cadef/out/linux_errno.rs</code>可知, <code>-64</code>返回的是: <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// target/debug/build/axerrno-011bdf3cce8cadef/out/linux_errno.rs</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/// Machine is not on the network</span></span><br><span class="line">ENONET = <span class="number">64</span>,</span><br></pre></td></tr></table></figure>
+<code>ENOENT</code>在同目录下, 同样存在: <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">// target/debug/build/axerrno-011bdf3cce8cadef/out/linux_errno.rs</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/// No such file or directory</span></span><br><span class="line">ENOENT = <span class="number">2</span>,</span><br></pre></td></tr></table></figure>
+分析我们执行的指令可知, <code>FSTATAT</code>对应的系统调用<code>syscall_fstatat</code>作用是查看目标路径下的文件信息, 在执行该命令前, 其应当是不存在的, 故其应返回<code>ENOENT</code>而不是<code>ENONET</code></li>
+<li>观察<code>syscall_fstatat</code><br>查看<code>syscall_fstatat</code>代码可知, 其对解析出的路径调用<code>get_stat_in_fs</code>完成信息获取</li>
+<li>修改<code>get_stat_in_fs</code><br>由于我们知道其错误返回了<code>ENONET</code>, 故搜索该字段即可迅速定位并完成修改 <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 是文件</span></span><br><span class="line"><span class="keyword">return</span> <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Ok</span>(file) = <span class="title function_ invoke__">new_fd</span>(real_path.<span class="title function_ invoke__">to_string</span>(), <span class="number">0</span>.<span class="title function_ invoke__">into</span>()) &#123;</span><br><span class="line">    <span class="keyword">match</span> file.<span class="title function_ invoke__">get_stat</span>() &#123;</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(stat) =&gt; <span class="title function_ invoke__">Ok</span>(stat),</span><br><span class="line">        <span class="title function_ invoke__">Err</span>(e) =&gt; &#123;</span><br><span class="line">            debug!(<span class="string">&quot;get stat error: &#123;:?&#125;&quot;</span>, e);</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(SyscallError::EINVAL)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">Err</span>(SyscallError::ENOENT) <span class="comment">// 修改为ENOENT</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="1-1-3-定位并修改错误—完成缺失的rename系统调用"><a href="#1-1-3-定位并修改错误—完成缺失的rename系统调用" class="headerlink" title="1.1.3 定位并修改错误—完成缺失的rename系统调用"></a>1.1.3 定位并修改错误—完成缺失的<code>rename</code>系统调用</h3><p>根据提示完成<code>syscall_renameat2</code>系统调用:</p>
+<ul>
+<li>实现<code>flags</code>结构体<br>在<a target="_blank" rel="noopener" href="https://man7.org/linux/man-pages/man2/renameat2.2.html">此处</a>找到对应的276号系统调用说明<br>可知, <code>flags</code>包含了:<code>RENAME_EXCHANGE</code>, <code>RENAME_NOREPLACE</code>和<code>RENAME_WHITEOUT</code>, 故实现如下:  <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> bitflags::bitflags;</span><br><span class="line"><span class="built_in">bitflags!</span> &#123;</span><br><span class="line"><span class="comment">/// sys_renameat2 用到的标志位</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">RenameFlags</span>: <span class="type">u32</span> &#123;</span><br><span class="line"><span class="keyword">const</span> NONE = <span class="number">0</span>;</span><br><span class="line"><span class="comment">// LAB3 其他可能的选项都有什么？</span></span><br><span class="line"><span class="comment">// 参考: https://man7.org/linux/man-pages/man2/renameat2.2.html</span></span><br><span class="line"><span class="keyword">const</span> RENAME_EXCHANGE = <span class="number">1</span>; <span class="comment">// 原子交换旧路径和新路径。两个路径名必须存在</span></span><br><span class="line"><span class="keyword">const</span> RENAME_NOREPLACE = <span class="number">2</span>; <span class="comment">// 如果newpath已经存在, 不要覆盖重命名的新路径。</span></span><br><span class="line"><span class="keyword">const</span> RENAME_WHITEOUT  = <span class="number">4</span>; <span class="comment">// 仅适用于覆盖/并集文件系统实现</span></span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>实现<code>syscall_renameat2</code><br>此处我没有实现<code>RENAME_EXCHANGE</code>和<code>RENAME_WHITEOUT</code>, 只对<code>RENAME_NOREPLACE</code>进行了实现, 其核心就是调用底层的<code>axfs::api::rename</code>  <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// 276</span></span><br><span class="line"><span class="comment">/// 重命名文件或目录</span></span><br><span class="line"><span class="comment">// LAB3 你需要完成这个 syscall</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">syscall_renameat2</span>(</span><br><span class="line">old_dirfd: <span class="type">usize</span>,</span><br><span class="line">old_path: *<span class="keyword">const</span> <span class="type">u8</span>,</span><br><span class="line">new_dirfd: <span class="type">usize</span>,</span><br><span class="line">new_path: *<span class="keyword">const</span> <span class="type">u8</span>,</span><br><span class="line">flags: <span class="type">usize</span>,</span><br><span class="line">) <span class="punctuation">-&gt;</span> SyscallResult &#123;</span><br><span class="line"><span class="keyword">let</span> <span class="variable">old_path</span> = <span class="title function_ invoke__">deal_with_path</span>(old_dirfd, <span class="title function_ invoke__">Some</span>(old_path), <span class="literal">false</span>).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line"><span class="keyword">let</span> <span class="variable">new_path</span> = <span class="title function_ invoke__">deal_with_path</span>(new_dirfd, <span class="title function_ invoke__">Some</span>(new_path), <span class="literal">false</span>).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line"><span class="keyword">let</span> <span class="variable">proc_path</span> = FilePath::<span class="title function_ invoke__">new</span>(<span class="string">&quot;/proc&quot;</span>).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line"><span class="keyword">if</span> old_path.<span class="title function_ invoke__">start_with</span>(&amp;proc_path) || new_path.<span class="title function_ invoke__">start_with</span>(&amp;proc_path) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(SyscallError::EPERM);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="variable">new_path_str</span> = new_path.<span class="title function_ invoke__">path</span>();</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">replace</span> = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(flag) = RenameFlags::<span class="title function_ invoke__">from_bits</span>(flags.<span class="title function_ invoke__">try_into</span>().<span class="title function_ invoke__">unwrap</span>()) &#123;</span><br><span class="line">    <span class="keyword">if</span> flag.<span class="title function_ invoke__">contains</span>(RenameFlags::RENAME_EXCHANGE) &#123;</span><br><span class="line">        <span class="built_in">panic!</span>(<span class="string">&quot;not supported!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> flag.<span class="title function_ invoke__">contains</span>(RenameFlags::RENAME_NOREPLACE) &#123;</span><br><span class="line">        replace = <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> flag.<span class="title function_ invoke__">contains</span>(RenameFlags::RENAME_WHITEOUT) &#123;</span><br><span class="line">        <span class="built_in">panic!</span>(<span class="string">&quot;not supported!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> !<span class="title function_ invoke__">path_exists</span>(old_path_str) &#123;</span><br><span class="line">    error!(<span class="string">&quot;old path not exists:&#123;&#125;&quot;</span>, old_path_str);</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(SyscallError::ENOENT);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> !replace &amp;&amp; <span class="title function_ invoke__">path_exists</span>(new_path_str) &#123;</span><br><span class="line">    error!(<span class="string">&quot;new path exists:&#123;&#125;&quot;</span>, new_path_str);</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(SyscallError::EEXIST);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// error!(&quot;old path = &#123;&#125;&quot;, old_path_str);</span></span><br><span class="line"><span class="comment">// error!(&quot;new path = &#123;&#125;&quot;, new_path_str);</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="variable">res</span> = axfs::api::<span class="title function_ invoke__">rename</span>(old_path_str, new_path_str);</span><br><span class="line"></span><br><span class="line"><span class="keyword">match</span> res &#123;</span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(()) =&gt; <span class="title function_ invoke__">Ok</span>(<span class="number">0</span>),</span><br><span class="line">    <span class="title function_ invoke__">Err</span>(e) =&gt; <span class="title function_ invoke__">Err</span>(e.<span class="title function_ invoke__">into</span>()),</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// return Err(SyscallError::EPERM);</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="1-1-4-输出结果"><a href="#1-1-4-输出结果" class="headerlink" title="1.1.4 输出结果"></a>1.1.4 输出结果</h3><p>输出结果如下:<br>    <img src="/../../../images/lab3_1.png" alt="img"></p>
+<h2 id="1-2-实验3-2"><a href="#1-2-实验3-2" class="headerlink" title="1.2 实验3.2"></a>1.2 实验3.2</h2><blockquote>
+<p>修改代码，使得 busybox mv def bin 正常输出 bin&#x2F;def。</p>
+</blockquote>
+<h3 id="1-2-1-对拍结果"><a href="#1-2-1-对拍结果" class="headerlink" title="1.2.1 对拍结果"></a>1.2.1 对拍结果</h3><p>根据题目分析可知, 此处的错误原因在于内核将<code>bin</code>看成了一个文件, 而不是一个目录<br>因此, 此处对拍可以不用跟<code>strace</code>对比, 其实际输出太过复杂, 可以和我们之前的<code>实验3.1</code>进行对拍</p>
+<blockquote>
+<p>PS:此处借助VScode的比较工具对2次的输出进行比对</p>
+</blockquote>
+<p><img src="/../../../images/3-1%E5%AF%B9%E6%8B%8D3-2.png" alt="实验3.1对拍实验3.2"></p>
+<p>通过<code>VSCode</code>的对比我们可以更快地定位对拍的不同:</p>
+<ul>
+<li>在调用<code>syscall_renameat2</code>之前, 左侧的<code>实验3.1</code>不存在系统调用<code>FACCESSAT</code>, 而右侧的<code>实验3.2</code>则存在</li>
+<li>在调用<code>syscall_renameat2</code>之前的系统调用<code>FSTATAT</code>返回值不同:左侧的<code>实验3.1</code>返回值为<code>-2</code>, 而右侧的<code>实验3.2</code>返回<code>0</code></li>
+</ul>
+<h3 id="1-2-2-对拍分析"><a href="#1-2-2-对拍分析" class="headerlink" title="1.2.2 对拍分析"></a>1.2.2 对拍分析</h3><ol>
+<li><p>对拍分析–<code>FACCESSAT</code><br>查阅<code>syscall_faccessat</code>的注释可知, 该函数用于<code>获取文件权限</code>与判别目录还是文件无关, 可暂时跳过</p>
+</li>
+<li><p>对拍分析–<code>FSTATAT</code><br> 再次回到熟悉的函数<code>syscall_fstatat</code>, 发现其对路径字符串的解析在<code>get_stat_in_fs</code>中<br> 分析<code>get_stat_in_fs</code>, 发现其判断路径为文件夹或文件的依据是:</p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> !real_path.<span class="title function_ invoke__">ends_with</span>(<span class="string">&quot;/&quot;</span>) &amp;&amp; !real_path.<span class="title function_ invoke__">ends_with</span>(<span class="string">&quot;include&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p> 大致可以判断出错误原因了, 因为其判断路径是文件夹或者文件的依据是其是否以<code>/</code>结尾, 参考<code>syscall_renameat2</code>中的提示, 使用<code>metadata</code>来判断其是否为文件:</p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">is_file</span> = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="variable">meta_data</span> = <span class="title function_ invoke__">metadata</span>(real_path);</span><br><span class="line"><span class="keyword">if</span> meta_data.<span class="title function_ invoke__">is_ok</span>() &#123;</span><br><span class="line">    is_file = meta_data.<span class="title function_ invoke__">unwrap</span>().<span class="title function_ invoke__">is_file</span>();</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(SyscallError::ENOENT);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> is_file &#123;</span><br><span class="line">    <span class="comment">// 是文件</span></span><br><span class="line">    ...</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 是目录</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="1-2-3-输出结果"><a href="#1-2-3-输出结果" class="headerlink" title="1.2.3 输出结果"></a>1.2.3 输出结果</h3><p>输出结果如下:<br>    <img src="/../../../images/lab3_2.png" alt="img"></p>
+<h1 id="2-问答作业"><a href="#2-问答作业" class="headerlink" title="2 问答作业"></a>2 问答作业</h1><h2 id="2-1-思考题1"><a href="#2-1-思考题1" class="headerlink" title="2.1 思考题1"></a>2.1 思考题1</h2><ul>
+<li>思考题1.1<blockquote>
+<p>思考题1.1：这些代码具体在 ~&#x2F;.cargo 下的哪个文件夹？</p>
+</blockquote>
+</li>
+</ul>
+<p>我的<code>log</code>库的路径为:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">~/.cargo/registry/src/mirrors.tuna.tsinghua.edu.cn-df7c3c540f42cdbd/log-0.4.19/src/lib.rs</span><br></pre></td></tr></table></figure>
+<p>其中<code>src</code>的下一级目录为设置的镜像代理</p>
+<ul>
+<li>思考题1.2<blockquote>
+<p>思考题1.2：如果忘记 make clean 会发生什么？</p>
+</blockquote>
+</li>
+</ul>
+<p>阅读Makefile:</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">clean: clean_c</span></span><br><span class="line">	rm -rf <span class="variable">$(APP)</span>/*.bin <span class="variable">$(APP)</span>/*.elf</span><br><span class="line">	cargo clean</span><br></pre></td></tr></table></figure>
+<p>可知, <code>make clean</code>进行了<code>cargo clean</code>, 如果直接<code>make run</code>会导致依赖库不会重新下载</p>
+<h2 id="2-3-思考题2"><a href="#2-3-思考题2" class="headerlink" title="2.3 思考题2"></a>2.3 思考题2</h2><blockquote>
+<p>思考题2：在部分往届内核及运行指引 一节提到的内核中挑选一个，描述它在默认情况下启动后会执行哪些测例（抑或是直接启动终端）。你不一定要真的运行那个内核，读文档或搜索即可。</p>
+</blockquote>
+<p>选择内核为<a target="_blank" rel="noopener" href="https://github.com/oscomp/2021oscomp-best-kernel-design-impl/tree/2021-xv6">xv6</a>(<del>嘿嘿, 其实是对xv6比较熟悉, 偷个懒</del>)<br><code>xv6</code>运行测例位于<code>xv6-user</code>文件夹下, 并需要再在<code>Makefile</code>中尽显指定:</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">UPROGS=\</span><br><span class="line">	$U/_init\</span><br><span class="line">	$U/_sh\</span><br><span class="line">	$U/_cat\</span><br><span class="line">	$U/_echo\</span><br><span class="line">	$U/_grep\</span><br><span class="line">	$U/_ls\</span><br><span class="line">	$U/_kill\</span><br><span class="line">	$U/_mkdir\</span><br><span class="line">	$U/_xargs\</span><br><span class="line">	$U/_sleep\</span><br><span class="line">	$U/_find\</span><br><span class="line">	$U/_rm\</span><br><span class="line">	$U/_rmdir\</span><br><span class="line">	$U/_wc\</span><br><span class="line">	$U/_info\</span><br><span class="line">	$U/_usertests\</span><br><span class="line">	$U/_strace\</span><br><span class="line">	$U/_mv\</span><br><span class="line">	$U/_test\</span><br><span class="line">	$U/_grind\</span><br><span class="line">	$U/_forktest\</span><br><span class="line">	$U/_stressfs\</span><br><span class="line">	$U/_cowtest\</span><br><span class="line">	$U/_lazytests\</span><br><span class="line">	$U/_mount\</span><br><span class="line">	$U/_umount\</span><br><span class="line">	$U/_dup3\</span><br><span class="line">	$U/_mmaptests\</span><br><span class="line">	$U/_sync\</span><br><span class="line">	$U/_signal_test</span><br></pre></td></tr></table></figure>
+<p><code>Makefile</code>以上文件对应于<code>xv6-user</code>文件夹下去掉下划线并以<code>.c</code>结尾的源文件, 如<code>init.c</code>, <code>test.c</code>等</p>
+<h2 id="2-3-思考题3"><a href="#2-3-思考题3" class="headerlink" title="2.3 思考题3"></a>2.3 思考题3</h2><ul>
+<li>思考题3.1<blockquote>
+<p>思考题3.1：为什么要在开头结尾各输出一句，会不会太过重复？（提示：考虑执行出错的情况，或者 sys_exit ）</p>
+</blockquote>
+</li>
+</ul>
+<p>一方面, <code>sys_exit</code>输出一次后就终止了, 另一方面, 收尾各自输出依据可以判断是否出现了<code>panic</code>(<del>不确定是不是这个意思</del>)</p>
+<ul>
+<li>思考题3.2<blockquote>
+<p>思考题3.2：为什么要结尾还要输出一遍 syscall 的完整参数，只输出返回值行不行？（提示：考虑像 sys_yield 这样的 syscall）</p>
+</blockquote>
+</li>
+</ul>
+<p><code>sys_yield</code>这类系统调用让出了CPU, 因此通过打印参数, 可以观测让出CPU期间, 其寄存器有没有被修改, 或是将系统让出CPU的时间进行记录(<del>不确定是不是这个意思</del>)</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1 编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%AE%9E%E9%AA%8C3-1"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 实验3.1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-1-%E5%AF%B9%E6%8B%8D%E7%BB%93%E6%9E%9C"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1.1 对拍结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-2-%E5%AE%9A%E4%BD%8D%E5%B9%B6%E4%BF%AE%E6%94%B9%E9%94%99%E8%AF%AF%E2%80%94%E6%9C%AA%E5%AE%8C%E6%88%90rename%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.1.2 定位并修改错误—未完成rename系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-3-%E5%AE%9A%E4%BD%8D%E5%B9%B6%E4%BF%AE%E6%94%B9%E9%94%99%E8%AF%AF%E2%80%94%E5%AE%8C%E6%88%90%E7%BC%BA%E5%A4%B1%E7%9A%84rename%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">1.1.3.</span> <span class="toc-text">1.1.3 定位并修改错误—完成缺失的rename系统调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-4-%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">1.1.4.</span> <span class="toc-text">1.1.4 输出结果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%AE%9E%E9%AA%8C3-2"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 实验3.2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E5%AF%B9%E6%8B%8D%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 对拍结果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E5%AF%B9%E6%8B%8D%E5%88%86%E6%9E%90"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 对拍分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 输出结果</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%80%9D%E8%80%83%E9%A2%981"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 思考题1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%80%9D%E8%80%83%E9%A2%982"><span class="toc-number">2.2.</span> <span class="toc-text">2.3 思考题2</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%80%9D%E8%80%83%E9%A2%983"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 思考题3</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&text=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习3&body=Check out this article: http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&title=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&name=2023开源操作系统训练营三阶段 proj2 练习3&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A03/&t=2023开源操作系统训练营三阶段 proj2 练习3"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

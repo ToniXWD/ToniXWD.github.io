@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab1&#x2F;intro.html 1.编程作业1.1 扩展 easy-fs-fuse 跟随前面文档的指引，扩展 easy-fs-fuse，使得它可以生成同时包含 Rust 和 C 用户程序的镜像   修改内核代码此步骤参考任务书 修改Makefile根据项目文档的说明, 基本上完成了生成同时包含">
+<meta property="og:type" content="article">
+<meta property="og:title" content="2023开源操作系统训练营三阶段 proj2 练习1">
+<meta property="og:url" content="http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;scpointer.github.io&#x2F;rcore2oscomp&#x2F;docs&#x2F;lab1&#x2F;intro.html 1.编程作业1.1 扩展 easy-fs-fuse 跟随前面文档的指引，扩展 easy-fs-fuse，使得它可以生成同时包含 Rust 和 C 用户程序的镜像   修改内核代码此步骤参考任务书 修改Makefile根据项目文档的说明, 基本上完成了生成同时包含">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/%E6%97%A7%E6%A0%88%E5%86%85%E5%AD%98%E5%88%86%E5%B8%83.png">
+<meta property="og:image" content="http://example.com/images/%E6%96%B0%E6%A0%88%E5%86%85%E5%AD%98%E5%88%86%E5%B8%83.png">
+<meta property="og:image" content="http://example.com/images/lab1-result.png">
+<meta property="article:published_time" content="2023-12-13T04:11:22.000Z">
+<meta property="article:modified_time" content="2023-12-23T15:53:05.981Z">
+<meta property="article:author" content="ToniXWD">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/%E6%97%A7%E6%A0%88%E5%86%85%E5%AD%98%E5%88%86%E5%B8%83.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>2023开源操作系统训练营三阶段 proj2 练习1</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2023/12/14/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A02/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/11/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/%E9%98%B6%E6%AE%B52-rCore-chapter3%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&text=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习1&body=Check out this article: http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&name=2023开源操作系统训练营三阶段 proj2 练习1&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&t=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1.编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%89%A9%E5%B1%95-easy-fs-fuse"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 扩展 easy-fs-fuse</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BF%AE%E6%94%B9os%E5%86%85%E6%A0%B8%E6%94%AF%E6%8C%81C%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 修改os内核支持C程序</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        2023开源操作系统训练营三阶段 proj2 练习1
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-13T04:11:22.000Z" class="dt-published" itemprop="datePublished">2023-12-13</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><strong>练习实验书</strong>: <a target="_blank" rel="noopener" href="https://scpointer.github.io/rcore2oscomp/docs/lab1/intro.html">https://scpointer.github.io/rcore2oscomp/docs/lab1/intro.html</a></p>
+<h1 id="1-编程作业"><a href="#1-编程作业" class="headerlink" title="1.编程作业"></a>1.编程作业</h1><h2 id="1-1-扩展-easy-fs-fuse"><a href="#1-1-扩展-easy-fs-fuse" class="headerlink" title="1.1 扩展 easy-fs-fuse"></a>1.1 扩展 easy-fs-fuse</h2><blockquote>
+<p>跟随前面文档的指引，扩展 easy-fs-fuse，使得它可以生成同时包含 Rust 和 C 用户程序的镜像</p>
+</blockquote>
+<ol>
+<li>修改内核代码<br>此步骤参考任务书</li>
+<li>修改Makefile<br>根据项目文档的说明, 基本上完成了生成同时包含 Rust 和 C 用户程序的镜像的需求, 但<code>Makefile</code>需要进行一定的修改<br>此处我基于<code>ch8</code>的代码进行修改 <figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">FS_IMG := target/fs.img</span><br><span class="line">...</span><br><span class="line"><span class="section">fs-img: <span class="variable">$(APPS)</span></span></span><br><span class="line">    @make -C ../user build TEST=<span class="variable">$(TEST)</span> CHAPTER=<span class="variable">$(CHAPTER)</span> BASE=<span class="variable">$(BASE)</span></span><br><span class="line">    @make -C ../testcases build</span><br><span class="line">    @rm -f <span class="variable">$(FS_IMG)</span></span><br><span class="line">    @cp ../user/build/elf/* ../testcases/build/</span><br><span class="line">    @cd ../easy-fs-fuse &amp;&amp; cargo run --release -- -s ../testcases/build -o ../os/<span class="variable">$(FS_IMG)</span></span><br></pre></td></tr></table></figure>
+ 主要区别在于, 此次构建<code>fs-img</code>之前需要先编译<code>testcases</code>目录下的c程序, 并将<code>user</code>目录下的<code>elf</code>文件复制到<code>testcases/build/</code>下, 根据<code>testcases/build/</code>生成镜像时需要将任务书中的<code>-t</code>参数替换为<code>-o</code>参数</li>
+<li>结果和测试<br>在<code>os</code>下执行<code>make fs-img CHAPTER=8 BASE=2</code>, 可以生成包含c程序的文件系统镜像。<br>同理，<code>os</code>下执行<code>make run CHAPTER=8 BASE=2</code>后运行<code>42</code>和<code>hello</code>程序:<ul>
+<li><code>42</code>运行结果 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt; 42</span><br><span class="line">Shell: Process 2 exited with code 42</span><br></pre></td></tr></table></figure>
+ 可以看出<code>42</code>返回值为42, 这与期望值相符合</li>
+<li><code>hello</code>运行结果 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt; hello xwd</span><br><span class="line">Incorrect argc</span><br><span class="line">Shell: Process 2 exited with code 1</span><br><span class="line">&gt;&gt; hello</span><br><span class="line">Incorrect argc</span><br><span class="line">Shell: Process 2 exited with code 1</span><br></pre></td></tr></table></figure>
+ 可以看出, <code>hello</code>程序无论是否添加参数, 都会输出错误信息, 这也是接下来要解决的问题。</li>
+</ul>
+</li>
+</ol>
+<h2 id="1-2-修改os内核支持C程序"><a href="#1-2-修改os内核支持C程序" class="headerlink" title="1.2 修改os内核支持C程序"></a>1.2 修改os内核支持C程序</h2><blockquote>
+<p>在 usershell 里运行了 42 和 hello 两个用户程序。42 的运行结果是符合预期的，但 hello 的结果看起来不太对，你的任务是修改内核，使得 hello 测例给出正常输出（即给出一行以 my name is 开头的输出，且 exit_code为0）。</p>
+</blockquote>
+<ol>
+<li>原因分析<br>阅读原<code>rCore</code><a target="_blank" rel="noopener" href="http://learningos.cn/rCore-Tutorial-Guide-2023A/chapter7/2cmdargs-and-redirection.html">文档</a>与本实验<a target="_blank" rel="noopener" href="https://scpointer.github.io/rcore2oscomp/docs/lab1/clib.html">文档</a><br>可以看出, 二者的栈分布是不同的, 先看旧的栈内存分布<br><img src="/../../../images/%E6%97%A7%E6%A0%88%E5%86%85%E5%AD%98%E5%88%86%E5%B8%83.png" alt="img"><br><br>可以看到在此栈的内存分布中, 实际的参数放在接近栈底的位置, 其指向的实际参数在靠近栈顶的位置, 并且通过阅读源码<code>process.rs</code>中的<code>exec</code>: <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">trap_cx.x[<span class="number">10</span>] = args.<span class="title function_ invoke__">len</span>();</span><br><span class="line">trap_cx.x[<span class="number">11</span>] = argv_base;</span><br></pre></td></tr></table></figure>
+ 可知参数个数<code>argc</code>时通过手动计算<code>args</code>的长度计算得到的, 并没有存储在栈上。<br> 阅读本实验指导书可知，C程序的栈内存分布如下：<br><img src="/../../../images/%E6%96%B0%E6%A0%88%E5%86%85%E5%AD%98%E5%88%86%E5%B8%83.png" alt="img"><br><br>在此栈的内存分布中, 实际的参数放在接近栈顶的位置, 其指向的实际参数在靠近栈底的位置， 并且栈指针指向了<code>argc</code><br>而且由<code>testcases/lib/main.c</code>可知: <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __start_main(<span class="type">long</span> *p)</span><br><span class="line">&#123;</span><br><span class="line"><span class="type">int</span> argc = p[<span class="number">0</span>];</span><br><span class="line"><span class="type">char</span> **argv = (<span class="type">void</span> *)(p+<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="built_in">exit</span>(main(argc, argv));</span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+ <code>p</code>是传递的栈指针<code>sp</code>, 因此<code>argc</code>会被置为栈指针当前指向的数据, 而根据前述分析可知, <code>argc</code>是存放于<code>a0</code>寄存器的, 因此后续使用<code>argc</code>时报错, 这是栈分布于C程序标准不一致导致的。</li>
+<li>修改os思路<br>因此，需要将os中初始化栈分布相关的代码进行修改， 使之符合C语言的约定， 实际上我们要修改的代码位于：<code>os/src/task/process.rs</code>中的<code>pub fn exec(self: &amp;Arc&lt;Self&gt;, elf_data: &amp;[u8], args: Vec&lt;String&gt;)</code><br>修改内存分布为上图的形式, 次过程不难, 具体代码实现可参考: <a href="../os/src/task/process.rs#L184">我的实现</a></li>
+<li>小bug修改: 去除文件名<br>观察<code>hello.c</code>源码: <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line"><span class="type">char</span> greeting[<span class="number">11</span>] = <span class="string">&quot;my name is &quot;</span>;</span><br><span class="line"><span class="type">char</span> error[<span class="number">15</span>] = <span class="string">&quot;Incorrect argc\n&quot;</span>;</span><br><span class="line"><span class="keyword">if</span> (argc != <span class="number">1</span>) &#123;</span><br><span class="line">    write(<span class="number">1</span>, error, <span class="number">15</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line"><span class="keyword">while</span>(argv[<span class="number">0</span>][len] != <span class="number">0</span>) &#123;</span><br><span class="line">    len++;</span><br><span class="line">&#125;</span><br><span class="line">write(<span class="number">1</span>, greeting, <span class="number">11</span>);</span><br><span class="line">write(<span class="number">1</span>, argv[<span class="number">0</span>], len);</span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+ 可知其<code>argv[0]</code>应当为命令行输入的参数, 而非约定中的程序名, 因此需要在系统调用中对<code>args</code>中去除第一个函数名参数:<br> 具体代码实现可参考: <a href="../os/src/syscall/process.rs#L74">我的实现</a></li>
+<li>运行结果<br>再次执行<code>make run CHAPTER=8 BASE=2</code>后运行<code>hello</code>程序 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Rust user shell</span><br><span class="line">&gt;&gt; hello xwd</span><br><span class="line">my name is xwdShell: Process 2 exited with code 0</span><br></pre></td></tr></table></figure>
+ <img src="/../../../images/lab1-result.png" alt="结果截图"><br></li>
+</ol>
+<h1 id="2-问答作业"><a href="#2-问答作业" class="headerlink" title="2 问答作业"></a>2 问答作业</h1><ol>
+<li><p>elf 文件和 bin 文件有什么区别？<br><code>elf</code>是包含符号信息的二进制文件, <code>bin</code>文件是剥离了二进制信息的符号文件<br>以下是各个命令的输出</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ file elf/ch6_file0.elf</span><br><span class="line">elf/ch6_file0.elf: ELF 64-bit LSB executable, UCB RISC-V, RVC, double-float ABI, version 1 (SYSV), statically linked, stripped</span><br><span class="line">$ file bin/ch6_file0.bin</span><br><span class="line">bin/ch6_file0.bin: data</span><br></pre></td></tr></table></figure>
+<p> <code>elf</code>文件包含的信息有:</p>
+<ul>
+<li>类型: ELF 64-bit LSB executable</li>
+<li>RISC-V: 表示这是一个 RISC-V 架构的可执行文件。</li>
+<li>RVC: 表示该文件使用了 RISC-V 的压缩指令集。</li>
+<li>double-float ABI: 表示该文件使用了双精度浮点数 ABI（Application Binary Interface）。</li>
+<li>版本 1 (SYSV): 表示该 ELF 文件采用了 SYSV 版本 1 的格式。</li>
+<li>静态链接: 表示该文件是静态链接的，即所有的库和依赖在编译时就被链接进来了。</li>
+<li>stripped: 表示该文件已经被剥离了符号信息。<br> <code>bin</code>文件包含的信息有:</li>
+<li>“data” 表示这是一个二进制数据文件</li>
+</ul>
+<p> 总而言之, <code>elf</code>包含了程序的代码、数据、和用于指示操作系统如何运行程序的元数据, <code>bin</code>是纯二进制格式的文件，不包含元数据</p>
+<p> 因此<code>riscv64-linux-musl-objdump -ld ch6_file0.bin &gt; debug.S</code>命令会报错:<br> <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ riscv64-linux-musl-objdump -ld ch6_file0.bin &gt; debug.S</span><br><span class="line">riscv64-linux-musl-objdump: ch6_file0.bin: file format not recognized</span><br></pre></td></tr></table></figure><br> 而<code>riscv64-linux-musl-objdump -ld ch6_file0.elf &gt; debug.S</code>可以得到反汇编文件<code>debug.S</code></p>
+</li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1.编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%89%A9%E5%B1%95-easy-fs-fuse"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 扩展 easy-fs-fuse</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BF%AE%E6%94%B9os%E5%86%85%E6%A0%B8%E6%94%AF%E6%8C%81C%E7%A8%8B%E5%BA%8F"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 修改os内核支持C程序</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AE%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 问答作业</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&text=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&is_video=false&description=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=2023开源操作系统训练营三阶段 proj2 练习1&body=Check out this article: http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&title=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&name=2023开源操作系统训练营三阶段 proj2 练习1&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/13/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%B8%89/%E9%98%B6%E6%AE%B53-proj2%E7%BB%83%E4%B9%A01/&t=2023开源操作系统训练营三阶段 proj2 练习1"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
