@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="1 打开&#x2F;关闭1.1 标签页操作在Vim中，可以使用tabnew命令来创建一个新的标签页（tab page）。标签页类似于编辑器中的分页，允许你在同一个Vim实例中同时打开多个文件，并在它们之间进行切换。以下是如何使用tabnew命令的一些示例：  打开一个新的空白标签页： 1:tabnew  这将创建一个新的空白标签页，你可以在其中开始编辑新的文件。  打开一个特定的文件在新的标签页中">
+    <meta name="description" content="0 Vim的操纵模式Vim实际上可以看出一门语言, 其移动和读写有自己的模式, 了解这个思维实际上比掌握后续的命令更重要, 这里先给出其不同操作的操作模式:  common mode   &#123;count&#125;&#123;motion&#125;&#123;operator&#125; 或 &#123;operator&#125;&#123;count&#125;&#123;motio">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Vim入门到入土">
 <meta property="og:url" content="http://example.com/2023/12/24/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Vim%E5%85%A5%E9%97%A8%E5%88%B0%E5%85%A5%E5%9C%9F/index.html">
 <meta property="og:site_name" content="ToniBlog">
-<meta property="og:description" content="1 打开&#x2F;关闭1.1 标签页操作在Vim中，可以使用tabnew命令来创建一个新的标签页（tab page）。标签页类似于编辑器中的分页，允许你在同一个Vim实例中同时打开多个文件，并在它们之间进行切换。以下是如何使用tabnew命令的一些示例：  打开一个新的空白标签页： 1:tabnew  这将创建一个新的空白标签页，你可以在其中开始编辑新的文件。  打开一个特定的文件在新的标签页中">
+<meta property="og:description" content="0 Vim的操纵模式Vim实际上可以看出一门语言, 其移动和读写有自己的模式, 了解这个思维实际上比掌握后续的命令更重要, 这里先给出其不同操作的操作模式:  common mode   &#123;count&#125;&#123;motion&#125;&#123;operator&#125; 或 &#123;operator&#125;&#123;count&#125;&#123;motio">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-12-23T16:05:28.000Z">
-<meta property="article:modified_time" content="2023-12-23T16:45:22.843Z">
+<meta property="article:modified_time" content="2023-12-29T05:07:12.621Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="vim">
 <meta name="twitter:card" content="summary">
@@ -22,17 +22,17 @@
     
       
         
-          <link rel="shortcut icon" href="/images/favicon.ico">
+          <link rel="shortcut icon" href="/images/flash_dc.png">
         
       
       
         
-          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
         
       
       
         
-          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
         
       
     
@@ -83,8 +83,10 @@
     <span id="actions">
       <ul>
         
+        <li><a class="icon" aria-label="上一篇" href="/2023/12/24/MIT6.8540/Lec01%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
-        <li><a class="icon" aria-label="下一篇" href="/2023/12/23/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/wsl%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/23/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/WSL%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -114,7 +116,7 @@
     
     
       <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%89%93%E5%BC%80-%E5%85%B3%E9%97%AD"><span class="toc-number">1.</span> <span class="toc-text">1 打开&#x2F;关闭</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%87%E7%AD%BE%E9%A1%B5%E6%93%8D%E4%BD%9C"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 标签页操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E9%80%80%E5%87%BA"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 退出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%96%87%E4%BB%B6IO"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 文件IO</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E5%AD%97%E7%AC%A6%E5%92%8C%E5%8D%95%E8%AF%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">2.</span> <span class="toc-text">2 基本字符和单词操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E6%9C%AC%E5%AE%9A%E4%BD%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 基本定位操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BB%84%E5%90%88%E5%AE%9A%E4%BD%8D"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 组合定位</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8F%92%E5%85%A5%E4%B8%8E%E5%88%A0%E9%99%A4"><span class="toc-number">3.</span> <span class="toc-text">3 插入与删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E6%8F%92%E5%85%A5"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基本插入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%9F%BA%E6%9C%AC%E5%88%A0%E9%99%A4"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 基本删除</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%9F%BA%E6%9C%AC%E6%9B%BF%E6%8D%A2"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 基本替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%A4%8D%E5%88%B6%E5%92%8C%E7%B2%98%E8%B4%B4"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 复制和粘贴</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9F%A5%E6%89%BE%E5%86%85%E5%AE%B9%E5%92%8C%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.</span> <span class="toc-text">4 查找内容和替换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%9F%A5%E6%89%BE"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%9F%A5%E6%89%BE%E5%B9%B6%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 查找并替换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">5.</span> <span class="toc-text">5 组合操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%B7%B3%E8%BD%AC%E7%BB%84%E5%90%88%E5%91%BD%E4%BB%A4"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 跳转组合命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4%E7%BB%84%E5%90%88"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 基本命令组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%8B%AC%E5%8F%B7%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 括号组合操作</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Visual-mode-%E6%93%8D%E4%BD%9C"><span class="toc-number">6.</span> <span class="toc-text">6 Visual mode 操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E5%85%B6%E4%BB%96%E6%93%8D%E4%BD%9C"><span class="toc-number">7.</span> <span class="toc-text">7 其他操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E5%AF%BC%E5%85%A5%E5%85%B6%E4%BB%96%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 导入其他文件内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%85%8D%E7%BD%AE%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 配置项设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%91%BD%E4%BB%A4"><span class="toc-number">7.3.</span> <span class="toc-text">7.3 执行命令行命令</span></a></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-Vim%E7%9A%84%E6%93%8D%E7%BA%B5%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">0 Vim的操纵模式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%89%93%E5%BC%80-%E5%85%B3%E9%97%AD"><span class="toc-number">2.</span> <span class="toc-text">1 打开&#x2F;关闭</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%96%B0%E6%A0%87%E7%AD%BE%E9%A1%B5"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 新标签页</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-split%E5%88%86%E5%89%B2%E9%A1%B5"><span class="toc-number">2.2.</span> <span class="toc-text">1.2 split分割页</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%96%87%E4%BB%B6IO"><span class="toc-number">2.3.</span> <span class="toc-text">1.3 文件IO</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E5%AD%97%E7%AC%A6%E5%92%8C%E5%8D%95%E8%AF%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">3.</span> <span class="toc-text">2 基本字符和单词操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E6%9C%AC%E5%AE%9A%E4%BD%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 基本定位操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BB%84%E5%90%88%E5%AE%9A%E4%BD%8D"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 组合定位</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8F%92%E5%85%A5%E4%B8%8E%E5%88%A0%E9%99%A4"><span class="toc-number">4.</span> <span class="toc-text">3 插入与删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E6%8F%92%E5%85%A5"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 基本插入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%9F%BA%E6%9C%AC%E5%88%A0%E9%99%A4"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 基本删除</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%9F%BA%E6%9C%AC%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 基本替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%A4%8D%E5%88%B6%E5%92%8C%E7%B2%98%E8%B4%B4"><span class="toc-number">4.4.</span> <span class="toc-text">3.4 复制和粘贴</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9F%A5%E6%89%BE%E5%86%85%E5%AE%B9%E5%92%8C%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.</span> <span class="toc-text">4 查找内容和替换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%9F%A5%E6%89%BE"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%9F%A5%E6%89%BE%E5%B9%B6%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 查找并替换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">6.</span> <span class="toc-text">5 组合操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%B7%B3%E8%BD%AC%E7%BB%84%E5%90%88%E5%91%BD%E4%BB%A4"><span class="toc-number">6.1.</span> <span class="toc-text">5.1 跳转组合命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4%E7%BB%84%E5%90%88"><span class="toc-number">6.2.</span> <span class="toc-text">5.2 基本命令组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%8B%AC%E5%8F%B7%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">6.3.</span> <span class="toc-text">5.3 括号组合操作</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Visual-mode-%E6%93%8D%E4%BD%9C"><span class="toc-number">7.</span> <span class="toc-text">6 Visual mode 操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E5%85%B6%E4%BB%96%E6%93%8D%E4%BD%9C"><span class="toc-number">8.</span> <span class="toc-text">7 其他操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E5%AF%BC%E5%85%A5%E5%85%B6%E4%BB%96%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9"><span class="toc-number">8.1.</span> <span class="toc-text">7.1 导入其他文件内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%85%8D%E7%BD%AE%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">8.2.</span> <span class="toc-text">7.2 配置项设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%91%BD%E4%BB%A4"><span class="toc-number">8.3.</span> <span class="toc-text">7.3 执行命令行命令</span></a></li></ol></li></ol>
       </div>
     
   </span>
@@ -164,7 +166,57 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="1-打开-关闭"><a href="#1-打开-关闭" class="headerlink" title="1 打开&#x2F;关闭"></a>1 打开&#x2F;关闭</h1><h2 id="1-1-标签页操作"><a href="#1-1-标签页操作" class="headerlink" title="1.1 标签页操作"></a>1.1 标签页操作</h2><p>在Vim中，可以使用<code>tabnew</code>命令来创建一个新的标签页（tab page）。标签页类似于编辑器中的分页，允许你在同一个Vim实例中同时打开多个文件，并在它们之间进行切换。以下是如何使用<code>tabnew</code>命令的一些示例：</p>
+    <h1 id="0-Vim的操纵模式"><a href="#0-Vim的操纵模式" class="headerlink" title="0 Vim的操纵模式"></a>0 Vim的操纵模式</h1><p>Vim实际上可以看出一门语言, 其移动和读写有自己的模式, 了解这个思维实际上比掌握后续的命令更重要, 这里先给出其不同操作的操作模式:</p>
+<ul>
+<li><strong>common mode</strong></li>
+</ul>
+<ol>
+<li><code>&#123;count&#125;&#123;motion&#125;&#123;operator&#125;</code> 或 <code>&#123;operator&#125;&#123;count&#125;&#123;motion&#125;</code><ul>
+<li><code>count</code>: 执行次数</li>
+<li><code>motion</code>: 定位</li>
+<li><code>operator</code>: 执行的动作<br>这个操作模式是完成最基本的动作<br>例如:<code>d5w</code>就表示删除往后的5个单词<br>其中<code>&#123;count&#125;</code>可以省略, 也就是1,</li>
+</ul>
+</li>
+<li><code>&#123;operator&#125;&#123;a|i&#125;&#123;text-object&#125;</code><ul>
+<li><code>operator</code>: 同样是执行的动作</li>
+<li><code>&#123;a|i&#125;</code>: <code>a</code>表示包括指定的文本对象包括空白字符, <code>i</code>表示包括指定的文本对象不包括空白字符</li>
+<li><code>&#123;text-object&#125;</code>:<ul>
+<li><code>w</code>: word</li>
+<li><code>s</code>: sentence</li>
+<li><code>b</code>|<code>(</code>: ()包裹的内容</li>
+<li><code>B</code>|<code>&#123;</code>: {}包裹的内容</li>
+<li><code>&quot;|&#39;</code>: 被引号包裹的内容<br>例如: <code>daw</code> 删除后续包括空白字符的文本对象</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li><strong>visual mode</strong></li>
+</ul>
+<ol>
+<li><code>&#123;trigger visual mode&#125;&#123;motion&#125;&#123;operator&#125;</code><br>与<strong>common mode</strong>的第一种操作模式类似, 只不过提前进入<code>visual mode</code></li>
+</ol>
+<ul>
+<li><strong>ex命令</strong></li>
+</ul>
+<ol>
+<li><p><code>:[range]command[options]</code><br> 对指定范围的内容执行<code>command</code>, <code>options</code>不固定<br> 例如: <code>:10,12d a</code> 表示删除10-12行的内容</p>
+</li>
+<li><p>搜索替换: <code>:[range]s/&#123;pattern&#125;/&#123;substitute&#125;/&#123;flags&#125;</code></p>
+<ul>
+<li><code>range</code>: 范围</li>
+<li><code>s</code>: 就是具体的一个<code>command</code></li>
+<li><code>pattern</code>: 模式, 支持正则表达式</li>
+<li><code>substitute</code>:替换内容</li>
+<li><code>flags</code>:</li>
+<li><code>g</code>: 全局替换</li>
+<li><code>i</code>: 无视大小写</li>
+<li><code>c</code>: 替换前确认</li>
+</ul>
+</li>
+</ol>
+<h1 id="1-打开-关闭"><a href="#1-打开-关闭" class="headerlink" title="1 打开&#x2F;关闭"></a>1 打开&#x2F;关闭</h1><h2 id="1-1-新标签页"><a href="#1-1-新标签页" class="headerlink" title="1.1 新标签页"></a>1.1 新标签页</h2><p>在Vim中，可以使用<code>tabnew</code>命令来创建一个新的标签页（tab page）。标签页类似于编辑器中的分页，允许你在同一个Vim实例中同时打开多个文件，并在它们之间进行切换。以下是如何使用<code>tabnew</code>命令的一些示例：</p>
 <ol>
 <li><p>打开一个新的空白标签页：</p>
 <figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">tabnew</span></span><br></pre></td></tr></table></figure>
@@ -174,42 +226,38 @@
 <li><p>打开一个特定的文件在新的标签页中：</p>
 <figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">tabnew</span> filename</span><br></pre></td></tr></table></figure>
 
-<p>这将在一个新的标签页中打开名为”filename”的文件。你可以替换”filename”为你想要打开的实际文件的路径。</p>
+<p>这将在一个新的标签页中打开名为”filename”的文件。可以替换”filename”为你想要打开的实际文件的路径。</p>
 </li>
 <li><p>在不同的标签页之间切换：</p>
 <ul>
 <li>切换到下一个标签页：按下<code>gt</code>键。</li>
 <li>切换到上一个标签页：按下<code>gT</code>键。</li>
+<li>可以按下<code>&#123;N&#125;gt</code>，其中<code>&#123;N&#125;</code>是标签页的序号。例如，如果要切换到第三个标签页，可以按下<code>3gt</code>。</li>
 </ul>
 </li>
-<li><p>关闭当前的标签页：</p>
-<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">tabclose</span></span><br></pre></td></tr></table></figure>
-
-<p>这将关闭当前的标签页，并且如果标签页中有未保存的更改，Vim会提示你保存它们。</p>
+<li><p>关闭当前的标签页：<br><code>:tabclose</code>:   将关闭当前的标签页，并且如果标签页中有未保存的更改，Vim会提示你保存它们。</p>
 </li>
-<li><p>查看所有的标签页：</p>
-<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">tabs</span></span><br></pre></td></tr></table></figure>
-
-<p>这将显示所有打开的标签页，并且会在当前标签页前面标记一个”%”。</p>
+<li><p>查看所有的标签页：<br><code>:tabs</code> :   这将显示所有打开的标签页，并且会在当前标签页前面标记一个”%”。</p>
 </li>
-<li><p>使用标签页序号：</p>
-<p>在Normal 模式下，可以按下<code>&#123;N&#125;gt</code>，其中<code>&#123;N&#125;</code>是标签页的序号。例如，如果要切换到第三个标签页，可以按下<code>3gt</code>。</p>
+<li><p>使用<code>:tabnext</code>和<code>:tabprev</code>命令：<br>使用<code>:tabnext</code>和<code>:tabprev</code>命令来切换到下一个或上一个标签页：</p>
+<ul>
+<li><code>:tabnext</code>: 切换到下一个标签页</li>
+<li><code>:tabprev</code>: 要切换到上一个标签页</li>
+</ul>
 </li>
-<li><p>使用<code>:tabnext</code>和<code>:tabprev</code>命令：</p>
-<p>你也可以使用<code>:tabnext</code>和<code>:tabprev</code>命令来切换到下一个或上一个标签页。例如，要切换到下一个标签页，可以执行：</p>
-<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">tabnext</span></span><br></pre></td></tr></table></figure>
-
-<p>要切换到上一个标签页，可以执行：</p>
-<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:tabprev</span><br></pre></td></tr></table></figure>
-<p>这些命令可以在不知道标签页序号的情况下方便地切换标签页。</p>
+<li><p>退出当前标签页</p>
+<ul>
+<li><code>:q</code>: 退出当前标签页</li>
+<li><code>:qa</code>: 退出所有标签页</li>
+<li><code>tabo</code>: 退出其他标签页</li>
+</ul>
+</li>
+<li><p>打开或新建文件<br><code>:edit &#123;relative-path-to-file&#125;</code></p>
 </li>
 </ol>
-<h2 id="1-2-退出"><a href="#1-2-退出" class="headerlink" title="1.2 退出"></a>1.2 退出</h2><ol>
-<li><p>退出当前标签页</p>
- <figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:q Close current window</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>退出所有标签页</p>
- <figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:<span class="keyword">qa</span> Close <span class="keyword">all</span> windows</span><br></pre></td></tr></table></figure></li>
+<h2 id="1-2-split分割页"><a href="#1-2-split分割页" class="headerlink" title="1.2 split分割页"></a>1.2 split分割页</h2><ol>
+<li>新建分割页<br><code>:sp &#123;relative-path-to-file&#125;</code>: 水平分页<br><code>:vsp &#123;relative-path-to-file&#125;</code>: 垂直分页</li>
+<li>当前分隔页的副本<br><code>&lt;CTRL-W&gt; S</code> 水平方向<br><code>&lt;CTRL-W&gt; V </code>t垂直方向</li>
 </ol>
 <h2 id="1-3-文件IO"><a href="#1-3-文件IO" class="headerlink" title="1.3 文件IO"></a>1.3 文件IO</h2><ol>
 <li><code>:w</code> 保存文件</li>
@@ -264,6 +312,12 @@
 </li>
 </ol>
 <p>这些命令通常与其他操作一起使用，以便在文本中快速导航和编辑。例如，如果你想删除从光标位置到下一个出现字母<code>a</code>的字符之间的文本，你可以使用<code>dt&#123;char&#125;</code>，其中<code>&#123;char&#125;</code>是你想要删除的字符。这些命令的组合允许你在Vim中以精确的方式执行各种文本编辑任务。</p>
+<p><strong>重点: 如何连续进行重复的定位操作?</strong></p>
+<p>答案: 使用<code>;</code>和<code>,</code>:</p>
+<ul>
+<li><code>;</code>: 重复到下一个定位的位置, 例如使用<code>fa</code>后跳转到了往后第一个<code>a</code>出现的位置, 在使用<code>;</code>可以到第二个<code>a</code>出现的位置, 以此类推</li>
+<li><code>,</code>: <code>;</code>的反向操作</li>
+</ul>
 <h1 id="3-插入与删除"><a href="#3-插入与删除" class="headerlink" title="3 插入与删除"></a>3 插入与删除</h1><h2 id="3-1-基本插入"><a href="#3-1-基本插入" class="headerlink" title="3.1 基本插入"></a>3.1 基本插入</h2><ol>
 <li><p><code>i</code>：进入插入模式。按下<code>i</code>键会使光标位于当前位置，你可以在光标前插入文本。</p>
 </li>
@@ -360,7 +414,7 @@ n 查找下一个<br>N 查找上一个 <figure class="highlight vim"><table><tr>
 <li><code>:s/&#123;&#123;old&#125;&#125;/&#123;&#123;new&#125;&#125;</code> 用new替换old,普通替换, 替换范围为当前行的所有</li>
 <li><code>:%s/&#123;&#123;old&#125;&#125;/&#123;&#123;new&#125;&#125;/g</code> 用new替换old,普通替换, 替换范围为所有文档范围</li>
 <li><code>:%s/&#123;&#123;old&#125;&#125;/&#123;&#123;new&#125;&#125;/gc</code> 用new替换old,普通替换, 替换范围为所有文档范围, 并在每一次替换时进行确认</li>
-<li><code>:&#123;&#123;#&#125;&#125;,&#123;&#123;#&#125;&#125;s/old/new/g</code> <code>#</code>指定了替换操的行范围</li>
+<li><code>:&#123;&#123;#&#125;&#125;,&#123;&#123;#&#125;&#125;s/old/new/g</code> <code>#</code>指定了替换操的行范围<br>范围除了数字外还包括:<br> <code>$</code>: 将光标移到文件的最后一行,<br> <code>0</code>: 将光标移到文件的第一行<br> <code>%</code>: 整个文件<br> <code>&#39;&lt;,&#39;&gt;</code>: <code>visual mode</code>下选择的内容</li>
 </ol>
 <h1 id="5-组合操作"><a href="#5-组合操作" class="headerlink" title="5 组合操作"></a>5 组合操作</h1><h2 id="5-1-跳转组合命令"><a href="#5-1-跳转组合命令" class="headerlink" title="5.1 跳转组合命令"></a>5.1 跳转组合命令</h2><ol>
 <li><code>c-o</code> 返回上一个位置</li>
@@ -387,7 +441,7 @@ n 查找下一个<br>N 查找上一个 <figure class="highlight vim"><table><tr>
 <li><code>:set nocp</code> 确保vim没有在兼容模式</li>
 </ol>
 <h2 id="7-3-执行命令行命令"><a href="#7-3-执行命令行命令" class="headerlink" title="7.3 执行命令行命令"></a>7.3 执行命令行命令</h2><figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">:! <span class="keyword">command</span></span><br></pre></td></tr></table></figure>
-<p>执行<code>command</code>操作</p>
+<p>执行<code>command</code>操作<br>以下是几个特殊的指令<br><code>@:</code>: 重复上一个指令<br><code>@@</code>: 继续重复</p>
 
   </div>
 </article>
@@ -421,7 +475,7 @@ n 查找下一个<br>N 查找上一个 <figure class="highlight vim"><table><tr>
     
     
       <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%89%93%E5%BC%80-%E5%85%B3%E9%97%AD"><span class="toc-number">1.</span> <span class="toc-text">1 打开&#x2F;关闭</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%87%E7%AD%BE%E9%A1%B5%E6%93%8D%E4%BD%9C"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 标签页操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E9%80%80%E5%87%BA"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 退出</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%96%87%E4%BB%B6IO"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 文件IO</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E5%AD%97%E7%AC%A6%E5%92%8C%E5%8D%95%E8%AF%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">2.</span> <span class="toc-text">2 基本字符和单词操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E6%9C%AC%E5%AE%9A%E4%BD%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 基本定位操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BB%84%E5%90%88%E5%AE%9A%E4%BD%8D"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 组合定位</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8F%92%E5%85%A5%E4%B8%8E%E5%88%A0%E9%99%A4"><span class="toc-number">3.</span> <span class="toc-text">3 插入与删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E6%8F%92%E5%85%A5"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基本插入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%9F%BA%E6%9C%AC%E5%88%A0%E9%99%A4"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 基本删除</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%9F%BA%E6%9C%AC%E6%9B%BF%E6%8D%A2"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 基本替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%A4%8D%E5%88%B6%E5%92%8C%E7%B2%98%E8%B4%B4"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 复制和粘贴</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9F%A5%E6%89%BE%E5%86%85%E5%AE%B9%E5%92%8C%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.</span> <span class="toc-text">4 查找内容和替换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%9F%A5%E6%89%BE"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%9F%A5%E6%89%BE%E5%B9%B6%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 查找并替换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">5.</span> <span class="toc-text">5 组合操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%B7%B3%E8%BD%AC%E7%BB%84%E5%90%88%E5%91%BD%E4%BB%A4"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 跳转组合命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4%E7%BB%84%E5%90%88"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 基本命令组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%8B%AC%E5%8F%B7%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 括号组合操作</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Visual-mode-%E6%93%8D%E4%BD%9C"><span class="toc-number">6.</span> <span class="toc-text">6 Visual mode 操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E5%85%B6%E4%BB%96%E6%93%8D%E4%BD%9C"><span class="toc-number">7.</span> <span class="toc-text">7 其他操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E5%AF%BC%E5%85%A5%E5%85%B6%E4%BB%96%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 导入其他文件内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%85%8D%E7%BD%AE%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 配置项设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%91%BD%E4%BB%A4"><span class="toc-number">7.3.</span> <span class="toc-text">7.3 执行命令行命令</span></a></li></ol></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-Vim%E7%9A%84%E6%93%8D%E7%BA%B5%E6%A8%A1%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">0 Vim的操纵模式</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%89%93%E5%BC%80-%E5%85%B3%E9%97%AD"><span class="toc-number">2.</span> <span class="toc-text">1 打开&#x2F;关闭</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%96%B0%E6%A0%87%E7%AD%BE%E9%A1%B5"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 新标签页</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-split%E5%88%86%E5%89%B2%E9%A1%B5"><span class="toc-number">2.2.</span> <span class="toc-text">1.2 split分割页</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%96%87%E4%BB%B6IO"><span class="toc-number">2.3.</span> <span class="toc-text">1.3 文件IO</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E5%AD%97%E7%AC%A6%E5%92%8C%E5%8D%95%E8%AF%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">3.</span> <span class="toc-text">2 基本字符和单词操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E6%9C%AC%E5%AE%9A%E4%BD%8D%E6%93%8D%E4%BD%9C"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 基本定位操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BB%84%E5%90%88%E5%AE%9A%E4%BD%8D"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 组合定位</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8F%92%E5%85%A5%E4%B8%8E%E5%88%A0%E9%99%A4"><span class="toc-number">4.</span> <span class="toc-text">3 插入与删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E6%8F%92%E5%85%A5"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 基本插入</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%9F%BA%E6%9C%AC%E5%88%A0%E9%99%A4"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 基本删除</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%9F%BA%E6%9C%AC%E6%9B%BF%E6%8D%A2"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 基本替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%A4%8D%E5%88%B6%E5%92%8C%E7%B2%98%E8%B4%B4"><span class="toc-number">4.4.</span> <span class="toc-text">3.4 复制和粘贴</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9F%A5%E6%89%BE%E5%86%85%E5%AE%B9%E5%92%8C%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.</span> <span class="toc-text">4 查找内容和替换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%9F%A5%E6%89%BE"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%9F%A5%E6%89%BE%E5%B9%B6%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 查找并替换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">6.</span> <span class="toc-text">5 组合操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E8%B7%B3%E8%BD%AC%E7%BB%84%E5%90%88%E5%91%BD%E4%BB%A4"><span class="toc-number">6.1.</span> <span class="toc-text">5.1 跳转组合命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%9F%BA%E6%9C%AC%E5%91%BD%E4%BB%A4%E7%BB%84%E5%90%88"><span class="toc-number">6.2.</span> <span class="toc-text">5.2 基本命令组合</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%8B%AC%E5%8F%B7%E7%BB%84%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-number">6.3.</span> <span class="toc-text">5.3 括号组合操作</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Visual-mode-%E6%93%8D%E4%BD%9C"><span class="toc-number">7.</span> <span class="toc-text">6 Visual mode 操作</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E5%85%B6%E4%BB%96%E6%93%8D%E4%BD%9C"><span class="toc-number">8.</span> <span class="toc-text">7 其他操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E5%AF%BC%E5%85%A5%E5%85%B6%E4%BB%96%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9"><span class="toc-number">8.1.</span> <span class="toc-text">7.1 导入其他文件内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%85%8D%E7%BD%AE%E9%A1%B9%E8%AE%BE%E7%BD%AE"><span class="toc-number">8.2.</span> <span class="toc-text">7.2 配置项设置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%91%BD%E4%BB%A4"><span class="toc-number">8.3.</span> <span class="toc-text">7.3 执行命令行命令</span></a></li></ol></li></ol>
       </div>
     
 
