@@ -13,17 +13,17 @@
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 实验介绍本次实验是实现一个简易版本的MapReduce编程框架,官方文档在这里:lab1文档, 强烈建议先阅读MapReduce的论文, 难度主要体现在设计上, 实际的代码实现倒是相对简单, 这也得益于go的语言特性, 比CMU15445使用Cpp写代码方便多了。实验需要实现的是Coordinator和Worker的设计, 具体实现细节十分自由(无从下手) 我的代码实现点这里： https:&#x2F;">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/images/MapReduce%E4%BB%BB%E5%8A%A1%E5%85%B3%E7%B3%BB.png">
+<meta property="og:image" content="http://example.com/images/MapReduce_relation.png">
 <meta property="og:image" content="http://example.com/images/MapReduce-Test.png">
 <meta property="og:image" content="http://example.com/images/MapReduce-Test-2.png">
 <meta property="og:image" content="http://example.com/images/MapReduce-Test-3.png">
 <meta property="article:published_time" content="2023-12-23T05:25:18.000Z">
-<meta property="article:modified_time" content="2023-12-26T14:05:56.226Z">
+<meta property="article:modified_time" content="2023-12-29T06:20:58.681Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/images/MapReduce%E4%BB%BB%E5%8A%A1%E5%85%B3%E7%B3%BB.png">
+<meta name="twitter:image" content="http://example.com/images/MapReduce_relation.png">
     
     
       
@@ -181,7 +181,7 @@
 </ol>
 <h2 id="2-2-任务误区解读"><a href="#2-2-任务误区解读" class="headerlink" title="2.2 任务误区解读"></a>2.2 任务误区解读</h2><ol>
 <li><p><code>Map</code>、<code>Reduce</code>任务、<code>Coordinator</code>和<code>Worker</code>的关系如何?<br>这些任务(文中此后称为<code>Task</code>)与<code>Worker</code>是什么关系呢? 是否存在对应关系? 这些对应关系需要记录吗? 通常, 在常见的主从关系中, 主节点需要记录从节点的信息,例如线程id等表名身份的信息, 但在我们的<code>MapReduce</code>中却没有这样的必要, 因为<code>Worker</code>节点是可以扩容的, 而<code>Coordinator</code>与<code>Worker</code>之间只有传递<code>Task</code>相关信息的需求, 因此<code>Coordinator</code>只需要记录<code>Task</code>任务的状态即可, <code>Task</code>分配给<code>Worker</code>后执行可能成功或失败, 因此<code>Coordinator</code>还需要维护任务执行的时间信息, 以便在超时后重新分配任务。因此，<code>Map</code>、<code>Reduce</code>任务、<code>Coordinator</code>和<code>Worker</code>的关系可以参考下图:</p>
-<p><img src="/../../images/MapReduce%E4%BB%BB%E5%8A%A1%E5%85%B3%E7%B3%BB.png" alt="MapReduce_relation"></p>
+<p><img src="/../../images/MapReduce_relation.png" alt="MapReduce_relation"></p>
 <p> <code>Worker</code>可能在不同时间执行不同的<code>Task</code>, 也可能什么也不做(初始状态或等候所有<code>Map Task</code>完成时可能会闲置)</p>
 </li>
 <li><p><code>Map</code>、<code>Reduce</code>任务有多少个? 如何分配?</p>
