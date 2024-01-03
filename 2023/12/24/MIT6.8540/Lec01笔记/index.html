@@ -13,16 +13,16 @@
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="本次课程包括了分布式系统的引入内容和MapReduce, 前者是引入性质的内容就不过多介绍了, 这里介绍MapReduce 1 MapReduce是什么?MapReduce是一种编程模型, 用于处理和大数据。其思想是使程序员能通过简单的Map函数和Reduce函数的编写就能完成分布式计算的任务, 而不需要知道任何有关分布式的事情，MapReduce框架会处理剩下的事情。 2 MapReduce结构">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/images/Lec02%E7%AC%94%E8%AE%B0_MapReduce_Fig.png">
-<meta property="og:image" content="http://example.com/images/MapReduce%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="http://example.com/images/Lec02_MapReduce_Fig.png">
+<meta property="og:image" content="http://example.com/images/MapReduce_process.png">
 <meta property="article:published_time" content="2023-12-24T09:34:02.000Z">
-<meta property="article:modified_time" content="2023-12-29T05:41:11.091Z">
+<meta property="article:modified_time" content="2024-01-02T07:22:26.084Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
 <meta property="article:tag" content="MapReduce">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/images/Lec02%E7%AC%94%E8%AE%B0_MapReduce_Fig.png">
+<meta name="twitter:image" content="http://example.com/images/Lec02_MapReduce_Fig.png">
     
     
       
@@ -173,7 +173,7 @@
   <div class="content e-content" itemprop="articleBody">
     <p>本次课程包括了分布式系统的引入内容和<code>MapReduce</code>, 前者是引入性质的内容就不过多介绍了, 这里介绍<code>MapReduce</code></p>
 <h1 id="1-MapReduce是什么"><a href="#1-MapReduce是什么" class="headerlink" title="1 MapReduce是什么?"></a>1 MapReduce是什么?</h1><p><code>MapReduce</code>是一种编程模型, 用于处理和大数据。其思想是使程序员能通过简单的<code>Map</code>函数和<code>Reduce</code>函数的编写就能完成分布式计算的任务, 而不需要知道任何有关分布式的事情，<code>MapReduce</code>框架会处理剩下的事情。</p>
-<h1 id="2-MapReduce结构"><a href="#2-MapReduce结构" class="headerlink" title="2 MapReduce结构"></a>2 MapReduce结构</h1><p><img src="/../../images/Lec02%E7%AC%94%E8%AE%B0_MapReduce_Fig.png" alt="Alt text"></p>
+<h1 id="2-MapReduce结构"><a href="#2-MapReduce结构" class="headerlink" title="2 MapReduce结构"></a>2 MapReduce结构</h1><p><img src="/../../images/Lec02_MapReduce_Fig.png" alt="Alt text"></p>
 <p>上图所示是论文中对<code>MapReduce</code>架构描述, <code>MapReduce</code>中有如下术语:</p>
 <ul>
 <li><code>Worker</code>: 分布式系统中不同计算机上运行的进程</li>
@@ -200,7 +200,7 @@
 <li>文件系统备份<br>在<code>MapReduce</code>框架中，输入数据通常存储在一个分布式文件系统（如<code>GFS</code>）中，该文件系统会将数据块复制到多个节点上。这种数据副本机制确保了即使某些机器发生故障，数据仍然可用。</li>
 </ul>
 <h1 id="4-一个wc执行流程的案例"><a href="#4-一个wc执行流程的案例" class="headerlink" title="4 一个wc执行流程的案例"></a>4 一个wc执行流程的案例</h1><p>此处给出一个统计单词出现数量任务执行流程的案例, 助于理解</p>
-<p><img src="/../../images/MapReduce%E6%B5%81%E7%A8%8B.png" alt="img"></p>
+<p><img src="/../../images/MapReduce_process.png" alt="img"></p>
 <blockquote>
 <p>假设单词<code>a</code>的哈希值为0, <code>b</code>的哈希值为1</p>
 </blockquote>
@@ -276,7 +276,7 @@
     Copyright &copy;
     
     
-    2016-2023
+    2016-2024
     ToniXWD
   </div>
   <div class="footer-right">
