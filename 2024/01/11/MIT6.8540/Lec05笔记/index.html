@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本节课是介绍Raft共识算法的第一部分, 建议阅读论文, 如果要做Lab的话, 论文是一定要看的, 尤其是要吃透论文中的图2。 1 引入: 脑裂（split brain）脑裂的定义:  当系统中的节点因为网络故障而无法相互通信时，可能会发生脑裂现象，即系统被分割成两个或多个互不连通的子集，每个子集都可能认为自己是完整的系统。  在介绍raft算法之前, 课程首先总结了之前课程中的几个分布式应用程序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志">
+<meta property="og:url" content="http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本节课是介绍Raft共识算法的第一部分, 建议阅读论文, 如果要做Lab的话, 论文是一定要看的, 尤其是要吃透论文中的图2。 1 引入: 脑裂（split brain）脑裂的定义:  当系统中的节点因为网络故障而无法相互通信时，可能会发生脑裂现象，即系统被分割成两个或多个互不连通的子集，每个子集都可能认为自己是完整的系统。  在介绍raft算法之前, 课程首先总结了之前课程中的几个分布式应用程序">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Lec06-split.png">
+<meta property="og:image" content="http://example.com/images/Lec06-raft-kv.png">
+<meta property="article:published_time" content="2024-01-11T01:33:25.000Z">
+<meta property="article:modified_time" content="2024-01-11T04:42:11.670Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Raft">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Lec06-split.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/07/MIT6.8540/Lec04%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&text=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志&body=Check out this article: http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&name=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&t=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BC%95%E5%85%A5-%E8%84%91%E8%A3%82%EF%BC%88split-brain%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">1 引入: 脑裂（split brain）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A4%9A%E6%95%B0%E6%8A%95%E7%A5%A8%EF%BC%88Majority-Vote%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2 多数投票（Majority Vote）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-raft%E7%9A%84%E8%BF%90%E8%A1%8C%E6%A1%88%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">3 raft的运行案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Log"><span class="toc-number">4.</span> <span class="toc-text">4 Log</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Leader%E9%80%89%E4%B8%BE"><span class="toc-number">5.</span> <span class="toc-text">5 Leader选举</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E9%80%89%E4%B8%BE%E6%9C%BA%E5%88%B6"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 选举机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E9%81%BF%E5%85%8D%E9%80%89%E7%A5%A8%E5%88%86%E8%A3%82"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 避免选票分裂</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Raft%E6%9C%AA%E8%80%83%E8%99%91%E7%9A%84%E6%83%85%E5%BD%A2-%E5%8D%95%E5%90%91%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Raft未考虑的情形: 单向网络故障</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-11T01:33:25.000Z" class="dt-published" itemprop="datePublished">2024-01-11</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">课程笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Raft/" rel="tag">Raft</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本节课是介绍<code>Raft</code>共识算法的第一部分, 建议阅读<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/gfs.pdf">论文</a>, 如果要做<code>Lab</code>的话, 论文是一定要看的, 尤其是要吃透论文中的图2。</p>
+<h1 id="1-引入-脑裂（split-brain）"><a href="#1-引入-脑裂（split-brain）" class="headerlink" title="1 引入: 脑裂（split brain）"></a>1 引入: 脑裂（split brain）</h1><p>脑裂的定义:</p>
+<blockquote>
+<p>当系统中的节点因为网络故障而无法相互通信时，可能会发生脑裂现象，即系统被分割成两个或多个互不连通的子集，每个子集都可能认为自己是完整的系统。</p>
+</blockquote>
+<p>在介绍<code>raft</code>算法之前, 课程首先总结了之前课程中的几个分布式应用程序的共性和潜在的问题:</p>
+<ul>
+<li><code>MapReduce</code>: 主节点管理<code>Map</code>和<code>Reduce</code>任务的派发和信息收集, 自始至终没有发生变化</li>
+<li><code>GFS</code>: 主节点管理<code>Chunk</code>信息、租约管理等, 主节点通过日志的形式避免宕机后信息的丢失</li>
+<li><code>VMware FT</code>: 通过一个原子测试完成<code>Primary</code>和<code>Backup</code>之间的切换</li>
+</ul>
+<p>以上讨论的问题都是主节点失效后系统能否正常工作的场景, 看起来<code>VMware FT</code>可以满足在一个服务器宕机后剩下的服务器也能正常运行的需求, 但这里仍然存在问题: <strong>其原子测试本身也是一个<code>Test-and-Set服务</code></strong></p>
+<p>下图为课程中展示的案例:</p>
+<p><img src="/../../images/Lec06-split.png" alt="split-brain"></p>
+<p>因为<code>Test-and-Set服务</code>本身也算是一个分布式应用, 其也存在主从备份的概念, 因此会出现上图中描述 的场景:</p>
+<ol>
+<li><code>Primary</code>和<code>Backup</code>之间的网络出现问题, 都认为自己是唯一的服务节点</li>
+<li><code>Primary</code>与<code>Test-and-Set Server1</code>之间网络正常, 与<code>Test-and-Set Server2</code>之间网络不正常; <code>Backup</code>与<code>Test-and-Set Server1</code>之间网络不正常, 与<code>Test-and-Set Server2</code>之间网络正常</li>
+<li><code>Primary</code>和<code>Backup</code>的<code>Test-and-Set</code>测试都成功了, 此时存在2个上线的服务器, 这就是一种<strong>脑裂</strong>现象</li>
+</ol>
+<p>以上的问题是一种<strong>脑裂</strong>现象, 因为<code>Primary</code>和<code>Backup</code>之间出现了网络分区, 每个区域之间不能彼此访问。</p>
+<p><strong>补充:另外二者对脑裂现象的处理</strong>:</p>
+<ul>
+<li><code>MapReduce</code>中没有提及解决方案</li>
+<li><code>GFS</code>的主节点会将关键的元数据信息存储在持久化的操作日志中，这个日志会被复制到多个地方，确保其可用性。如果发生网络分区，那么分布在不同分区的节点可能无法与主节点通信，但<code>GFS</code>的设计允许系统在某种程度的网络分区后仍然能够继续操作，只要分区中有足够的副本存在。</li>
+</ul>
+<h1 id="2-多数投票（Majority-Vote）"><a href="#2-多数投票（Majority-Vote）" class="headerlink" title="2 多数投票（Majority Vote）"></a>2 多数投票（Majority Vote）</h1><p>以上的问题在于不同的网络分区并不知道自己是否在别的网络分区工作的同时也在工作， 为了解决这个问题， <code>raft</code>算法提出了<code>Majority Vote</code>: <strong>任何决策必须要求过半的节点的投票支持</strong>。这是<code>Raft</code>最基本的一个概念, 而且这个概念还有一个重要的前提: <strong>节点数量必须是奇数</strong></p>
+<p>因为如果是奇数的节点构成的分布式应用, 至多只有一个数量过半的网络分区, 因此至多只有一个网络分区能够完成正常的决策工作, 避免了脑裂。同时， 这个机制还表达了<code>raft</code>的容错能力: <strong>至多允许一半的节点异常</strong>。</p>
+<h1 id="3-raft的运行案例"><a href="#3-raft的运行案例" class="headerlink" title="3 raft的运行案例"></a>3 raft的运行案例</h1><p>课程中为了展示<code>raft</code>在实际应用中如何工作, 给出了<code>lab3</code>中将实现的<code>kv存储</code>的例子:</p>
+<p><img src="/../../images/Lec06-raft-kv.png" alt="raft-kv"></p>
+<ol>
+<li>客户端请请求(<code>Get</code>或<code>Put</code>)发送给<code>Leader</code>的服务层</li>
+<li><code>Leader</code>的服务层将这个<code>Get</code>或<code>Put</code>命令向下发送到<code>Raft</code>层</li>
+<li><code>Raft</code>层将操作封装成日志发送给多个<code>Follower</code>的<code>Raft</code>层</li>
+<li><code>Follower</code>的<code>Raft</code>层复制日志后回复</li>
+<li><code>Leader</code>的<code>Raft</code>层收到过半节点回复后, 向上发送一个通知到应用程序表示真正的执行这个操作了。</li>
+<li><code>Leader</code>的服务执行命令改变自身<code>Table</code>的状态, 并回复给客户端执行结果</li>
+<li><code>Follower</code>的应用层也应用<code>Raft</code>层的日志改变自身<code>Table</code>的状态(这里需要<code>Leader</code>告知哪些<code>log</code>是<code>commited</code>, 通常是通过心跳告知, 图中未画出, 而且这个操作通常有延迟, 客户端不需要等待这个操作完成)</li>
+</ol>
+<p><strong>接口函数说明</strong></p>
+<ol>
+<li><code>Start</code>函数<br>应用程序通过<code>Start</code>函数将一个操作传递给<code>Raft</code>层，返回值包括，这个请求将会存放在<code>Log</code>中的索引(如果成功<code>commit</code>的话)</li>
+<li><code>applyCh channel</code><br>当之前请求的操作<code>commit</code>之后, 通过<code>applyCh channel</code>向应用程序发出消息通知, 应用程序读取这个消息。</li>
+</ol>
+<p>具体而言, 客户端调用应用层的<code>RPC</code>，应用层收到<code>RPC</code>之后，会调用<code>Start</code>函数，<code>Start</code>函数会立即返回，但是这时，应用层不会返回消息给客户端，因为它还没有执行客户端请求，它也不知道这个请求是否会被<code>Raft</code>层<code>commit</code>。只有在某一时刻，对应于这个客户端请求的消息在<code>applyCh channel</code>中出现, 应用层才会执行这个请求，并返回响应给客户端。</p>
+<h1 id="4-Log"><a href="#4-Log" class="headerlink" title="4 Log"></a>4 Log</h1><p><code>Raft</code>中的<code>Log</code>会被添加到节点的<code>Log数组</code>中, 每一个<code>Log</code>包含了以下内容:</p>
+<ul>
+<li>具体的命令, 取决于应用</li>
+<li>任期<code>Term</code>, 用于判断这个<code>Log</code>是否有效</li>
+</ul>
+<p><code>Leader</code>节点需要维护每个<code>Follower</code>的<code>Log</code>状态:</p>
+<ol>
+<li>目前已经复制的<code>Log</code>在数组中的索引</li>
+<li>下一个追加的<code>Log</code>应该从哪个索引开始</li>
+</ol>
+<p>同时<code>Leader</code>也需要维护全局的日志状态:</p>
+<ul>
+<li>目前已经提交的<code>Log</code>在日志数组中的索引</li>
+</ul>
+<p><code>Log</code>有3大作用:</p>
+<ol>
+<li>用于<code>Leader</code>和<code>Follower</code>之间的同步</li>
+<li>包含命令用以改变应用程序的状态</li>
+<li>每个<code>Raft</code>节点都需要将<code>Log</code>写入到它的磁盘中, 因此<code>Log</code>还可以被<code>Raft</code>节点用来从头执行其中的操作进而重建故障前的状态</li>
+</ol>
+<p><strong>重启后<code>Leader</code>如何利用<code>Log</code>进行恢复?</strong></p>
+<ol>
+<li>首先重启后进行<code>Leader</code>选举，其中一个节点被选为<code>Leader</code></li>
+<li><code>Leader</code>通过心跳来确定目前已经提交的日志的索引位置</li>
+<li>在这个索引位置以前, 所有的节点的日志是相同的, 可以应用到自身的状态机</li>
+<li>在这个索引位置以后, <code>Leader</code>迫使其他所有副本的<code>Log</code>与自己保持一致</li>
+</ol>
+<h1 id="5-Leader选举"><a href="#5-Leader选举" class="headerlink" title="5 Leader选举"></a>5 Leader选举</h1><h2 id="5-1-选举机制"><a href="#5-1-选举机制" class="headerlink" title="5.1 选举机制"></a>5.1 选举机制</h2><p>每一个运行的<code>raft</code>节点都包含一个任期号(<code>Term</code>), 每个任期只能有一个<code>Leader</code>。</p>
+<p>如何保证每个任期只能有一个<code>Leader</code>？</p>
+<p>首先， 每一个运行的<code>raft</code>节点只能是如下几个角色之一：</p>
+<ul>
+<li><code>Leader</code></li>
+<li><code>Follower</code></li>
+<li><code>Candidate</code></li>
+</ul>
+<p>每个<code>Raft</code>节点都有一个选举定时器, 每次收到心跳<code>RPC</code>或追加<code>log</code>的<code>RPC</code>(都通过<code>AppendEntries</code>)时, 都将重置这个选举定时器, 在选举定时器没有到期时, 发出<code>AppendEntries</code>的节点是<code>Leader</code>, 接收<code>AppendEntries</code>的节点是<code>Follower</code>, 一旦因为没有接收到消息导致选举定时器到期, 节点转化为<code>Candidate</code>并进行投票选举。</p>
+<p>每一次选举会增加<code>Term</code>，通过<code>RequestVote</code>向其他节点寻求投票, 由于节点数量是奇数, 而投票选举成功要求过半的投票, 因此只有一个<code>Leader</code>将在一个特定的<code>Term</code>内选举成功。</p>
+<p>拿到过半投票的<code>Leader</code>将通过心跳告知新<code>Leader</code>的诞生, 如果没有这样的节点, 则再次自增<code>Term</code>进行新一轮的选举。</p>
+<h2 id="5-2-避免选票分裂"><a href="#5-2-避免选票分裂" class="headerlink" title="5.2 避免选票分裂"></a>5.2 避免选票分裂</h2><p>因为每个<code>Candidate</code>都会给自己投票, 因此如果所有的<code>Follower</code>同时转化为<code>Candidate</code>并发起选举, 结果一定是各自一张投票, 形成了选票分裂(<code>Split Vote</code>), 并且恶心循环地再次进行新一轮选举。</p>
+<p>为了避免这种情况，不同的服务器都应该选取随机的超时时间。先超时的节点有更大的概率获得更多的选票，因此避免了多次选票分裂的情况。</p>
+<blockquote>
+<p>PS: 选举超时的设定要求: 至少大于<code>Leader</code>的心跳间隔, 否则该节点会在收到正常的心跳之前触发选举</p>
+</blockquote>
+<h2 id="5-3-Raft未考虑的情形-单向网络故障"><a href="#5-3-Raft未考虑的情形-单向网络故障" class="headerlink" title="5.3 Raft未考虑的情形: 单向网络故障"></a>5.3 <code>Raft</code>未考虑的情形: 单向网络故障</h2><p>以下的情形会导致<code>Raft</code>不能正常工作:</p>
+<ol>
+<li><code>Leader</code>可以发出心跳，但是又不能收到任何客户端请求</li>
+<li><code>Leader</code>的心跳会抑制其他服务器开始一次新的选举</li>
+</ol>
+<p>以上情形将导致客户端请求永远不被执行, 教授提出的解决方案是:<strong>通过一个双向的心跳解决</strong>: </p>
+<ol>
+<li><code>Follower</code>需要回复心跳</li>
+<li>如果<code>Leader</code>一段时间没有收到自己发出心跳的回复，将让出<code>Leader</code></li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BC%95%E5%85%A5-%E8%84%91%E8%A3%82%EF%BC%88split-brain%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">1 引入: 脑裂（split brain）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A4%9A%E6%95%B0%E6%8A%95%E7%A5%A8%EF%BC%88Majority-Vote%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2 多数投票（Majority Vote）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-raft%E7%9A%84%E8%BF%90%E8%A1%8C%E6%A1%88%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">3 raft的运行案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Log"><span class="toc-number">4.</span> <span class="toc-text">4 Log</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Leader%E9%80%89%E4%B8%BE"><span class="toc-number">5.</span> <span class="toc-text">5 Leader选举</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E9%80%89%E4%B8%BE%E6%9C%BA%E5%88%B6"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 选举机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E9%81%BF%E5%85%8D%E9%80%89%E7%A5%A8%E5%88%86%E8%A3%82"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 避免选票分裂</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Raft%E6%9C%AA%E8%80%83%E8%99%91%E7%9A%84%E6%83%85%E5%BD%A2-%E5%8D%95%E5%90%91%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Raft未考虑的情形: 单向网络故障</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&text=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志&body=Check out this article: http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&title=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&name=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/&t=MIT6.8540(6.824) Lec05笔记: raft论文解读1：选举和日志"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
