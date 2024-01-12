@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="1 整体介绍论文介绍了一种在虚拟机上实现的备份系统的设计: VMWare Fault-tolerant, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于状态机的。 传统的主从备份的复制方法称为状态转移（State Transfer），备份服务器几乎连续地将主服务器的所有状态更改进行传输到备份服务器，包括CPU、内存和I&#x2F;O设备的更改。然而，发送这些状态所需的带宽，特别是内存中的变">
+    <meta name="description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 1 整体介绍论文介绍了一种在虚拟机上实现的备份系统的设计: VMWare Fault-tolerant, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于状态机的。 传统的主从备份的复制方法称为状态转移（State Transfer），备份服务器几乎连续地将主服务器的所有状态更改进行传输">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.8540(6.824) Lec04笔记: vm-ft论文解读">
 <meta property="og:url" content="http://example.com/2024/01/07/MIT6.8540/Lec04%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="ToniBlog">
-<meta property="og:description" content="1 整体介绍论文介绍了一种在虚拟机上实现的备份系统的设计: VMWare Fault-tolerant, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于状态机的。 传统的主从备份的复制方法称为状态转移（State Transfer），备份服务器几乎连续地将主服务器的所有状态更改进行传输到备份服务器，包括CPU、内存和I&#x2F;O设备的更改。然而，发送这些状态所需的带宽，特别是内存中的变">
+<meta property="og:description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 1 整体介绍论文介绍了一种在虚拟机上实现的备份系统的设计: VMWare Fault-tolerant, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于状态机的。 传统的主从备份的复制方法称为状态转移（State Transfer），备份服务器几乎连续地将主服务器的所有状态更改进行传输">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/Basic-FT-Configuration.png">
 <meta property="og:image" content="http://example.com/images/FT-Protocol.png">
 <meta property="og:image" content="http://example.com/images/VMWare-FT-process.png">
 <meta property="article:published_time" content="2024-01-07T08:47:33.000Z">
-<meta property="article:modified_time" content="2024-01-08T05:46:37.183Z">
+<meta property="article:modified_time" content="2024-01-12T10:19:41.767Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="VMWare FT">
@@ -88,7 +88,7 @@
     <span id="actions">
       <ul>
         
-        <li><a class="icon" aria-label="上一篇" href="/2024/01/11/MIT6.8540/Lec05%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="上一篇" href="/2024/01/11/MIT6.8540/Lec06%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
         <li><a class="icon" aria-label="下一篇" href="/2024/01/06/MIT6.8540/Lab2_Raft_2B/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
@@ -171,7 +171,8 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="1-整体介绍"><a href="#1-整体介绍" class="headerlink" title="1 整体介绍"></a>1 整体介绍</h1><p>论文介绍了一种在虚拟机上实现的备份系统的设计: <strong>VMWare Fault-tolerant</strong>, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于<strong>状态机</strong>的。</p>
+    <p>课程主页: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/schedule.html">https://pdos.csail.mit.edu/6.824/schedule.html</a></p>
+<h1 id="1-整体介绍"><a href="#1-整体介绍" class="headerlink" title="1 整体介绍"></a>1 整体介绍</h1><p>论文介绍了一种在虚拟机上实现的备份系统的设计: <strong>VMWare Fault-tolerant</strong>, 使用了较小的带宽, 支持在远距离实现容错。该实现是基于<strong>状态机</strong>的。</p>
 <p>传统的主从备份的复制方法称为<strong>状态转移</strong>（State Transfer），备份服务器几乎连续地将主服务器的所有状态更改进行传输到备份服务器，包括CPU、内存和I&#x2F;O设备的更改。然而，发送这些状态所需的带宽，特别是内存中的变化，可能非常大。</p>
 <p>本文使用了<strong>复制状态机</strong>（Replicated State Machine）以减小带宽需求，其思想是将服务器建模为<strong>确定性状态机</strong>，通过从相同的初始状态开始，并确保它们以相同的顺序接收相同的输入请求来保持同步。</p>
 <p>本质来说, <strong>状态转移</strong>是复制主节点内存或寄存器中的内容, <strong>复制状态机</strong>是传输来自客户端的操作或其他外部事件。使用复制状态机的主要原因是，外部操作或事件通常比服务的状态要小很多。</p>

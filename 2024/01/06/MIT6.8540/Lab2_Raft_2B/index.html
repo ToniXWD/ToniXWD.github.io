@@ -17,7 +17,7 @@
 <meta property="og:image" content="http://example.com/images/lab2-2B-test2.png">
 <meta property="og:image" content="http://example.com/images/lab2-2B-test3.png">
 <meta property="article:published_time" content="2024-01-06T09:17:01.000Z">
-<meta property="article:modified_time" content="2024-01-07T08:15:14.967Z">
+<meta property="article:modified_time" content="2024-01-12T02:39:02.493Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
@@ -191,7 +191,7 @@
 </ol>
 <p>这样的实现会导致以下的情况:</p>
 <ol>
-<li>某一时刻一个<code>server</code>网络出现了问题(称其为<code>S</code>), 其自增currentTerm后发出选举， 经过多次选举超时后其<code>currentTerm</code>已经远大于离开集群时的<code>currentTerm</code></li>
+<li>某一时刻一个<code>server</code>网络出现了问题(称其为<code>S</code>), 其自增<code>currentTerm</code>后发出选举， 经过多次选举超时后其<code>currentTerm</code>已经远大于离开集群时的<code>currentTerm</code></li>
 <li>后来网络恢复了正常, 这时其他的服务器收到了<code>S</code>的选举请求, 这个选举请求有更新的term, 因此都同意向它投票, <code>S</code>成为了最新的<code>leader</code></li>
 <li>由于<code>S</code>离开集群时集群其他的服务器已经提交了多个<code>log</code>, 这些提交在<code>S</code>中不存在, 而<code>S</code>信任自己的<code>log</code>, 并将自己的<code>log</code>复制到所有的<code>follower</code>上, 这将覆盖已经提交了多个<code>log</code>, 导致了错误</li>
 </ol>

@@ -6,17 +6,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GFS是一个分布式的文件系统，它将数据存储在多个网络连接的机器上。这种设计可以提供高容错性和高数据可靠性。">
+    <meta name="description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GF">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.8540(6.824) Lec03笔记: GFS">
 <meta property="og:url" content="http://example.com/2023/12/30/MIT6.8540/Lec03%E7%AC%94%E8%AE%B0/index.html">
 <meta property="og:site_name" content="ToniBlog">
-<meta property="og:description" content="本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GFS是一个分布式的文件系统，它将数据存储在多个网络连接的机器上。这种设计可以提供高容错性和高数据可靠性。">
+<meta property="og:description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GF">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/GFS_structure.png">
 <meta property="og:image" content="http://example.com/images/lease_process.png">
 <meta property="article:published_time" content="2023-12-30T09:11:45.000Z">
-<meta property="article:modified_time" content="2024-01-03T06:17:14.132Z">
+<meta property="article:modified_time" content="2024-01-12T10:19:44.372Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="GFS">
@@ -170,7 +170,8 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <p>本节课是解释谷歌的分布式文件系统<code>GFS</code>, 强烈建议阅读其<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/gfs.pdf">论文</a></p>
+    <p>课程主页: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/schedule.html">https://pdos.csail.mit.edu/6.824/schedule.html</a></p>
+<p>本节课是解释谷歌的分布式文件系统<code>GFS</code>, 强烈建议阅读其<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/gfs.pdf">论文</a></p>
 <h1 id="1-GFS简介"><a href="#1-GFS简介" class="headerlink" title="1 GFS简介"></a>1 GFS简介</h1><p><code>GFS</code>（<code>Google File System</code>）是<code>Google</code>特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:</p>
 <ol>
 <li><p><strong>分布式架构</strong>：<code>GFS</code>是一个分布式的文件系统，它将数据存储在多个网络连接的机器上。这种设计可以提供高容错性和高数据可靠性。</p>
