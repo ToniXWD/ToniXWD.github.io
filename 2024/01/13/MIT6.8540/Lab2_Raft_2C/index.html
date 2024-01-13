@@ -9,15 +9,15 @@
     <meta name="description" content="本文将介绍lab2C部分的实现, lab2C要求实现raft中的持久化功能, 相比lab2A,和lab2B, 本节的难度其实很小, 但复杂的是lab2A,和lab2B中的一些微小的bug会在2C中显现, 并且相对不太容易注意到。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.8540(6.824) Lab2: Raft 2C">
-<meta property="og:url" content="http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/index.html">
+<meta property="og:url" content="http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/index.html">
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="本文将介绍lab2C部分的实现, lab2C要求实现raft中的持久化功能, 相比lab2A,和lab2B, 本节的难度其实很小, 但复杂的是lab2A,和lab2B中的一些微小的bug会在2C中显现, 并且相对不太容易注意到。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/lab2-2C-test2B.png">
 <meta property="og:image" content="http://example.com/images/lab2-2C-test2C.png">
 <meta property="og:image" content="http://example.com/images/lab2-2C-test2C-2.png">
-<meta property="article:published_time" content="2024-01-06T09:17:01.000Z">
-<meta property="article:modified_time" content="2024-01-13T16:59:45.398Z">
+<meta property="article:published_time" content="2024-01-13T09:15:38.000Z">
+<meta property="article:modified_time" content="2024-01-13T17:01:40.411Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
@@ -88,10 +88,8 @@
     <span id="actions">
       <ul>
         
-        <li><a class="icon" aria-label="上一篇" href="/2024/01/06/MIT6.8540/Lab2_Raft_2B/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
-        
-        <li><a class="icon" aria-label="下一篇" href="/2024/01/01/MIT6.8540/Lab2_Raft_2A/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/12/MIT6.8540/Lec07%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -104,17 +102,17 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&text=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&is_video=false&description=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&name=MIT6.8540(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&t=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&text=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&is_video=false&description=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&name=MIT6.8540(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&t=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -146,7 +144,7 @@
       
     <div class="postdate">
       
-        <time datetime="2024-01-06T09:17:01.000Z" class="dt-published" itemprop="datePublished">2024-01-06</time>
+        <time datetime="2024-01-13T09:15:38.000Z" class="dt-published" itemprop="datePublished">2024-01-13</time>
         
       
     </div>
@@ -188,7 +186,7 @@
 <p><strong>解决方案:</strong><br>很简单, 直接截断切片, 去掉<code>if</code>判断的条件:</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(rf.log) &gt; args.PrevLogIndex+<span class="number">1</span> &#123;</span><br><span class="line">    rf.log = rf.log[:args.PrevLogIndex+<span class="number">1</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h1 id="2-优化-快速回退"><a href="#2-优化-快速回退" class="headerlink" title="2 优化: 快速回退"></a>2 优化: 快速回退</h1><p>在之前的回退实现中, 如果有<code>Follower</code>的日志不匹配, 每次<code>RPC</code>中, <code>Leader</code>会将其<code>nextIndex</code>自减1来重试, 但其在某些情况下会导致效率很低, 因此需要<code>AppendEntries RPC</code>的回复信息携带更多的字段以加速回退, 核心思想就是: :<strong><code>Follower</code>返回更多信息给<code>Leader</code>，使其可以以<code>Term</code>为单位来回退</strong></p>
+<h1 id="2-优化-快速回退"><a href="#2-优化-快速回退" class="headerlink" title="2 优化: 快速回退"></a>2 优化: 快速回退</h1><p>在之前的回退实现中, 如果有<code>Follower</code>的日志不匹配, 每次<code>RPC</code>中, <code>Leader</code>会将其<code>nextIndex</code>自减1来重试, 但其在某些情况下会导致效率很低, 因此需要<code>AppendEntries RPC</code>的回复信息携带更多的字段以加速回退, 核心思想就是:<strong><code>Follower</code>返回更多信息给<code>Leader</code>，使其可以以<code>Term</code>为单位来回退</strong></p>
 <p>教授在课堂上已经介绍了快速回退的实现机制, 可以看我整理的<a href="/2024/01/12/MIT6.8540/Lec07%E7%AC%94%E8%AE%B0/">笔记</a> </p>
 <p>我的实现和课堂的介绍基本一致, 只是将<code>XLen</code>从<code>空白的Log槽位数</code>改为<code>Log的长度</code>:</p>
 <h2 id="2-1-结构体定义"><a href="#2-1-结构体定义" class="headerlink" title="2.1 结构体定义"></a>2.1 结构体定义</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> AppendEntriesReply <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// Your data here (2A).</span></span><br><span class="line">	Term    <span class="type">int</span>  <span class="comment">// currentTerm, for leader to update itself</span></span><br><span class="line">	Success <span class="type">bool</span> <span class="comment">// true if follower contained entry matching prevLogIndex and prevLogTerm</span></span><br><span class="line">	XTerm   <span class="type">int</span>  <span class="comment">// Follower中与Leader冲突的Log对应的Term</span></span><br><span class="line">	XIndex  <span class="type">int</span>  <span class="comment">// Follower中，对应Term为XTerm的第一条Log条目的索引</span></span><br><span class="line">	XLen    <span class="type">int</span>  <span class="comment">// Follower的log的长度</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -281,17 +279,17 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&text=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&is_video=false&description=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&name=MIT6.8540(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/06/MIT6.8540/Lab2_Raft_2C/&t=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&text=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&is_video=false&description=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&title=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&name=MIT6.8540(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/&t=MIT6.8540(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
