@@ -1,3 +1,4 @@
+http://example.com/2024/01/15/MIT6.8540/Lab2_Raft_2D/
 http://example.com/2024/01/13/MIT6.8540/Lab2_Raft_2C/
 http://example.com/2024/01/12/MIT6.8540/Lec07%E7%AC%94%E8%AE%B0/
 http://example.com/2023/12/24/MIT6.8540/Lec01%E7%AC%94%E8%AE%B0/
