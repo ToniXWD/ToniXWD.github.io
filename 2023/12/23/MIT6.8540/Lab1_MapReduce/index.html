@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
     <meta name="description" content="1 实验介绍本次实验是实现一个简易版本的MapReduce编程框架,官方文档在这里:lab1文档, 强烈建议先阅读MapReduce的论文, 难度主要体现在设计上, 实际的代码实现倒是相对简单, 这也得益于go的语言特性, 比CMU15445使用Cpp写代码方便多了。实验需要实现的是Coordinator和Worker的设计, 具体实现细节十分自由(无从下手) 我的代码实现点这里： https:&#x2F;">
 <meta property="og:type" content="article">
-<meta property="og:title" content="MIT6.8540(6.824) Lab1: MapReduce">
+<meta property="og:title" content="MIT6.5840(6.824) Lab1: MapReduce">
 <meta property="og:url" content="http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/index.html">
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 实验介绍本次实验是实现一个简易版本的MapReduce编程框架,官方文档在这里:lab1文档, 强烈建议先阅读MapReduce的论文, 难度主要体现在设计上, 实际的代码实现倒是相对简单, 这也得益于go的语言特性, 比CMU15445使用Cpp写代码方便多了。实验需要实现的是Coordinator和Worker的设计, 具体实现细节十分自由(无从下手) 我的代码实现点这里： https:&#x2F;">
@@ -18,7 +18,7 @@
 <meta property="og:image" content="http://example.com/images/MapReduce-Test-2.png">
 <meta property="og:image" content="http://example.com/images/MapReduce-Test-3.png">
 <meta property="article:published_time" content="2023-12-23T05:25:18.000Z">
-<meta property="article:modified_time" content="2023-12-29T06:20:58.681Z">
+<meta property="article:modified_time" content="2024-01-15T18:04:01.643Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
@@ -43,7 +43,7 @@
       
     
     <!-- title -->
-    <title>MIT6.8540(6.824) Lab1: MapReduce</title>
+    <title>MIT6.5840(6.824) Lab1: MapReduce</title>
     <!-- async scripts -->
     <!-- Google Analytics -->
 
@@ -106,16 +106,16 @@
     <div id="share" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&text=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&is_video=false&description=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab1: MapReduce&body=Check out this article: http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&name=MIT6.8540(6.824) Lab1: MapReduce&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&t=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&text=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&is_video=false&description=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab1: MapReduce&body=Check out this article: http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&name=MIT6.5840(6.824) Lab1: MapReduce&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&t=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -135,7 +135,7 @@
   <header>
     
     <h1 class="posttitle p-name" itemprop="name headline">
-        MIT6.8540(6.824) Lab1: MapReduce
+        MIT6.5840(6.824) Lab1: MapReduce
     </h1>
 
 
@@ -173,7 +173,7 @@
 
   <div class="content e-content" itemprop="articleBody">
     <h1 id="1-实验介绍"><a href="#1-实验介绍" class="headerlink" title="1 实验介绍"></a>1 实验介绍</h1><p>本次实验是实现一个简易版本的<code>MapReduce</code>编程框架,官方文档在这里:<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/labs/lab-mr.html">lab1文档</a>, 强烈建议先阅读<code>MapReduce</code>的<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/mapreduce.pdf">论文</a>, 难度主要体现在设计上, 实际的代码实现倒是相对简单, 这也得益于<code>go</code>的语言特性, 比<code>CMU15445</code>使用Cpp写代码方便多了。实验需要实现的是<code>Coordinator</code>和<code>Worker</code>的设计, 具体实现细节十分自由(<del>无从下手</del>)</p>
-<p>我的代码实现点这里： <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.8540/tree/lab1">https://github.com/ToniXWD/MIT6.8540/tree/lab1</a></p>
+<p>我的代码实现点这里： <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab1">https://github.com/ToniXWD/MIT6.5840/tree/lab1</a></p>
 <h1 id="2-既有框架解读"><a href="#2-既有框架解读" class="headerlink" title="2 既有框架解读"></a>2 既有框架解读</h1><p>解读现有的框架设计是第一步。</p>
 <h2 id="2-1-代码解读"><a href="#2-1-代码解读" class="headerlink" title="2.1 代码解读"></a>2.1 代码解读</h2><ol>
 <li>阅读<code>src/main/mrcoordinator.go</code>可知：<br> 服务进程通过<code>MakeCoordinator</code>启动了一个<code>Coordinator</code> c, <code>c.server()</code>中启用了一个协程用于接受<code>RPC</code>调用:<code>go http.Serve(l, nil)</code>, 需要注意的是, 在 Go 的 <code>net/http</code> 包中, 使用 <code>http.Serve(l, nil)</code> 启动 <code>HTTP</code> 服务器以侦听和处理请求时，服务器会为每个进来的请求自动启动一个新的协程。这意味着每个 RPC 调用都是在其自己的独立协程中被处理的，允许并发处理多个请求。因此, 我们的设计可能需要使用锁等同步原语实现共享资源的保护, 同时<code>Coordinator</code>不会主动与<code>Worker</code>通信(除非自己额外实现), 只能通过<code>Worker</code>的<code>RPC</code>通信来完成任务。同时， 当所有任务完成时， <code>Done</code>方法将会返回<code>false</code>, 从而将<code>Coordinator</code>关闭。</li>
@@ -338,16 +338,16 @@
     <div id="share-footer" style="display: none">
       <ul>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&text=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&is_video=false&description=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.8540(6.824) Lab1: MapReduce&body=Check out this article: http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&name=MIT6.8540(6.824) Lab1: MapReduce&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&t=MIT6.8540(6.824) Lab1: MapReduce"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&text=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&is_video=false&description=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab1: MapReduce&body=Check out this article: http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&title=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&name=MIT6.5840(6.824) Lab1: MapReduce&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/23/MIT6.8540/Lab1_MapReduce/&t=MIT6.5840(6.824) Lab1: MapReduce"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
