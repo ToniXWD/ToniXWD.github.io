@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是介绍Raft共识算法的第一部分, 建议阅读论文, 如果要做Lab的话, 论文是一定要看的, 尤其是要吃透论文中的图2。 本节课介绍的内容包括: 日志恢复、选举限制、持久化、快照和一致性。 1 日志恢复1.1 日志恢复的案例为了举例说明Raft是如何进行日志恢复的, 我们假设有如下表格的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照">
+<meta property="og:url" content="http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是介绍Raft共识算法的第一部分, 建议阅读论文, 如果要做Lab的话, 论文是一定要看的, 尤其是要吃透论文中的图2。 本节课介绍的内容包括: 日志恢复、选举限制、持久化、快照和一致性。 1 日志恢复1.1 日志恢复的案例为了举例说明Raft是如何进行日志恢复的, 我们假设有如下表格的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-01-12T01:19:15.000Z">
+<meta property="article:modified_time" content="2024-01-16T08:06:33.138Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Raft">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/11/MIT6.5840/Lec05%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照&body=Check out this article: http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 日志恢复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 日志恢复的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 日志恢复的逻辑</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%80%89%E4%B8%BE%E7%BA%A6%E6%9D%9F"><span class="toc-number">2.</span> <span class="toc-text">2 选举约束</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9C%BA%E5%88%B6%E6%8F%8F%E8%BF%B0"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 机制描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%A1%88%E4%BE%8B"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 案例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D"><span class="toc-number">3.</span> <span class="toc-text">3 快速恢复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%E7%9A%84%E9%9C%80%E6%B1%82"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 快速恢复的需求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="toc-number">3.2.</span> <span class="toc-text">3.1 快速恢复的机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%A1%88%E4%BE%8B%E8%AF%B4%E6%98%8E"><span class="toc-number">3.3.</span> <span class="toc-text">3.2 案例说明</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">4 持久化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 持久化的内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 什么时候持久化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%BF%AB%E7%85%A7"><span class="toc-number">5.</span> <span class="toc-text">5 快照</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%BF%AB%E7%85%A7%EF%BC%9F"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 为什么需要快照？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%BF%AB%E7%85%A7%E9%80%A0%E6%88%90%E7%9A%84Follower%E6%97%A5%E5%BF%97%E7%BC%BA%E5%A4%B1%E9%97%AE%E9%A2%98"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 快照造成的Follower日志缺失问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-number">6.</span> <span class="toc-text">6 线性一致性</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-12T01:19:15.000Z" class="dt-published" itemprop="datePublished">2024-01-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">课程笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Raft/" rel="tag">Raft</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>课程主页: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/schedule.html">https://pdos.csail.mit.edu/6.824/schedule.html</a></p>
+<p>本节课是介绍<code>Raft</code>共识算法的第一部分, 建议阅读<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/gfs.pdf">论文</a>, 如果要做<code>Lab</code>的话, 论文是一定要看的, 尤其是要吃透论文中的图2。</p>
+<p>本节课介绍的内容包括: 日志恢复、选举限制、持久化、快照和一致性。</p>
+<h1 id="1-日志恢复"><a href="#1-日志恢复" class="headerlink" title="1 日志恢复"></a>1 日志恢复</h1><h2 id="1-1-日志恢复的案例"><a href="#1-1-日志恢复的案例" class="headerlink" title="1.1 日志恢复的案例"></a>1.1 日志恢复的案例</h2><p>为了举例说明<code>Raft</code>是如何进行日志恢复的, 我们假设有如下表格的情形:</p>
+<table>
+<thead>
+<tr>
+<th align="left">节点\log索引</th>
+<th align="right">10</th>
+<th align="right">11</th>
+<th align="right">12</th>
+<th align="right">13</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">S1</td>
+<td align="right">3</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S2</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">4</td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S3</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">5</td>
+<td align="right"></td>
+</tr>
+</tbody></table>
+<p>表格中存在3个节点<code>S1,S2,S3</code>, 存放的值是每个日志槽位的<code>Term</code>。 假设其在日志槽位<code>0-9</code>都保持完全一致。以下说明了为什么某一时刻会出现上表的状态：</p>
+<ol>
+<li>到槽位<code>10</code>的日志为止， 所有的节点网络正常且工作正常, 此时最高<code>Term</code>为3, <code>Leader</code>为<code>S3</code></li>
+<li>此后<code>S1</code>故障, 因此槽位<code>11</code>的<code>log</code>只被复制在了<code>S2</code>和<code>S3</code></li>
+<li>之后<code>S2,S3</code>之间的网络也出现了故障<code>S2</code>进行选举</li>
+<li>恰好选举时<code>S1</code>恢复了, <code>S1,S2</code>都为<code>S2</code>投票, <code>S2</code>因为获得了超过半数投票而被选为新<code>Leader</code>, 新的<code>Term</code>为4</li>
+<li>新<code>Leader S2</code>向自身槽位12处追加一个<code>Term</code>为4的<code>log</code>, 然后故障了, 因此槽位12处<code>Term</code>为4的<code>log</code>只存在于<code>S2</code></li>
+<li>此时<code>S3</code>触发选举超时, 并获取了<code>S1</code>和<code>S3</code>的选票成为新<code>Leader</code>, 新的<code>Term</code>为5</li>
+<li>新<code>Leader S3</code>向自身槽位12处追加一个<code>Term</code>为5的<code>log</code>, 然后准备开始广播, 并且广播前<code>S2</code>也恢复了</li>
+</ol>
+<p>以上就是为什么会出现表中所示的内容的原因, 而<code>Raft</code>的日志恢复的目的是, 将<code>Leader</code>的日志强行复制到其他节点, 介绍这个机制前, 需要引入<code>Leader</code>维护的几个变量和<code>AppendEntries RPC</code>中的参数:</p>
+<p><strong><code>Leader</code>维护的变量</strong></p>
+<ul>
+<li><code>nextIndex[]</code>: <code>Leader</code>认为下一个追加的日志在每个节点的索引</li>
+<li><code>matchIndex[]</code>: <code>Leader</code>认为每个节点中已经复制的日志项的最高索引</li>
+</ul>
+<p><strong><code>AppendEntries RPC</code>中的参数</strong></p>
+<ul>
+<li><code>term</code>: <code>Leader</code>的任期</li>
+<li><code>leaderId</code>: <code>Leader</code>的<code>id</code></li>
+<li><code>prevLogIndex</code>: 追加的新日志前的日志索引</li>
+<li><code>prevLogTerm</code>: 追加的新日志前的日志的<code>Term</code></li>
+<li><code>entries[]</code>: 日志项切片</li>
+<li><code>leaderCommit</code>: <code>Leader</code>记录的已经<code>commit</code>的日志项的最高索引</li>
+</ul>
+<p>因此, 按照论文<a href="../../images/raft-figure2.png">Figure 2</a>中的描述, 新的<code>Leader</code>将把<code>nextIndex[]</code>初始化为自身日志数组长度, 发送时的<code>PrevLogIndex</code>就是<code>nextIndex[i] - 1</code>, 因此<code>Leader S3</code>向<code>S1</code>和<code>S2</code>发送的<code>AppendEntries RPC</code>为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;AppendEntriesArgs&#123;</span><br><span class="line">    Term:         <span class="number">5</span>,</span><br><span class="line">    LeaderId:     <span class="number">3</span>,</span><br><span class="line">    PrevLogIndex: <span class="number">11</span>,</span><br><span class="line">    PrevLogTerm:  <span class="number">3</span>,</span><br><span class="line">    LeaderCommit: <span class="number">1</span>,</span><br><span class="line">    Entrie:       ...,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因此, <code>Follower</code>收到<code>AppendEntries RPC</code>会根据<code>PrevLogIndex</code>, <code>PrevLogTerm</code>进行检查:</p>
+<ul>
+<li><code>S1</code>发现自己没有<code>槽位11</code>的<code>log</code>, 返回<code>false</code></li>
+<li><code>S2</code>发现自己有<code>槽位11</code>的<code>log</code>, 其<code>Term</code>为3也与<code>AppendEntriesArgs</code>匹配, 因此其使用<code>AppendEntriesArgs</code>中的覆盖原来槽位12处的<code>log</code>, 返回<code>true</code></li>
+</ul>
+<p><code>Leader S3</code>收到<code>S1</code>和<code>S2</code>回复的<code>AppendEntries RPC</code>后, 会做如下处理:</p>
+<ol>
+<li>发现<code>S2</code>回复了<code>true</code>, 因此将<code>S2</code>的<code>matchIndex[S2]</code>设置为<code>PrevLogIndex+len(Entries)</code>, 将<code>nextIndex[S2]</code>设置为<code>matchIndex[S2]+1</code></li>
+<li>发现<code>S1</code>回复了<code>false</code>, 于是将其<code>nextIndex[S1]</code>自减, 再次发送的<code>AppendEntries RPC</code>为:</li>
+</ol>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;AppendEntriesArgs&#123;</span><br><span class="line">    Term:         <span class="number">5</span>,</span><br><span class="line">    LeaderId:     <span class="number">3</span>,</span><br><span class="line">    PrevLogIndex: <span class="number">10</span>,</span><br><span class="line">    PrevLogTerm:  <span class="number">3</span>,</span><br><span class="line">    LeaderCommit: <span class="number">1</span>,</span><br><span class="line">    Entrie:       ...,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这时<code>S1</code>发现自己有<code>槽位10</code>的<code>log</code>, 其<code>Term</code>也与<code>AppendEntriesArgs</code>匹配, 因此进行追加并返回<code>true</code>, <code>Leader S3</code>按照相同的逻辑处理<code>nextIndex[S1]</code>和<code>matchIndex[S1]</code></p>
+<h2 id="1-2-日志恢复的逻辑"><a href="#1-2-日志恢复的逻辑" class="headerlink" title="1.2 日志恢复的逻辑"></a>1.2 日志恢复的逻辑</h2><p>从上述的日志恢复的机制我们可以看出, <code>Raft</code>强制将<code>Leader</code>的日志条目覆盖到<code>Follower</code>上, 这一机制的根本前提是: <strong><code>Leader</code>的日志是最新和完整的</strong>, 这一前提的实现就是接下来介绍了<strong>选举约束</strong></p>
+<h1 id="2-选举约束"><a href="#2-选举约束" class="headerlink" title="2 选举约束"></a>2 选举约束</h1><h2 id="2-1-机制描述"><a href="#2-1-机制描述" class="headerlink" title="2.1 机制描述"></a>2.1 机制描述</h2><p><code>Raft</code>中选举约束的机制是:</p>
+<ol>
+<li>如果<code>Term</code>更小, 直接拒绝投票</li>
+<li><code>Candidate</code>的最后一条<code>Log</code>的<code>Term</code>大于本地最后一条<code>Log</code>的<code>Term</code>, 投票</li>
+<li>否则, <code>Candidate</code>的最后一条<code>Log</code>的<code>Term</code>等于本地最后一条<code>Log</code>的<code>Term</code>, 且<code>Candidate</code>的<code>Log数组</code>长度更长, 投票</li>
+<li>否则, 拒绝投票</li>
+</ol>
+<p>在之前的<code>AppendEntries RPC</code>中的参数中, 包含了<code>Term</code>, 其表示<code>Candidate</code>的<code>Term</code>, 为什么不使用<code>Candidate</code>的<code>Term</code>进行比较而实用最后一条<code>Log</code>的<code>Term</code>进行比较呢? 因为使用<code>Candidate</code>的<code>Term</code>进行比较会出现很多问题, 例如孤立节点:</p>
+<ol>
+<li>某一时刻一个<code>server</code>网络出现了问题(称其为<code>S</code>), 其自增<code>currentTerm</code>(即记录自身的<code>Term</code>的字段)后发出选举， 经过多次选举超时后其<code>currentTerm</code>已经远大于离开集群时的<code>currentTerm</code></li>
+<li>后来网络恢复了正常, 这时其他的服务器收到了<code>S</code>的选举请求, 这个选举请求有更新的term, 因此都同意向它投票, <code>S</code>成为了最新的<code>leader</code></li>
+<li>由于<code>S</code>离开集群时集群其他的服务器已经提交了多个<code>log</code>, 这些提交在<code>S</code>中不存在, 而<code>S</code>信任自己的<code>log</code>, 并将自己的<code>log</code>复制到所有的<code>follower</code>上, 这将覆盖已经提交了多个<code>log</code>, 导致了错误</li>
+</ol>
+<h2 id="2-2-案例"><a href="#2-2-案例" class="headerlink" title="2.2 案例"></a>2.2 案例</h2><p>此处还是举之前的那一个例子:</p>
+<table>
+<thead>
+<tr>
+<th align="left">节点\log索引</th>
+<th align="right">10</th>
+<th align="right">11</th>
+<th align="right">12</th>
+<th align="right">13</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">S1</td>
+<td align="right">3</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S2</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">4</td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S3</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">5</td>
+<td align="right"></td>
+</tr>
+</tbody></table>
+<p>但我们假设这个到达这个状态(<code>S3</code>是<code>Leader</code>, <code>Term</code>为5, 且向自身追加<code>log</code>前已经发送了心跳, 即同步了<code>Term</code>)后, <code>S3</code>又故障了, 然后其马上又恢复, 此时没有<code>Leader</code>, 将触发选举超时, 假设<code>S1</code>先触发选举超时, 其广播投票的<code>RequestVote RPC</code>, 其论文<a href="../../images/raft-figure2.png">Figure2</a>描述的请求参数为:</p>
+<ul>
+<li><code>term</code>: <code>candidate</code> 的<code>Term</code></li>
+<li><code>candidateId</code>: <code>candidate</code> 的<code>id</code></li>
+<li><code>lastLogIndex</code>: <code>candidate</code> 最后一个日志项的索引</li>
+<li><code>lastLogTerm</code>: <code>candidate</code> 最后一个日志项的<code>Term</code></li>
+</ul>
+<p>因此, <code>S1</code>发出的<code>RequestVote RPC</code>参数为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;RequestVoteArgs&#123;</span><br><span class="line">    Term:         <span class="number">5</span>,</span><br><span class="line">    candidateId:  <span class="number">1</span>,</span><br><span class="line">    lastLogIndex: <span class="number">10</span>,</span><br><span class="line">    lastLogTerm:  <span class="number">3</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其余节点的反应为:</p>
+<ul>
+<li><code>S2</code>和<code>S3</code>发现其<code>RequestVoteArgs</code>的<code>Term</code>为5, 进行下一步判断, 但发现<code>lastLogTerm</code>比自己的<code>4</code>和<code>5</code>更小, 因此拒绝投票</li>
+</ul>
+<p>此后, <code>S2</code>发起了选举, <code>RequestVote RPC</code>参数为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;RequestVoteArgs&#123;</span><br><span class="line">    Term:         <span class="number">5</span>,</span><br><span class="line">    candidateId:  <span class="number">2</span>,</span><br><span class="line">    lastLogIndex: <span class="number">12</span>,</span><br><span class="line">    lastLogTerm:  <span class="number">4</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其余节点的反应为:</p>
+<ul>
+<li><code>S1</code>发现其<code>RequestVoteArgs</code>的<code>Term</code>为5, 进行下一步判断, 发现<code>lastLogTerm</code>为4, 比自己的3更大, 投票</li>
+<li><code>S3</code>发现其<code>RequestVoteArgs</code>的<code>Term</code>为5, 进行下一步判断, 发现<code>lastLogTerm</code>为4, 比自己的5更小, 拒绝投票</li>
+</ul>
+<p><code>S2</code>收获了自身和<code>S1</code>两张选票, 满足过半的要求, 成为新的<code>Leader</code>, 并在稍后将通过心跳将自己的<code>Term</code>为4的那个<code>log</code>覆盖掉<code>S3</code>中相同位置的<code>log</code></p>
+<h1 id="3-快速恢复"><a href="#3-快速恢复" class="headerlink" title="3 快速恢复"></a>3 快速恢复</h1><h2 id="3-1-快速恢复的需求"><a href="#3-1-快速恢复的需求" class="headerlink" title="3.1 快速恢复的需求"></a>3.1 快速恢复的需求</h2><p>在之前<strong>日志恢复</strong>的介绍中, 如果有<code>Follower</code>的日志不匹配, 每次<code>RPC</code>中, <code>Leader</code>会将其<code>nextIndex</code>自减1来重试, 但其在某些情况下会导致效率很低(说的就是<code>Lab2</code>的测例), 其情况为:</p>
+<ol>
+<li>某一时刻, 发生了网络分区, 旧的<code>leader</code>正好在数量较少的那一个分区, 且这个分区无法满足<code>commit</code>过半的要求</li>
+<li>另一个大的分区节点数量更多, 能满足投票过半和<code>commit</code>过半的要求, 因此选出了<code>Leader</code>并追加并<code>commit</code>了很多新的<code>log</code></li>
+<li>于此同时, 旧的<code>leader</code>也在向其分区内的节点追加很多新的<code>log</code>, 只是其永远也无法<code>commit</code></li>
+<li>某一时刻, 网络恢复正常, 旧的<code>Leader</code>被转化为<code>Follower</code>, 其需要进行新的<code>Leader</code>的日志恢复, 由于其<code>log数组</code>差异巨大, 因此将<code>nextIndex</code>自减1来重试将耗费大量的时间</li>
+</ol>
+<p>因此, 在上述情况下, 需要进行<strong>快速恢复</strong>的优化</p>
+<h2 id="3-1-快速恢复的机制"><a href="#3-1-快速恢复的机制" class="headerlink" title="3.1 快速恢复的机制"></a>3.1 快速恢复的机制</h2><p>论文中描述如下:</p>
+<blockquote>
+<p>If desired, the protocol can be optimized to reduce the number of rejected AppendEntries RPCs. For example, when rejecting an AppendEntries request, the follower can include the term of the conflicting entry and the first index it stores for that term. With this information, the leader can decrement nextIndex to bypass all of the conflicting entries in that term; one AppendEntries RPC will be required for each term with conflicting entries, rather than one RPC per entry. In practice, we doubt this optimization is necessary, since failures happen infrequently and it is unlikely that there will be many inconsistent entries.</p>
+</blockquote>
+<p>论文中的描述过于简略, 教授在课堂上进行了进一步的解释, 其思想在于:<strong><code>Follower</code>返回更多信息给<code>Leader</code>，使其可以以<code>Term</code>为单位来回退</strong></p>
+<p>具体而言, 需要在<code>AppendEntriesReplay</code>中增加下面几个字段:</p>
+<ul>
+<li><code>XTerm</code>: <code>Follower</code>中与<code>Leader</code>冲突的<code>Log</code>对应的<code>Term</code>, 如果<code>Follower</code>在对应位置没有<code>Log</code>将其设置为-1</li>
+<li><code>XIndex</code>: <code>Follower</code>中，对应<code>Term</code>为<code>XTerm</code>的第一条<code>Log</code>条目的索引</li>
+<li><code>XLen</code>: 空白的<code>Log</code>槽位数, 如果<code>Follower</code>在对应位置没有<code>Log</code>，那么<code>XTerm</code>设置为-1</li>
+</ul>
+<p>当<code>Follower</code>收到回复后, 按如下规则做出反应:</p>
+<ol>
+<li>如果<code>XTerm != -1</code>, 表示<code>PrevLogIndex</code>这个位置发生了冲突, <code>Follower</code>检查自身是否有<code>Term</code>为<code>XTerm</code>的日志项<ol>
+<li>如果有, 则将<code>nextIndex[i]</code>设置为自己<code>Term</code>为<code>XTerm</code>的最后一个日志项的下一位, 这样的情况出现在<code>Follower</code>有着更多旧<code>Term</code>的日志项(<code>Leader</code>也有这样<code>Term</code>的日志项), 这种回退会一次性覆盖掉多余的旧<code>Term</code>的日志项</li>
+<li>如果没有, 则将<code>nextIndex[i]</code>设置为<code>XIndex</code>, 这样的情况出现在<code>Follower</code>有着<code>Leader</code>所没有的<code>Term</code>的旧日志项, 这种回退会一次性覆盖掉没有出现在<code>Leader</code>中的<code>Term</code>的日志项</li>
+</ol>
+</li>
+<li>如果<code>XTerm == -1</code>, 表示<code>Follower</code>中的日志不存在<code>PrevLogIndex</code>处的日志项, 这样的情况出现在<code>Follower</code>的<code>log数组长度</code>更短的情况下, 此时将<code>nextIndex[i]</code>减去<code>XLen</code></li>
+</ol>
+<h2 id="3-2-案例说明"><a href="#3-2-案例说明" class="headerlink" title="3.2 案例说明"></a>3.2 案例说明</h2><p>如下所示为各个节点的状态, 此时<code>Leader</code>为<code>S3</code>, 其将要广播<code>Term</code>为6的<code>AppendEntries RPC</code>给<code>Follower</code>:</p>
+<table>
+<thead>
+<tr>
+<th align="left">节点\log索引</th>
+<th align="right">10</th>
+<th align="right">11</th>
+<th align="right">12</th>
+<th align="right">13</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">S0</td>
+<td align="right">4</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S1</td>
+<td align="right">4</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S2</td>
+<td align="right">4</td>
+<td align="right">4</td>
+<td align="right">4</td>
+<td align="right"></td>
+</tr>
+<tr>
+<td align="left">S3</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">6</td>
+<td align="right">6</td>
+</tr>
+</tbody></table>
+<p>其请求的<code>AppendEntriesArgs</code>为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;AppendEntriesArgs&#123;</span><br><span class="line">    Term:         <span class="number">6</span>,</span><br><span class="line">    LeaderId:     <span class="number">3</span>,</span><br><span class="line">    PrevLogIndex: <span class="number">12</span>,</span><br><span class="line">    PrevLogTerm:  <span class="number">6</span>,</span><br><span class="line">    LeaderCommit: <span class="number">1</span>,</span><br><span class="line">    Entrie:       ...,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>情况1: <code>S0</code>:<ul>
+<li><code>S0</code>在<code>PrevLogIndex</code>位置不存在<code>log</code>, 其返回<code>XTerm=-1 &amp;&amp; XLen=2</code></li>
+<li><code>Follower</code>收到回复后, 将<code>nextIndex[S0]</code>减去<code>XLen=2</code>, 下次发送时<code>PrevLogIndex=10</code>. 将进行正常的追加日志</li>
+</ul>
+</li>
+<li>情况2: <code>S1</code>:<ul>
+<li><code>S1</code>在<code>PrevLogIndex</code>位置的<code>Term</code>发生了冲突, 其返回<code>XTerm=5 &amp;&amp; XIndex=11</code></li>
+<li><code>Follower</code>收到回复后, 发现自己没有<code>Term =5</code>的日志项, 将<code>nextIndex[S1]</code>设置为<code>XIndex=11</code>, 下次发送时<code>PrevLogIndex=10</code>. 将进行正常的追加日志并覆盖掉<code>Term=5</code>的部分</li>
+</ul>
+</li>
+<li>情况3: <code>S2</code>:<ul>
+<li><code>S2</code>在<code>PrevLogIndex</code>位置的<code>Term</code>发生了冲突, 其返回<code>XTerm=4 &amp;&amp; XIndex=10</code></li>
+<li><code>Follower</code>收到回复后, 发现自己也有<code>Term =4</code>的日志项, 将<code>nextIndex[S1]</code>设置为<code>Term=4</code>的最后一个<code>log</code>的下一位, 即11, 下次发送时<code>PrevLogIndex=10</code>. 将进行正常的追加日志并覆盖掉多余的<code>Term=4</code>的部分</li>
+</ul>
+</li>
+</ol>
+<h1 id="4-持久化"><a href="#4-持久化" class="headerlink" title="4 持久化"></a>4 持久化</h1><h2 id="4-1-持久化的内容"><a href="#4-1-持久化的内容" class="headerlink" title="4.1 持久化的内容"></a>4.1 持久化的内容</h2><p>持久化存储的目的是为了在服务器重启时利用持久化存储的数据恢复节点上一个工作时刻的状态。并且，持久化的内容仅仅是<code>Raft</code>层, 其应用层不做要求。</p>
+<p>论文中提到需要持久花的数据包括:</p>
+<ol>
+<li><code>votedFor</code>:<br><code>votedFor</code>记录了一个节点在某个<code>Term</code>内的投票记录, 因此如果不将这个数据持久化, 可能会导致如下情况:<ol>
+<li>在一个<code>Term</code>内某个节点向某个<code>Candidate</code>投票, 随后故障</li>
+<li>故障重启后, 又收到了另一个<code>RequestVote RPC</code>, 由于其没有将<code>votedFor</code>持久化, 因此其不知道自己已经投过票, 结果是再次投票, 这将导致同一个<code>Term</code>可能出现2个<code>Leader</code></li>
+</ol>
+</li>
+<li><code>currentTerm</code>:<br><code>currentTerm</code>的作用也是实现一个任期内最多只有一个<code>Leader</code>, 因为如果一个几点重启后不知道现在的<code>Term</code>时多少, 其无法再进行投票时将<code>currentTerm</code>递增到正确的值, 也可能导致有多个<code>Leader</code>在同一个<code>Term</code>中出现</li>
+<li><code>Log</code>:<br>这个很好理解, 需要用<code>Log</code>来恢复自身的状态</li>
+</ol>
+<p>这里值得思考的是：<strong>为什么只需要持久化<code>votedFor</code>, <code>currentTerm</code>, <code>Log</code>？</strong></p>
+<p>原因是其他的数据， 包括 <code>commitIndex</code>、<code>lastApplied</code>、<code>nextIndex</code>、<code>matchIndex</code>都可以通过心跳的发送和回复逐步被重建, <code>Leader</code>会根据回复信息判断出哪些<code>Log</code>被<code>commit</code>了。</p>
+<h2 id="4-2-什么时候持久化"><a href="#4-2-什么时候持久化" class="headerlink" title="4.2 什么时候持久化"></a>4.2 什么时候持久化</h2><p>由于将任何数据持久化到硬盘上都是巨大的开销, 其开销远大于<code>RPC</code>, 因此需要仔细考虑什么时候将数据持久化。</p>
+<p>如果每次修改三个需要持久化的数据: <code>votedFor</code>, <code>currentTerm</code>, <code>Log</code>时, 都进行持久化, 其持久化的开销将会很大， 很容易想到的解决方案是进行批量化操作， 例如只在回复一个<code>RPC</code>或者发送一个<code>RPC</code>时，才进行持久化操作。</p>
+<h1 id="5-快照"><a href="#5-快照" class="headerlink" title="5 快照"></a>5 快照</h1><h2 id="5-1-为什么需要快照？"><a href="#5-1-为什么需要快照？" class="headerlink" title="5.1 为什么需要快照？"></a>5.1 为什么需要快照？</h2><p><code>Log</code>实际上是描述了某个应用的操作, 以一个<code>K/V数据库</code>为例, <code>Log</code>就是<code>Put</code>或者<code>Get</code>, 当这个应用运行了相当长的时间后, 其积累的<code>Log</code>将变得很长, 但<code>K/V数据库</code>实际上键值对并不多, 因为<code>Log</code>包含了大量的对同一个键的赋值或取值操作。</p>
+<p>因此， 应当设计一个阈值，例如1M， 将应用程序的状态做一个快照，然后丢弃这个快照之前的<code>Log</code>。</p>
+<p>这里有两大关键点：</p>
+<ol>
+<li>快照是<code>Raft</code>要求上层的应用程序做的, 因为<code>Raft</code>本身并不理解应用程序的状态和各种命令</li>
+<li><code>Raft</code>需要选取一个<code>Log</code>作为快照的分界点, 在这个分界点要求应用程序做快照, 并删除这个分界点之前的<code>Log</code></li>
+<li>在持久化快照的同时也持久化这个分界点之后的<code>Log</code></li>
+</ol>
+<p>引入快照后, <code>Raft</code>启动时需要检查是否有之前创建的快照, 并迫使应用程序应用这个快照。</p>
+<h2 id="5-2-快照造成的Follower日志缺失问题"><a href="#5-2-快照造成的Follower日志缺失问题" class="headerlink" title="5.2 快照造成的Follower日志缺失问题"></a>5.2 快照造成的<code>Follower</code>日志缺失问题</h2><p>假设有一个<code>Follower</code>的日志数组长度很短, 短于<code>Leader</code>做出快照的分界点, 那么这中间缺失的<code>Log</code>将无法通过心跳<code>AppendEntries RPC</code>发给<code>Follower</code>, 因此这个确实的<code>Log</code>将永久无法被补上。</p>
+<ul>
+<li>解决方案1：<br>如果<code>Leader</code>发现有<code>Follower</code>的<code>Log</code>落后作快照的分界点，那么<code>Leader</code>就不丢弃快照之前的<code>Log</code>。</li>
+</ul>
+<p>这个方案的缺陷在于如果一个<code>Follower</code>落后太多(例如关机了一周), 这个<code>Follower</code>的<code>Log</code>长度将使<code>Leader</code>无法通过快照来减少内存消耗。</p>
+<ul>
+<li>解决方案2：<br>这也是<code>Raft</code>采用的方案。<code>Leader</code>可以丢弃<code>Follower</code>落后作快照的分界点的<code>Log</code>。通过一个新的<code>InstallSnapshot RPC</code>来补全丢失的<code>Log</code>, 具体来说过程如下:<ol>
+<li><code>Follower</code>通过<code>AppendEntries</code>发现自己的<code>Log</code>更短, 强制<code>Leader</code>回退自己的<code>Log</code></li>
+<li>回退到在某个点时，<code>Leader</code>不能再回退，因为它已经到了自己<code>Log</code>的起点, 更早的<code>Log</code>已经由于快照而被丢弃</li>
+<li><code>Leader</code>将自己的快照发给<code>Follower</code></li>
+<li><code>Leader</code>稍后通过<code>AppendEntries</code>发送快照后的<code>Log</code></li>
+</ol>
+</li>
+</ul>
+<h1 id="6-线性一致性"><a href="#6-线性一致性" class="headerlink" title="6 线性一致性"></a>6 线性一致性</h1><p>这里讨论的是如何定义操作的正确性。由于并没有讲完, 就先不总结了, 相关的内容挪到<code>Lec08</code>的笔记中</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 日志恢复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 日志恢复的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%97%A5%E5%BF%97%E6%81%A2%E5%A4%8D%E7%9A%84%E9%80%BB%E8%BE%91"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 日志恢复的逻辑</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%80%89%E4%B8%BE%E7%BA%A6%E6%9D%9F"><span class="toc-number">2.</span> <span class="toc-text">2 选举约束</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9C%BA%E5%88%B6%E6%8F%8F%E8%BF%B0"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 机制描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%A1%88%E4%BE%8B"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 案例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D"><span class="toc-number">3.</span> <span class="toc-text">3 快速恢复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%E7%9A%84%E9%9C%80%E6%B1%82"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 快速恢复的需求</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="toc-number">3.2.</span> <span class="toc-text">3.1 快速恢复的机制</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%A1%88%E4%BE%8B%E8%AF%B4%E6%98%8E"><span class="toc-number">3.3.</span> <span class="toc-text">3.2 案例说明</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">4 持久化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E5%86%85%E5%AE%B9"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 持久化的内容</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 什么时候持久化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%BF%AB%E7%85%A7"><span class="toc-number">5.</span> <span class="toc-text">5 快照</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%BF%AB%E7%85%A7%EF%BC%9F"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 为什么需要快照？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%BF%AB%E7%85%A7%E9%80%A0%E6%88%90%E7%9A%84Follower%E6%97%A5%E5%BF%97%E7%BC%BA%E5%A4%B1%E9%97%AE%E9%A2%98"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 快照造成的Follower日志缺失问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-number">6.</span> <span class="toc-text">6 线性一致性</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照&body=Check out this article: http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec06笔记: raft论文解读2: 恢复、持久化和快照"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

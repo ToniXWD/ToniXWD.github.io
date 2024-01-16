@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;ToniXW">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lab2: Raft 2B">
+<meta property="og:url" content="http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;ToniXW">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/lab2-2B-test1.png">
+<meta property="og:image" content="http://example.com/images/lab2-2B-test2.png">
+<meta property="og:image" content="http://example.com/images/lab2-2B-test3.png">
+<meta property="article:published_time" content="2024-01-06T09:17:01.000Z">
+<meta property="article:modified_time" content="2024-01-15T18:04:01.597Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/lab2-2B-test1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lab2: Raft 2B</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/01/07/MIT6.5840/Lec04%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/01/MIT6.5840/Lab2_Raft_2A/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&text=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2B&body=Check out this article: http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&name=MIT6.5840(6.824) Lab2: Raft 2B&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&t=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-2A%E9%83%A8%E5%88%86%E7%9A%84bug%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 2A部分的bug修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%BF%AE%E5%A4%8D%E5%AD%A4%E7%AB%8B%E8%8A%82%E7%82%B9%E8%A2%AB%E9%80%89%E4%B8%BE%E7%9A%84bug"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 修复孤立节点被选举的bug</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BF%AE%E5%A4%8DcurrentTerm%E7%9A%84%E8%BF%BD%E8%B5%B6%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 修复currentTerm的追赶问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%AE%BA%E6%96%87%E8%A7%A3%E8%AF%BB-%E6%97%A5%E5%BF%97%E5%A4%8D%E5%88%B6%E5%92%8Ccommit%E9%83%A8%E5%88%86"><span class="toc-number">2.</span> <span class="toc-text">2 论文解读: 日志复制和commit部分</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.</span> <span class="toc-text">3 设计思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%83%E8%B7%B3%E5%92%8CAppendEntries%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 心跳和AppendEntries的区别?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%BB%93%E6%9E%84%E4%BD%93%E5%8F%82%E6%95%B0%E8%A7%A3%E8%AF%BB"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 结构体参数解读</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E4%BB%A3%E7%A0%81%E6%9E%B6%E6%9E%84%E5%88%86%E6%9E%90"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 代码架构分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E4%BF%AE%E6%94%B9%E5%90%8E%E7%9A%84%E5%8F%91%E5%B0%84%E5%99%A8"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 修改后的发射器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-AppendEntries-handler"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 AppendEntries handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-AppendEntries-RPC"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 AppendEntries RPC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-Start%E5%87%BD%E6%95%B0"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 Start函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-5-%E5%BA%94%E7%94%A8%E5%88%B0%E7%8A%B6%E6%80%81%E6%9C%BA%E7%9A%84%E5%8D%8F%E7%A8%8B"><span class="toc-number">4.5.</span> <span class="toc-text">4.5 应用到状态机的协程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-6-%E4%BF%AE%E6%94%B9%E9%80%89%E4%B8%BE%E5%87%BD%E6%95%B0"><span class="toc-number">4.6.</span> <span class="toc-text">4.6 修改选举函数</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%B8%B8%E8%A7%84%E6%B5%8B%E8%AF%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 常规测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%A4%9A%E6%AC%A1%E6%B5%8B%E8%AF%95"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 多次测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96"><span class="toc-number">6.</span> <span class="toc-text">6 代码优化</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lab2: Raft 2B
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-06T09:17:01.000Z" class="dt-published" itemprop="datePublished">2024-01-06</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/Lab%E7%AC%94%E8%AE%B0/">Lab笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Go/" rel="tag">Go</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文将介绍<code>lab2B</code>部分的实现, <code>lab2B</code>要求实现<code>raft</code>中的日志复制和提交两部分的内容, 相比<code>lab2A</code>, <code>lab2B</code>的<code>Hint</code>更少, 难度也相对较大。</p>
+<p><code>Lab文档</code>见: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/labs/lab-raft.html">https://pdos.csail.mit.edu/6.824/labs/lab-raft.html</a></p>
+<p>我的2A部分的实现在<a href="/2024/01/01/MIT6.5840/Lab2_Raft_2A/">这里</a> </p>
+<p><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf">raft原论文</a></p>
+<p>我的代码:</p>
+<ul>
+<li>时间戳实现: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab2B">https://github.com/ToniXWD/MIT6.5840/tree/lab2B</a></li>
+<li>timer实现: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab2B-timer">https://github.com/ToniXWD/MIT6.5840/tree/lab2B-timer</a></li>
+</ul>
+<h1 id="1-2A部分的bug修复"><a href="#1-2A部分的bug修复" class="headerlink" title="1 2A部分的bug修复"></a>1 2A部分的bug修复</h1><h2 id="1-1-修复孤立节点被选举的bug"><a href="#1-1-修复孤立节点被选举的bug" class="headerlink" title="1.1 修复孤立节点被选举的bug"></a>1.1 修复孤立节点被选举的bug</h2><ul>
+<li><strong>问题追溯</strong><br><code>2A</code>部分中, <code>RequestVote</code>中允许投票的判断我的实现是这样的:<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> rf.votedFor == <span class="number">-1</span> || rf.votedFor == args.CandidateId &#123;</span><br><span class="line">    <span class="comment">// 首先确保是没投过票的</span></span><br><span class="line">    <span class="keyword">if</span> args.Term &gt; rf.currentTerm ||</span><br><span class="line">        (args.LastLogIndex &gt;= <span class="built_in">len</span>(rf.log)<span class="number">-1</span> &amp;&amp; args.LastLogTerm &gt;= rf.log[<span class="built_in">len</span>(rf.log)<span class="number">-1</span>].Term) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+在调试<code>2B</code>的时候, 遇到了已经<code>committed</code>的信息丢失的问题, 问题就在于上述的代码, 其判断统一投票的逻辑为:</li>
+</ul>
+<ol>
+<li>首先要求其没有投过票或者投票对象就是这个<code>RPC</code>请求发起者</li>
+<li>如果<code>args.Term &gt; rf.currentTerm</code>投票, 也就是投票者有更新的<code>term</code></li>
+<li>如果<code>term</code>相同, 则只有请求者的<code>log</code>至少和自己一样长, 并且<code>LastLogTerm </code>也至少和自己的最后一个<code>log</code>的<code>term</code>一样新, 才投票</li>
+</ol>
+<p>这样的实现会导致以下的情况:</p>
+<ol>
+<li>某一时刻一个<code>server</code>网络出现了问题(称其为<code>S</code>), 其自增<code>currentTerm</code>后发出选举， 经过多次选举超时后其<code>currentTerm</code>已经远大于离开集群时的<code>currentTerm</code></li>
+<li>后来网络恢复了正常, 这时其他的服务器收到了<code>S</code>的选举请求, 这个选举请求有更新的term, 因此都同意向它投票, <code>S</code>成为了最新的<code>leader</code></li>
+<li>由于<code>S</code>离开集群时集群其他的服务器已经提交了多个<code>log</code>, 这些提交在<code>S</code>中不存在, 而<code>S</code>信任自己的<code>log</code>, 并将自己的<code>log</code>复制到所有的<code>follower</code>上, 这将覆盖已经提交了多个<code>log</code>, 导致了错误</li>
+</ol>
+<ul>
+<li><strong>bug修改</strong><br>因此, 重新审视<code>raft</code>论文中<code>Figure 2</code>的描述:<blockquote>
+<p>Receiver implementation:</p>
+<ol>
+<li>Reply false if term &lt; currentTerm (§5.1)</li>
+<li>If votedFor is null or candidateId, and candidate’s log is at least as up-to-date as receiver’s log, grant vote (§5.2, §5.4)</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<p>这里的日志至少一样新指的并不是<code>raft</code>结构体中的<code>currentTerm</code>, 而是指的<code>log</code>中最后一项的<code>Term</code>, 因此需要将<code>if</code>判断条件修改为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> rf.votedFor == <span class="number">-1</span> || rf.votedFor == args.CandidateId &#123;</span><br><span class="line">    <span class="comment">// 首先确保是没投过票的</span></span><br><span class="line">    <span class="keyword">if</span> args.LastLogTerm &gt; rf.log[<span class="built_in">len</span>(rf.log)<span class="number">-1</span>].Term ||</span><br><span class="line">        (args.LastLogTerm == rf.log[<span class="built_in">len</span>(rf.log)<span class="number">-1</span>].Term &amp;&amp; args.LastLogIndex &gt;= <span class="built_in">len</span>(rf.log)<span class="number">-1</span>) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><em>PS: 为什么这么显眼的错误能通过<code>2A</code>的测例…</em></p>
+<h2 id="1-2-修复currentTerm的追赶问题"><a href="#1-2-修复currentTerm的追赶问题" class="headerlink" title="1.2 修复currentTerm的追赶问题"></a>1.2 修复<code>currentTerm</code>的追赶问题</h2><p>还是<code>RequestVote</code>中的bug:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> args.Term &gt; rf.currentTerm &#123;</span><br><span class="line">    <span class="comment">// 已经是新一轮的term, 之前的投票记录作废</span></span><br><span class="line">    rf.votedFor = <span class="number">-1</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里在收到其他节点的投票申请后, 如果当前的<code>Term</code>更小, 则撤销以前任期的投票记录, 改为未投票, 这将导致后续的<code>if</code>判断满足第一个投票条件: <code>首先要求其没有投过票或者投票对象就是这个RPC请求发起者</code>, 但除了撤销以前任期的投票记录外, 还应该将自身转化为<code>Follower</code>, 同时直接将<code>Term</code>更新到<code>args.Term</code></p>
+<p>为什么之前的实现忽略了这些呢? 因为在之前的实现中, 预想中的角色的转化是发生在接受到心跳后。换言之， 需要等待新的<code>leader</code>产生后通过心跳函数来完成之前在<code>RequestVote</code>中出现<code>args.Term &gt; rf.currentTerm</code>的节点的角色转换, 但是问题在于可能存在<strong>孤立节点</strong>, 因为<strong>孤立节点</strong>的<code>log</code>中的最后一项的<code>Term</code>很小, 但由于多次的选举超时, 其<code>currentTerm</code>很大, 而新的<code>leader</code>产生后通过心跳函数来完成某个节点角色切换为<code>follower</code>的前提是<code>term</code>更大*, 因此如果<strong>孤立节点</strong>的<code>currentTerm</code>很大, 需要新的<code>leader</code>经过非常多次的选举, 因为每次选举自增的<code>currentTerm</code>为1, 这将导致很长且并不要的时间消耗</p>
+<p>所以, 修改过后的代码为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> args.Term &gt; rf.currentTerm &#123;</span><br><span class="line">    <span class="comment">// 已经是新一轮的term, 之前的投票记录作废</span></span><br><span class="line">    rf.votedFor = <span class="number">-1</span></span><br><span class="line">    rf.currentTerm = args.Term <span class="comment">// 易错点, 需要将currentTerm提升到最新的term</span></span><br><span class="line">    rf.role = Follower</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="2-论文解读-日志复制和commit部分"><a href="#2-论文解读-日志复制和commit部分" class="headerlink" title="2 论文解读: 日志复制和commit部分"></a>2 论文解读: 日志复制和commit部分</h1><p>日志复制的逻辑如下:</p>
+<ul>
+<li><strong><code>leader</code>视角</strong></li>
+</ul>
+<ol>
+<li><code>client</code>想集群的一个节点发送的命令, 如果不是<code>leader</code>, <code>follower</code>会通过心跳得知<code>leader</code>并返回给<code>client</code></li>
+<li><code>leader</code>收到了命令, 将其构造为一个日志项, 添加当前节点的<code>currentTerm</code>为日志项的<code>Term</code>, 并将其追加到自己的<code>log</code>中</li>
+<li><code>leader</code>发送<code>AppendEntries RPC</code>将<code>log</code>复制到所有的节点, <code>AppendEntries RPC</code>需要增加<code>PrevLogIndex</code>、<code>PrevLogTerm</code>以供<code>follower</code>校验, 其中<code>PrevLogIndex</code>、<code>PrevLogTerm</code>由<code>nextIndex</code>确定</li>
+<li>如果<code>RPC</code>返回了成功, 则更新<code>matchIndex</code>和<code>nextIndex</code>, 同时寻找一个满足过半的<code>matchIndex[i] &gt;= N</code>的索引位置<code>N</code>, 将其更新为自己的<code>commitIndex</code>, 并提交直到<code>commitIndex</code>部分的日志项</li>
+<li>如果<code>RPC</code>返回了失败, 且伴随的的<code>Term</code>更大, 表示自己已经不是<code>leader</code>了, 将自身的角色转换为<code>Follower</code>, 并更新<code>currentTerm</code>和<code>votedFor</code>, 重启计时器</li>
+<li>如果<code>RPC</code>返回了失败, 且伴随的的<code>Term</code>和自己的<code>currentTerm</code>相同, 将<code>nextIndex</code>自减再重试</li>
+</ol>
+<ul>
+<li><strong><code>follower</code>视角</strong></li>
+</ul>
+<ol>
+<li><code>follower</code>收到<code>AppendEntries RPC</code>后,<code>currentTerm</code>不匹配直接告知更新的<code>Term</code>, 并返回<code>false</code></li>
+<li><code>follower</code>收到<code>AppendEntries RPC</code>后, 通过<code>PrevLogIndex</code>、<code>PrevLogTerm</code>可以判断出”<code>leader</code>认为自己<code>log</code>的结尾位置”是否存在并且<code>Term</code>匹配, 如果不匹配, 返回<code>false</code>并不执行操作;</li>
+<li>如果上述位置的信息匹配, 则需要判断插入位置是否有旧的日志项, 如果有, 则向后将<code>log</code>中冲突的内容清除</li>
+<li>将<code>RPC</code>中的日志项追加到<code>log</code>中</li>
+<li>根据<code>RPC</code>的传入参数更新<code>commitIndex</code>, 并提交直到<code>commitIndex</code>部分的日志项</li>
+</ol>
+<h1 id="3-设计思路"><a href="#3-设计思路" class="headerlink" title="3 设计思路"></a>3 设计思路</h1><h2 id="3-1-心跳和AppendEntries的区别"><a href="#3-1-心跳和AppendEntries的区别" class="headerlink" title="3.1 心跳和AppendEntries的区别?"></a>3.1 心跳和<code>AppendEntries</code>的区别?</h2><p>根据<code>2A</code>的内容可知, 心跳就是一种特殊的<code>AppendEntries</code>, 其特殊在<code>Entries</code>长度为0, 并且有论文可知</p>
+<blockquote>
+<p>• If last log index ≥ nextIndex for a follower: send AppendEntries RPC with log entries starting at nextIndex<br>• If successful: update nextIndex and matchIndex for follower (§5.3)<br>• If AppendEntries fails because of log inconsistency: decrement nextIndex and retry (§5.3)</p>
+</blockquote>
+<p><code>AppendEntries</code>除了<code>PRC</code>失败的情况下, 会一直重试, 直到返回<code>true</code>, 那么如果我们单独创建一个协程用于发送真正的不为心跳的<code>AppendEntries</code>, 需要考虑如下的问题:</p>
+<ol>
+<li>重试是应该立即重试, 还是设置一个重置超时?</li>
+<li>何时触发这个处理<code>AppendEntries</code>的协程? 是累计了多个个日志项后再出发处理协程? 还是一旦有一个日志项就触发?</li>
+<li>发射心跳处理函数时也会附带<code>PrevLogIndex</code>和<code>PrevLogTerm</code>以供<code>follower</code>验证, 心跳函数的这些参数会不会和之前的<code>AppendEntries</code>冲突? <code>follower</code>端如何处理这些重复的内容?</li>
+</ol>
+<p>看完上述几点, 我们可以看出, 如果将<code>AppendEntries</code>和心跳的发射器分开实现, 会增加代码的复杂度, 同时<code>AppendEntries</code>也具有重复发送的特点, 这和心跳的特点完美契合, 因此, 我们得出如下结论: <strong><code>AppendEntries</code>可以和心跳公用同一个发射器</strong></p>
+<h2 id="3-2-结构体参数解读"><a href="#3-2-结构体参数解读" class="headerlink" title="3.2 结构体参数解读"></a>3.2 结构体参数解读</h2><p>首先<code>raft</code>结构体会新增几个<code>2A</code>中没有使用过的成员, 解释如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Raft <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">	nextIndex  []<span class="type">int</span> <span class="comment">// 复制到某一个follower时, log开始的索引</span></span><br><span class="line">	matchIndex []<span class="type">int</span> <span class="comment">// 已经被复制到follower的日志的最高索引</span></span><br><span class="line">	commitIndex <span class="type">int</span>  <span class="comment">// 将要提交的日志的最高索引</span></span><br><span class="line">	lastApplied <span class="type">int</span>  <span class="comment">// 已经被应用到状态机的日志的最高索引</span></span><br><span class="line">	applyCh     <span class="keyword">chan</span> ApplyMsg <span class="comment">// 用于在应用到状态机时传递消息</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此, 发送心跳或者<code>AppendEntries</code>时, <code>AppendEntriesArgs</code>应如下构造:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">args := &amp;AppendEntriesArgs&#123;</span><br><span class="line">				Term:         rf.currentTerm,</span><br><span class="line">				LeaderId:     rf.me,</span><br><span class="line">				PrevLogIndex: rf.nextIndex[i] - <span class="number">1</span>,</span><br><span class="line">				PrevLogTerm:  rf.log[rf.nextIndex[i]<span class="number">-1</span>].Term,</span><br><span class="line">				LeaderCommit: rf.commitIndex,</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(rf.log)<span class="number">-1</span> &gt;= rf.nextIndex[i] &#123;</span><br><span class="line">    <span class="comment">// 如果有新的log需要发送, 则就是一个真正的AppendEntries而不是心跳</span></span><br><span class="line">    args.Entries = rf.log[rf.nextIndex[i]:]</span><br><span class="line">    DPrintf(<span class="string">&quot;leader %v 开始向 server %v 广播新的AppendEntries\n&quot;</span>, rf.me, i)</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 如果没有新的log发送, 就发送一个长度为0的切片, 表示心跳</span></span><br><span class="line">    args.Entries = <span class="built_in">make</span>([]Entry, <span class="number">0</span>)</span><br><span class="line">    DPrintf(<span class="string">&quot;leader %v 开始向 server %v 广播新的心跳, args = %+v \n&quot;</span>, rf.me, i, args)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>PS: 术语补充</strong></p>
+<ol>
+<li><code>commited</code>: 集群中半数节点都已经复制了日志, 这保证了这个日志即使在重新选举后仍然存在, 因为不存在<code>commited</code>日志项的节点不会被选举</li>
+<li><code>applied</code>: 指日志项的内容已经被应用到状态机</li>
+</ol>
+<h2 id="3-3-代码架构分析"><a href="#3-3-代码架构分析" class="headerlink" title="3.3 代码架构分析"></a>3.3 代码架构分析</h2><ol>
+<li>由于<code>AppendEntries</code>和心跳公用同一个发射器(此后就称为心跳发射), 因此<code>leader</code>只需要将从<code>client</code>接收的心得日志项追加到<code>log</code>中即可, 发射器在每次超时到达后, 从每个<code>nextIndex[i]</code>构造<code>Entries</code>切片, 如果切片长度为0就是心跳, 不需要显式地判断是心跳或者是真的<code>AppendEntries</code>。</li>
+<li>处理每个<code>AppendEntrie RPC</code>回复的函数只需要调整<code>nextIndex</code>和<code>matchIndex</code>即可, 下次心跳发送时会自动更新切片的长度。</li>
+<li>处理每个<code>AppendEntrie RPC</code>回复的函数还需要找到<code>N</code>以更新<code>commitIndex</code>并唤醒<strong>应用到状态机的协程</strong>(这个协程也可以是<code>Sleep</code> + 轮训的方式实现)</li>
+<li>由于<code>AppendEntries</code>也会附带上一次跳发射的回复处理中可能被更新的<code>commitIndex</code>, 因此<code>follower</code>端也会根据<code>commitIndex</code>唤醒自己的<strong>应用到状态机的协程</strong>(这个协程也可以是<code>Sleep</code> + 轮训的方式实现)</li>
+</ol>
+<h1 id="4-代码实现"><a href="#4-代码实现" class="headerlink" title="4 代码实现"></a>4 代码实现</h1><h2 id="4-1-修改后的发射器"><a href="#4-1-修改后的发射器" class="headerlink" title="4.1 修改后的发射器"></a>4.1 修改后的发射器</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> SendHeartBeats() &#123;</span><br><span class="line">	<span class="comment">// 2B相对2A的变化, 真实的AppendEntries也通过心跳发送</span></span><br><span class="line">	DPrintf(<span class="string">&quot;leader %v 开始发送心跳\n&quot;</span>, rf.me)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> !rf.killed() &#123;</span><br><span class="line">		rf.mu.Lock()</span><br><span class="line">		<span class="comment">// if the server is dead or is not the leader, just return</span></span><br><span class="line">		<span class="keyword">if</span> rf.role != Leader &#123;</span><br><span class="line">			rf.mu.Unlock()</span><br><span class="line">			<span class="comment">// 不是leader则终止心跳的发送</span></span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(rf.peers); i++ &#123;</span><br><span class="line">			<span class="keyword">if</span> i == rf.me &#123;</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			args := &amp;AppendEntriesArgs&#123;</span><br><span class="line">				Term:         rf.currentTerm,</span><br><span class="line">				LeaderId:     rf.me,</span><br><span class="line">				PrevLogIndex: rf.nextIndex[i] - <span class="number">1</span>,</span><br><span class="line">				PrevLogTerm:  rf.log[rf.nextIndex[i]<span class="number">-1</span>].Term,</span><br><span class="line">				LeaderCommit: rf.commitIndex,</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> <span class="built_in">len</span>(rf.log)<span class="number">-1</span> &gt;= rf.nextIndex[i] &#123;</span><br><span class="line">				<span class="comment">// 如果有新的log需要发送, 则就是一个真正的AppendEntries而不是心跳</span></span><br><span class="line">				args.Entries = rf.log[rf.nextIndex[i]:]</span><br><span class="line">				DPrintf(<span class="string">&quot;leader %v 开始向 server %v 广播新的AppendEntries\n&quot;</span>, rf.me, i)</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="comment">// 如果没有新的log发送, 就发送一个长度为0的切片, 表示心跳</span></span><br><span class="line">				args.Entries = <span class="built_in">make</span>([]Entry, <span class="number">0</span>)</span><br><span class="line">				DPrintf(<span class="string">&quot;leader %v 开始向 server %v 广播新的心跳, args = %+v \n&quot;</span>, rf.me, i, args)</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">go</span> rf.handleAppendEntries(i, args)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line"></span><br><span class="line">		time.Sleep(time.Duration(HeartBeatTimeOut) * time.Millisecond)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>与之前的区别就是为每个发送的<code>follower</code>单独构建了<code>AppendEntriesArgs</code>, 代码整体很简单, 几乎没啥区别</p>
+<h2 id="4-2-AppendEntries-handler"><a href="#4-2-AppendEntries-handler" class="headerlink" title="4.2 AppendEntries handler"></a>4.2 <code>AppendEntries handler</code></h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> handleAppendEntries(serverTo <span class="type">int</span>, args *AppendEntriesArgs) &#123;</span><br><span class="line">	<span class="comment">// 目前的设计, 重试自动发生在下一次心跳函数, 所以这里不需要死循环</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// for &#123;</span></span><br><span class="line">	reply := &amp;AppendEntriesReply&#123;&#125;</span><br><span class="line">	ok := rf.sendAppendEntries(serverTo, args, reply)</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rf.mu.Lock()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> args.Term != rf.currentTerm &#123;</span><br><span class="line">		<span class="comment">// 函数调用间隙值变了, 已经不是发起这个调用时的term了</span></span><br><span class="line">		<span class="comment">// 要先判断term是否改变, 否则后续的更改matchIndex等是不安全的</span></span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> reply.Success &#123;</span><br><span class="line">		<span class="comment">// server回复成功</span></span><br><span class="line">		rf.matchIndex[serverTo] = args.PrevLogIndex + <span class="built_in">len</span>(args.Entries)</span><br><span class="line">		rf.nextIndex[serverTo] = rf.matchIndex[serverTo] + <span class="number">1</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">// 需要判断是否可以commit</span></span><br><span class="line">		N := <span class="built_in">len</span>(rf.log) - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> N &gt; rf.commitIndex &#123;</span><br><span class="line">			count := <span class="number">1</span> <span class="comment">// 1表示包括了leader自己</span></span><br><span class="line">			<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(rf.peers); i++ &#123;</span><br><span class="line">				<span class="keyword">if</span> i == rf.me &#123;</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="keyword">if</span> rf.matchIndex[i] &gt;= N &amp;&amp; rf.log[N].Term == rf.currentTerm &#123;</span><br><span class="line">					count += <span class="number">1</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> count &gt; <span class="built_in">len</span>(rf.peers)/<span class="number">2</span> &#123;</span><br><span class="line">				<span class="comment">// 如果至少一半的follower回复了成功, 更新commitIndex</span></span><br><span class="line">				rf.commitIndex = N</span><br><span class="line">				<span class="keyword">break</span></span><br><span class="line">			&#125;</span><br><span class="line">			N -= <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> reply.Term &gt; rf.currentTerm &#123;</span><br><span class="line">		<span class="comment">// 回复了更新的term, 表示自己已经不是leader了</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 旧的leader收到了来自 server % v 的心跳函数中更新的term: %v, 转化为Follower\n&quot;</span>, rf.me, serverTo, reply.Term)</span><br><span class="line"></span><br><span class="line">		rf.currentTerm = reply.Term</span><br><span class="line">		rf.role = Follower</span><br><span class="line">		rf.votedFor = <span class="number">-1</span></span><br><span class="line">		rf.timeStamp = time.Now()</span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> reply.Term == rf.currentTerm &amp;&amp; rf.role == Leader &#123;</span><br><span class="line">		<span class="comment">// term仍然相同, 且自己还是leader, 表名对应的follower在prevLogIndex位置没有与prevLogTerm匹配的项</span></span><br><span class="line">		<span class="comment">// 将nextIndex自减再重试</span></span><br><span class="line">		rf.nextIndex[serverTo] -= <span class="number">1</span></span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		<span class="comment">// time.Sleep(RetryTimeOut)</span></span><br><span class="line">		<span class="comment">// continue</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// &#125;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里做出了如下几个修改:</p>
+<ol>
+<li>回复成功后, 添加了确定<code>N</code>的代码, 并判断是否更新<code>commitIndex</code>, 由于这里采取的<strong>应用到状态机的协程</strong>使用的是<code>Sleep</code>+轮训的方式, 因此没有别的操作, 如果采用条件变量, 还需要唤醒条件变量</li>
+<li>如果返回<code>false</code>但<code>term</code>相同, 表明对应的<code>follower</code>在<code>prevLogIndex</code>位置没有与<code>prevLogTerm</code>匹配的项或者不存在<code>prevLogIndex</code>, 将<code>nextIndex</code>自减, 下一次发射器会重试</li>
+</ol>
+<h2 id="4-3-AppendEntries-RPC"><a href="#4-3-AppendEntries-RPC" class="headerlink" title="4.3 AppendEntries RPC"></a>4.3 <code>AppendEntries RPC</code></h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// AppendEntries handler</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) &#123;</span><br><span class="line">	...</span><br><span class="line">    <span class="comment">// 之前的代码与2A相同</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// 心跳函数</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 接收到 leader %v 的心跳: %+v\n&quot;</span>, rf.me, args.LeaderId, args)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 收到 leader %v 的的AppendEntries: %+v \n&quot;</span>, rf.me, args.LeaderId, args)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> args.PrevLogIndex &gt;= <span class="built_in">len</span>(rf.log) || rf.log[args.PrevLogIndex].Term != args.PrevLogTerm &#123;</span><br><span class="line">		<span class="comment">// 校验PrevLogIndex和PrevLogTerm不合法</span></span><br><span class="line">		<span class="comment">// 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)</span></span><br><span class="line">		reply.Term = rf.currentTerm</span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		reply.Success = <span class="literal">false</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 检查到心跳中参数不合法:\n\t args.PrevLogIndex=%v, args.PrevLogTerm=%v, \n\tlen(self.log)=%v, self最后一个位置term为:%v\n&quot;</span>, rf.me, args.PrevLogIndex, args.PrevLogTerm, <span class="built_in">len</span>(rf.log), rf.log[<span class="built_in">len</span>(rf.log)<span class="number">-1</span>].Term)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 3. If an existing entry conflicts with a new one (same index</span></span><br><span class="line">	<span class="comment">// but different terms), delete the existing entry and all that</span></span><br><span class="line">	<span class="comment">// follow it (§5.3)</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(rf.log) &gt; args.PrevLogIndex+<span class="number">1</span> &amp;&amp; rf.log[args.PrevLogIndex+<span class="number">1</span>].Term != args.Entries[<span class="number">0</span>].Term &#123;</span><br><span class="line">		<span class="comment">// 发生了冲突, 移除冲突位置开始后面所有的内容</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 的log与args发生冲突, 进行移除\n&quot;</span>, rf.me)</span><br><span class="line">		rf.log = rf.log[:args.PrevLogIndex+<span class="number">1</span>]</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 4. Append any new entries not already in the log</span></span><br><span class="line">	<span class="comment">// 补充apeend的业务</span></span><br><span class="line">	rf.log = <span class="built_in">append</span>(rf.log, args.Entries...)</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &#123;</span><br><span class="line">		<span class="comment">// DPrintf(&quot;server %v 成功进行apeend, log: %+v\n&quot;, rf.me, rf.log)</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 成功进行apeend\n&quot;</span>, rf.me)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	reply.Success = <span class="literal">true</span></span><br><span class="line">	reply.Term = rf.currentTerm</span><br><span class="line">	<span class="keyword">if</span> args.LeaderCommit &gt; rf.commitIndex &#123;</span><br><span class="line">		<span class="comment">// 5.If leaderCommit &gt; commitIndex, set commitIndex = min(leaderCommit, index of last new entry)</span></span><br><span class="line">		rf.commitIndex = <span class="type">int</span>(math.Min(<span class="type">float64</span>(args.LeaderCommit), <span class="type">float64</span>(<span class="built_in">len</span>(rf.log)<span class="number">-1</span>)))</span><br><span class="line">	&#125;</span><br><span class="line">	rf.mu.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的改动主要是增加了具体的<code>append</code>业务, 架构与之前变化不大, 需要注意的是, 如果采用条件变量实现<strong>应用到状态机的协程</strong>, 还需要唤醒条件变量。</p>
+<h2 id="4-4-Start函数"><a href="#4-4-Start函数" class="headerlink" title="4.4 Start函数"></a>4.4 <code>Start</code>函数</h2><p><code>Start</code>函数只是将<code>command</code>追加到自己的<code>log</code>中, 因此其不保证<code>command</code>一定会提交。 其不需要调用任何其他的协程， 因此心跳函数是周期性自动检测的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> Start(command <span class="keyword">interface</span>&#123;&#125;) (<span class="type">int</span>, <span class="type">int</span>, <span class="type">bool</span>) &#123;</span><br><span class="line">	<span class="comment">// 如果不是leader返回false</span></span><br><span class="line">	rf.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> rf.mu.Unlock()</span><br><span class="line">	<span class="keyword">if</span> rf.role != Leader &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">-1</span>, <span class="number">-1</span>, <span class="literal">false</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	newEntry := &amp;Entry&#123;Term: rf.currentTerm, Cmd: command&#125;</span><br><span class="line">	rf.log = <span class="built_in">append</span>(rf.log, *newEntry)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">len</span>(rf.log) - <span class="number">1</span>, rf.currentTerm, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-5-应用到状态机的协程"><a href="#4-5-应用到状态机的协程" class="headerlink" title="4.5 应用到状态机的协程"></a>4.5 应用到状态机的协程</h2><p><code>CommitChecker</code>也是一个轮询的协程, 也可以使用条件变量来实现, 其不断检查<code>rf.commitIndex &gt; rf.lastApplied</code>, 将<code>rf.lastApplied</code>递增然后发送到管道<code>applyCh </code>。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> CommitChecker() &#123;</span><br><span class="line">	<span class="comment">// 检查是否有新的commit</span></span><br><span class="line">	<span class="keyword">for</span> !rf.killed() &#123;</span><br><span class="line">		rf.mu.Lock()</span><br><span class="line">		<span class="keyword">for</span> rf.commitIndex &gt; rf.lastApplied &#123;</span><br><span class="line">			rf.lastApplied += <span class="number">1</span></span><br><span class="line">			msg := &amp;ApplyMsg&#123;</span><br><span class="line">				CommandValid: <span class="literal">true</span>,</span><br><span class="line">				Command:      rf.log[rf.lastApplied].Cmd,</span><br><span class="line">				CommandIndex: rf.lastApplied,</span><br><span class="line">			&#125;</span><br><span class="line">			rf.applyCh &lt;- *msg</span><br><span class="line">			DPrintf(<span class="string">&quot;server %v 准备将命令 %v(索引为 %v ) 应用到状态机\n&quot;</span>, rf.me, msg.Command, msg.CommandIndex)</span><br><span class="line">		&#125;</span><br><span class="line">		rf.mu.Unlock()</span><br><span class="line">		time.Sleep(CommitCheckTimeInterval)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-6-修改选举函数"><a href="#4-6-修改选举函数" class="headerlink" title="4.6 修改选举函数"></a>4.6 修改选举函数</h2><p>由于<code>nextIndex[]</code>和<code>matchIndex[]</code>是易失性数据, 每次重新选出<code>leader</code>后需要重新初始化, 因此对<code>collectVote</code>修改如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> collectVote(serverTo <span class="type">int</span>, args *RequestVoteArgs) &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">if</span> rf.voteCount &gt; <span class="built_in">len</span>(rf.peers)/<span class="number">2</span> &#123;</span><br><span class="line">		...</span><br><span class="line">		rf.role = Leader</span><br><span class="line">		<span class="comment">// 需要重新初始化nextIndex和matchIndex</span></span><br><span class="line">		<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(rf.nextIndex); i++ &#123;</span><br><span class="line">			rf.nextIndex[i] = <span class="built_in">len</span>(rf.log)</span><br><span class="line">			rf.matchIndex[i] = <span class="number">0</span></span><br><span class="line">		&#125;</span><br><span class="line">		...</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	rf.muVote.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-测试"><a href="#5-测试" class="headerlink" title="5 测试"></a>5 测试</h1><h2 id="5-1-常规测试"><a href="#5-1-常规测试" class="headerlink" title="5.1 常规测试"></a>5.1 常规测试</h2><p>执行测试命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -v -run 2B</span><br></pre></td></tr></table></figure>
+<p>结果如下:</p>
+<p><img src="/../../images/lab2-2B-test1.png" alt="lab2-2A-test1"></p>
+<h2 id="5-2-多次测试"><a href="#5-2-多次测试" class="headerlink" title="5.2 多次测试"></a>5.2 多次测试</h2><p><code>raft</code>的许多特性导致其一次测试并不准确, 有些bug需要多次测试才会出现, 编写如下脚本命名为<code>manyTest_2B.sh</code>:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">初始化计数器</span></span><br><span class="line">count=0</span><br><span class="line">success_count=0</span><br><span class="line">fail_count=0</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置测试次数</span></span><br><span class="line">max_tests=50</span><br><span class="line"></span><br><span class="line">for ((i=1; i&lt;=max_tests; i++))</span><br><span class="line">do</span><br><span class="line">    echo &quot;Running test iteration $i of $max_tests...&quot;</span><br><span class="line"></span><br><span class="line">    # 运行 go 测试命令</span><br><span class="line">    go test -v -run 2B &amp;&gt; output.log</span><br><span class="line"></span><br><span class="line">    # 检查 go 命令的退出状态</span><br><span class="line">    if [ &quot;$?&quot; -eq 0 ]; then</span><br><span class="line">        # 测试成功</span><br><span class="line">        success_count=$((success_count+1))</span><br><span class="line">        echo &quot;Test iteration $i passed.&quot;</span><br><span class="line">        # 如果想保存通过的测试日志，取消下面行的注释</span><br><span class="line">        # mv output.log &quot;success_$i.log&quot;</span><br><span class="line">    else</span><br><span class="line">        # 测试失败</span><br><span class="line">        fail_count=$((fail_count+1))</span><br><span class="line">        echo &quot;Test iteration $i failed, check &#x27;failure_$i.log&#x27; for details.&quot;</span><br><span class="line">        mv output.log &quot;failure_$i.log&quot;</span><br><span class="line">    fi</span><br><span class="line">done</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">报告测试结果</span></span><br><span class="line">echo &quot;Testing completed: $max_tests iterations run.&quot;</span><br><span class="line">echo &quot;Successes: $success_count&quot;</span><br><span class="line">echo &quot;Failures: $fail_count&quot;</span><br></pre></td></tr></table></figure>
+<p>再次进行测试:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./manyTest_2B.sh</span><br></pre></td></tr></table></figure>
+<p>结果:</p>
+<p><img src="/../../images/lab2-2B-test2.png" alt="lab2-2B-test2"></p>
+<h1 id="6-代码优化"><a href="#6-代码优化" class="headerlink" title="6 代码优化"></a>6 代码优化</h1><p>代码优化的初衷是看到了官网的描述:</p>
+<blockquote>
+<p>The “ok 6.5840&#x2F;raft 35.557s” means that Go measured the time taken for the 2B tests to be 35.557 seconds of real (wall-clock) time. The “user 0m2.556s” means that the code consumed 2.556 seconds of CPU time, or time spent actually executing instructions (rather than waiting or sleeping). If your solution uses much more than a minute of real time for the 2B tests, or much more than 5 seconds of CPU time, you may run into trouble later on. Look for time spent sleeping or waiting for RPC timeouts, loops that run without sleeping or waiting for conditions or channel messages, or large numbers of RPCs sent.</p>
+</blockquote>
+<p>我之前的时间花了<code>75.5s</code>, 因此准备优化, 不过优化后发现也没多大改善, 主要原因是没有实现<strong>快速回退</strong>, 目前回退是一个一个的, 当然慢, 不过这个是<code>2C</code>的后话了</p>
+<ul>
+<li><strong>优化1: 使用条件变量</strong><br>将<code>CommitChecker</code>改为条件变量控制而不是轮询, 这里就不贴代码了, 很简单</li>
+<li><strong>优化1: 使用timer</strong><br>尽管课程不推荐<strong>timer</strong>, 但<code>ticker</code>如果是轮训的话, 应该是不如定时器快的, 因此试了下定时器的实现<br>这里也不贴代码了, 很简单</li>
+</ul>
+<p>优化后再次测试:</p>
+<p><img src="/../../images/lab2-2B-test3.png" alt="lab2-2B-test2"></p>
+<p>快了<code>6s</code>, 有一定程度提升, 但倒数第二个测试<br><code>Test (2B): leader backs up quickly over incorrect follower logs ...</code><br>还是很慢, 应该是暂时还没实现快速回退的原因</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-2A%E9%83%A8%E5%88%86%E7%9A%84bug%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 2A部分的bug修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%BF%AE%E5%A4%8D%E5%AD%A4%E7%AB%8B%E8%8A%82%E7%82%B9%E8%A2%AB%E9%80%89%E4%B8%BE%E7%9A%84bug"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 修复孤立节点被选举的bug</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BF%AE%E5%A4%8DcurrentTerm%E7%9A%84%E8%BF%BD%E8%B5%B6%E9%97%AE%E9%A2%98"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 修复currentTerm的追赶问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%AE%BA%E6%96%87%E8%A7%A3%E8%AF%BB-%E6%97%A5%E5%BF%97%E5%A4%8D%E5%88%B6%E5%92%8Ccommit%E9%83%A8%E5%88%86"><span class="toc-number">2.</span> <span class="toc-text">2 论文解读: 日志复制和commit部分</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.</span> <span class="toc-text">3 设计思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%BF%83%E8%B7%B3%E5%92%8CAppendEntries%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 心跳和AppendEntries的区别?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%BB%93%E6%9E%84%E4%BD%93%E5%8F%82%E6%95%B0%E8%A7%A3%E8%AF%BB"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 结构体参数解读</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E4%BB%A3%E7%A0%81%E6%9E%B6%E6%9E%84%E5%88%86%E6%9E%90"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 代码架构分析</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E4%BF%AE%E6%94%B9%E5%90%8E%E7%9A%84%E5%8F%91%E5%B0%84%E5%99%A8"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 修改后的发射器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-AppendEntries-handler"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 AppendEntries handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-AppendEntries-RPC"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 AppendEntries RPC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-Start%E5%87%BD%E6%95%B0"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 Start函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-5-%E5%BA%94%E7%94%A8%E5%88%B0%E7%8A%B6%E6%80%81%E6%9C%BA%E7%9A%84%E5%8D%8F%E7%A8%8B"><span class="toc-number">4.5.</span> <span class="toc-text">4.5 应用到状态机的协程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-6-%E4%BF%AE%E6%94%B9%E9%80%89%E4%B8%BE%E5%87%BD%E6%95%B0"><span class="toc-number">4.6.</span> <span class="toc-text">4.6 修改选举函数</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%B8%B8%E8%A7%84%E6%B5%8B%E8%AF%95"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 常规测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%A4%9A%E6%AC%A1%E6%B5%8B%E8%AF%95"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 多次测试</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96"><span class="toc-number">6.</span> <span class="toc-text">6 代码优化</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&text=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2B&body=Check out this article: http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&title=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&name=MIT6.5840(6.824) Lab2: Raft 2B&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/&t=MIT6.5840(6.824) Lab2: Raft 2B"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

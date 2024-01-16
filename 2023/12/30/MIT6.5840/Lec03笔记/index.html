@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GF">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lec03笔记: GFS">
+<meta property="og:url" content="http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 本节课是解释谷歌的分布式文件系统GFS, 强烈建议阅读其论文 1 GFS简介GFS（Google File System）是Google特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:  分布式架构：GF">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/GFS_structure.png">
+<meta property="og:image" content="http://example.com/images/lease_process.png">
+<meta property="article:published_time" content="2023-12-30T09:11:45.000Z">
+<meta property="article:modified_time" content="2024-01-15T18:04:01.773Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="GFS">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/GFS_structure.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lec03笔记: GFS</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/01/01/MIT6.5840/Lab2_Raft_2A/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2023/12/27/%E6%95%B0%E6%8D%AE%E5%BA%93/%E5%85%B3%E7%B3%BB%E5%9E%8B%E6%95%B0%E6%8D%AE%E5%BA%93/SQL%E8%BF%9B%E9%98%B6-1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec03笔记: GFS&body=Check out this article: http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec03笔记: GFS&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-GFS%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 GFS简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GFS%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 GFS架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 架构图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%9E%B6%E6%9E%84%E7%89%B9%E7%82%B9"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 架构特点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-GFS%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-number">3.</span> <span class="toc-text">3 GFS如何保证一致性?</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8E%9F%E5%AD%90%E6%80%A7%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E6%93%8D%E4%BD%9C"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 原子性命名空间操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%95%B0%E6%8D%AE%E5%8F%98%E6%9B%B4%E5%90%8E%E7%9A%84%E6%96%87%E4%BB%B6%E5%8C%BA%E5%9F%9F%E7%8A%B6%E6%80%81"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 数据变更后的文件区域状态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%95%B0%E6%8D%AE%E5%8F%98%E6%9B%B4%EF%BC%9A%E5%86%99%E6%93%8D%E4%BD%9C%E5%92%8C%E8%AE%B0%E5%BD%95%E8%BF%BD%E5%8A%A0"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 数据变更：写操作和记录追加</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%A1%AE%E4%BF%9D%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E6%89%8B%E6%AE%B5"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 确保一致性的手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E5%A4%84%E7%90%86%E6%95%85%E9%9A%9C"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 处理故障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-6-%E6%80%BB%E7%BB%93"><span class="toc-number">3.6.</span> <span class="toc-text">3.6 总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%A7%9F%E7%BA%A6-Leases-%E6%9C%BA%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">4 租约(Leases)机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%A7%9F%E7%BA%A6-Leases-%E6%9C%BA%E5%88%B6%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 租约(Leases)机制的工作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 流程图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Master%E8%8A%82%E7%82%B9-%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E4%B8%8E%E9%94%81"><span class="toc-number">5.</span> <span class="toc-text">5 Master节点: 命名空间与锁</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6 小结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lec03笔记: GFS
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-12-30T09:11:45.000Z" class="dt-published" itemprop="datePublished">2023-12-30</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">课程笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/GFS/" rel="tag">GFS</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>课程主页: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/schedule.html">https://pdos.csail.mit.edu/6.824/schedule.html</a></p>
+<p>本节课是解释谷歌的分布式文件系统<code>GFS</code>, 强烈建议阅读其<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/gfs.pdf">论文</a></p>
+<h1 id="1-GFS简介"><a href="#1-GFS简介" class="headerlink" title="1 GFS简介"></a>1 GFS简介</h1><p><code>GFS</code>（<code>Google File System</code>）是<code>Google</code>特别为应对大规模数据处理而设计的分布式文件系, 其设计目的是满足对处理大量数据集、高吞吐量的数据访问、可靠性、可扩展性的需求。其特性包括:</p>
+<ol>
+<li><p><strong>分布式架构</strong>：<code>GFS</code>是一个分布式的文件系统，它将数据存储在多个网络连接的机器上。这种设计可以提供高容错性和高数据可靠性。</p>
+</li>
+<li><p><strong>容错能力</strong>：<code>GFS</code>通过副本机制来确保数据的安全。即使某些硬件组件或机器出现故障，系统仍能确保数据不丢失，并继续提供服务。</p>
+</li>
+<li><p><strong>一致性模型</strong>：<code>GFS</code>采用了一致性模型，以容忍网络延迟和系统故障，同时保持数据的一致性。</p>
+</li>
+<li><p><strong>大文件优化</strong>：<code>GFS</code>被设计来存储大文件。它将每个文件分割成多个固定大小的块（<code>chunks</code>），每个块一般大小为64MB或更大。这种设计简化了文件管理，并且对于大规模数据处理非常有效。</p>
+</li>
+<li><p><strong>高吞吐量</strong>：<code>GFS</code>针对高吞吐量的数据访问进行了优化，尤其是顺序读写操作，这对于数据挖掘和内容索引等操作非常重要。</p>
+</li>
+<li><p><strong>主&#x2F;从架构</strong>：<code>GFS</code>采用了<strong>主&#x2F;从架构</strong>，有一个主服务器（Master）负责管理文件系统的命名空间、控制元数据和调度访问请求。数据被存储在多个分布式的块服务器（<code>Chunkserver</code>）上。</p>
+</li>
+<li><p><strong>写入模型</strong>：<code>GFS</code>的写入模型设计用于最小化由于远程写入导致的网络拥堵。它采用了<strong>写入一次，多次读取</strong>的模式，这意味着一旦写入，文件就不再修改，只允许追加操作。</p>
+</li>
+<li><p><strong>客户端和服务器交互</strong>：<code>GFS</code>客户端和服务器之间的交互尽可能地简单，并且大部分复杂的操作逻辑都在服务器端完成。</p>
+</li>
+</ol>
+<p><code>GFS</code>的设计论文被广泛研究，并激发了其他分布式文件系统的开发，如<code>Apache Hadoop</code>的<code>HDFS</code>（<code>Hadoop Distributed File System</code>）等。</p>
+<h1 id="2-GFS架构"><a href="#2-GFS架构" class="headerlink" title="2 GFS架构"></a>2 GFS架构</h1><h2 id="2-1-架构图"><a href="#2-1-架构图" class="headerlink" title="2.1 架构图"></a>2.1 架构图</h2><p>下图所示为摘自论文中的<code>GFS</code>架构:</p>
+<p><img src="/../../images/GFS_structure.png" alt="GFS_structure"></p>
+<p>架构图中包括如下术语:</p>
+<ol>
+<li><code>Master</code><br><code>GFS</code>中的中心节点，负责管理文件系统的全局视图。<code>Master</code>节点保存了所有文件的元数据，这包括文件和目录的命名空间结构、每个文件的<code>chunks</code>信息、每个<code>chunk</code>的位置以及每个操作的日志。<code>Master</code>调度客户端对<code>chunks</code>的读写请求，并处理命名空间的修改和访问控制。</li>
+<li><code>Chunkserver</code><br><code>Chunkserver</code>是GFS中的工作节点，负责存储实际的文件数据。文件数据被分割成多个<code>chunks</code>，每个<code>chunk</code>通常大小为64MB（可进行配置）。每个<code>Chunkserver</code>可能会存储数千个这样的<code>chunks</code>，并负责处理来自客户端的读写请求。它们向<code>Master</code>报告存储的<code>chunks</code>的状态，并根据<code>Master</code>的指示执行诸如创建副本或删除旧副本等操作。本质上, <code>Chunkserver</code>就是一个<code>Linux</code>的管理文件的进程。</li>
+<li><code>Client</code><br><code>Client</code>指的是使用GFS存储数据的应用程序。客户端通过<code>GFS</code>提供的<code>API</code>(其实就是链接一个库)与文件系统进行交互。客户端会先与<code>Master</code>节点通信以获取文件元数据和<code>chunks</code>的位置信息，然后直接与一个或多个<code>chunkservers</code>通信进行数据的读写操作。</li>
+<li><code>Chunk</code><br>文件分割的基本单位，是数据存储的块。每个<code>chunk</code>由<code>Chunkserver</code>存储和管理，具有固定的大小，例如64MB。通过使用固定大小的<code>chunks</code>，<code>GFS</code>能够简化存储管理，并且优化大规模数据的读写效率。文件有多少个<code>Chunk</code>, 每个<code>Chunk</code>在什么位置, 这些信息都存在<code>Master</code>的内存中。</li>
+<li><code>Chunk Handle</code><br><code>Chunk Handle</code>是<code>GFS</code>分配给每个chunk的唯一标识符。它是一个全局唯一的64位值，用于标识和引用存储在<code>chunkservers</code>上的特定<code>chunk</code>。<code>Chunk Handle</code>在<code>chunk</code>的整个生命周期中保持不变，即使其副本在不同的<code>chunkservers</code>之间移动或复制。</li>
+<li><code>Chunk Location</code><br><code>Chunk Location</code>是指存储特定<code>chunk</code>的<code>Chunkserver</code>的网络地址。Master节点跟踪每个<code>chunk</code>的所有副本的位置，并将这些位置信息提供给客户端，以便客户端可以直接与存储所需<code>chunks</code>的<code>Chunkserver</code>建立连接进行数据读写。</li>
+</ol>
+<h2 id="2-2-架构特点"><a href="#2-2-架构特点" class="headerlink" title="2.2 架构特点"></a>2.2 架构特点</h2><p><code>GFS</code>的架构特点可以总结如下:</p>
+<ol>
+<li>单<code>Master</code><br>所有文件系统元数据(包括文件系统命名空间、文件名与<code>chunk</code>的映射关系、<code>chunk</code>的位置、<code>chunk</code>版本号、日志等)都存储在单个<code>Master</code>节点的内存中</li>
+<li>文件分块<br>件被切分成固定大小的<code>chunks</code>, <code>chunkservers</code>将<code>chunks</code>存储在本地磁盘上作为<code>Linux</code>文件, <code>chunks</code>在多个<code>chunkservers</code>中备份存储</li>
+<li>心跳同步<br><code>chunkservers</code>与<code>master</code>通过心跳函数进行信息交互</li>
+<li>数据和指令分开传送<br><code>client</code>与<code>Master</code>节点交互来进行元数据操作，比如打开文件、获取文件信息、获取<code>chunk</code>位置等。之后， <code>client</code>直接与Chunkserver节点交互来进行实际的数据读写</li>
+<li>租约（<code>Leases</code>）机制<br>(此机制未在架构图中体现)<code>Master</code>节点给某个<code>chunk</code>的一个副本授予租约，该副本被称为<code>primary chunk</code>。持有租约的<code>Chunkserver</code>有责任在写操作中协调其他副本（<code>secondary chunks</code>）的更新顺序。</li>
+</ol>
+<h1 id="3-GFS如何保证一致性"><a href="#3-GFS如何保证一致性" class="headerlink" title="3 GFS如何保证一致性?"></a>3 GFS如何保证一致性?</h1><p><code>GFS</code>采用了一种宽松的一致性模型来在分布式的环境中保持系统性能和可用性。</p>
+<h2 id="3-1-原子性命名空间操作"><a href="#3-1-原子性命名空间操作" class="headerlink" title="3.1 原子性命名空间操作"></a>3.1 原子性命名空间操作</h2><ul>
+<li><strong>文件命名空间的变更</strong>（例如，创建文件）是<strong>原子性</strong>操作，由<code>master</code>服务器独家处理。</li>
+<li><strong>命名空间锁定</strong>和<strong>操作日志</strong>（记录操作的全局总顺序）保证了这些变更的原子性和正确性。</li>
+</ul>
+<h2 id="3-2-数据变更后的文件区域状态"><a href="#3-2-数据变更后的文件区域状态" class="headerlink" title="3.2 数据变更后的文件区域状态"></a>3.2 数据变更后的文件区域状态</h2><ul>
+<li>在数据变更后，文件区域的状态取决于变更的类型、变更是否成功，以及是否存在并发变更。</li>
+<li>如果所有客户端无论读取哪个副本都看到相同的数据，那么这个文件区域就是一致的。</li>
+<li>如果数据变更后文件区域是一致的，并且客户端可以完整地看到变更写入的内容，那么这个区域就是已定义的。</li>
+<li>当变更在没有并发写入者的干扰下成功时，受影响的区域是已定义的（也就是一致的）。</li>
+<li>并发的成功变更会使区域变得未定义但仍然一致：所有客户端看到的是相同的数据，但可能不反映任何单一变更所写入的内容。通常包含来自多个变更的混合片段。</li>
+<li>失败的变更会使区域变得不一致（因此也是未定义的）：不同的客户端可能在不同时间看到不同的数据。</li>
+</ul>
+<h2 id="3-3-数据变更：写操作和记录追加"><a href="#3-3-数据变更：写操作和记录追加" class="headerlink" title="3.3 数据变更：写操作和记录追加"></a>3.3 数据变更：写操作和记录追加</h2><ul>
+<li><strong>写操作</strong>在应用程序指定的偏移量处执行。</li>
+<li><strong>记录追加</strong>是一种原子操作，即使存在并发变更，也会在GFS选择的偏移量处至少追加一次数据。</li>
+<li><code>GFS</code>可能在中间插入填充或重复的记录，这些被视为不一致。</li>
+<li>在成功的变更之后，变更的文件区域是<strong>已定义</strong>的，并包含最后一次变更的数据。</li>
+</ul>
+<h2 id="3-4-确保一致性的手段"><a href="#3-4-确保一致性的手段" class="headerlink" title="3.4 确保一致性的手段"></a>3.4 确保一致性的手段</h2><ul>
+<li>在序列成功的变更后，变更的文件区域保证是已定义的，并且包含最后一次变更写入的数据。</li>
+<li><code>GFS</code>通过在所有副本上以相同的顺序应用变更来实现这一点。</li>
+<li>使用块版本号来检测任何因为在其<code>chunkserve</code>r关闭时错过变更而变得陈旧的副本。这些陈旧副本不会参与变更，也不会提供给寻求块位置的客户端。这些副本会在最早的机会被垃圾回收。</li>
+</ul>
+<h2 id="3-5-处理故障"><a href="#3-5-处理故障" class="headerlink" title="3.5 处理故障"></a>3.5 处理故障</h2><ul>
+<li><code>GFS</code>通过定期的<code>master</code>与所有块服务器之间的握手以及校验和来识别失败的块服务器和数据损坏。</li>
+<li>数据会尽快从有效副本中恢复，且在<code>GFS</code>能够反应之前，只有当所有副本丢失时，块才会不可逆转地丢失。即使在这种情况下，它也会变得不可用，而不是损坏：应用程序会收到清晰的错误而不是损坏的数据。</li>
+</ul>
+<h2 id="3-6-总结"><a href="#3-6-总结" class="headerlink" title="3.6 总结"></a>3.6 总结</h2><ul>
+<li>依赖<strong>追加</strong>操作：而非覆盖操作来变更文件，这不仅可以应对一致性和并发问题，而且比随机写入更高效、更能抵御应用程序故障。</li>
+<li>使用<strong>检查点</strong>（<code>Checkpointing</code>）：允许写入者在失败后能够部分地重新开始，同时使读取者避免处理尚未完成的文件数据。</li>
+<li>写入自验证、自识别的记录：通过额外的信息如校验和来确保记录的有效性，以及通过唯一标识符来处理可能的重复记录。</li>
+</ul>
+<blockquote>
+<p>PS: 这一部分论文中感觉有些泛泛而谈, 缺乏距离和图示, 感觉有些迷糊</p>
+</blockquote>
+<h1 id="4-租约-Leases-机制"><a href="#4-租约-Leases-机制" class="headerlink" title="4 租约(Leases)机制"></a>4 租约(<code>Leases</code>)机制</h1><h2 id="4-1-租约-Leases-机制的工作流程"><a href="#4-1-租约-Leases-机制的工作流程" class="headerlink" title="4.1 租约(Leases)机制的工作流程"></a>4.1 租约(<code>Leases</code>)机制的工作流程</h2><p>租约机制主要是用于协调分布式环境下的多个对相同<code>chunk</code>的变更操作, 因为多个变更操作的变更顺序很重要, 所有副本在应用变更时都遵循这个顺序。<code>Leases</code>的设计思路是将某一时间段内的处理任务交付给某一个<code>chunkserver</code>完成, 称为其获得了租约(<code>lease</code>), </p>
+<p>具体流程为:</p>
+<ol>
+<li><code>client</code>询问<code>master</code>哪个数据块服务器持有当前对于该数据块的租约，以及其他副本的位置。如果没有任何副本持有租约，<code>master</code>会选择一个副本授予租约（未展示）, 这个被授予租约的<code>server</code>称为<code>primary replica</code>, 其协调的<code>server</code>称为<code>secondary replica</code>。</li>
+<li><code>master</code>回复<code>client</code>其<code>primary replica</code>的身份和其他（次级）副本的位置。<code>client</code>缓存这些数据以用于未来的变更。只有当<code>primary replica</code>变得无法联系，或者回复说它不再持有租约时，<code>client</code>才需要再次联系<code>master</code>。</li>
+<li><code>client</code>将数据推送到所有副本。<code>client</code>可以按任何顺序这么做。每个数据块服务器都会将数据存储在一个内部的<code>LRU</code>缓冲区中，直到数据被使用或者过时。通过将数据流与控制流解耦，我们可以根据网络拓扑优化昂贵的数据流的调度，而不考虑哪个数据块服务器是<code>primary replica</code>。第3.2节将进一步讨论这一点。</li>
+<li>所有副本确认收到数据后，<code>client</code>向<code>primary replica</code>发送写请求。该请求标识了之前推送给所有副本的数据。<code>primary replica</code>为它接收到的所有变更分配连续的序列号，可能来自多个<code>client</code>，这提供了必要的序列化。它按照序列号顺序将变更应用到自己的本地状态。</li>
+<li><code>primary replica</code>将写请求转发给所有次级副本。每个次级副本按照<code>primary replica</code>分配的相同序列号顺序应用变更。</li>
+<li>所有次级副本都回复<code>primary replica</code>，表明它们已经完成了操作。</li>
+<li><code>primary replica</code>回复<code>client</code>。在任何副本遇到的任何错误都会报告给<code>client</code>。如果出现错误，写操作可能已经在<code>primary replica</code>和任意子集的次级副本上成功。（如果在<code>primary replica</code>上失败，它不会被分配序列号并转发。）<code>client</code>请求被视为失败，而且被修改的区域处于不一致状态。我们的<code>client</code>代码通过重试失败的变更来处理此类错误。在回退到从写操作开始的重试之前，它会在步骤（3）到（7）中尝试几次。</li>
+</ol>
+<h2 id="4-2-流程图"><a href="#4-2-流程图" class="headerlink" title="4.2 流程图"></a>4.2 流程图</h2><p>下图所示为摘自论文中的读写流程实例:</p>
+<p><img src="/../../images/lease_process.png" alt="lease_process"></p>
+<blockquote>
+<p>需要补充说明的是数据流动并不是随意的, 为了充分利用每台机器的网络带宽，数据是沿着数据块服务器的链线性推送的, 即每台机器都将数据转发到网络拓扑中尚未接收数据的“最近”的机器。</p>
+</blockquote>
+<h1 id="5-Master节点-命名空间与锁"><a href="#5-Master节点-命名空间与锁" class="headerlink" title="5 Master节点: 命名空间与锁"></a>5 <code>Master</code>节点: 命名空间与锁</h1><p>与许多传统文件系统不同，<code>GFS</code>没有列出该目录中所有文件的每个目录的数据结构。它也不支持文件或目录的别名（即硬链接或符号链接）。<code>GFS</code>在逻辑上将其名称空间表示为一个查找表，将完整路径名映射到元数据。通过前缀压缩，可以在内存中有效地表示这个表。名称空间树中的每个节点（无论是绝对文件名还是绝对目录名）都有一个关联的读写锁。</p>
+<p>每个操作在运行前都会获取一组锁。通常，如果它涉及到<code>/d1/d2/.../dn/leaf</code>，它将获得目录名<code>/d1、/d1/d2、...、/d1/d2/.../dn</code>的读锁，以及完整路径名<code>/d1/d2/.../dn/leaf</code>的读锁或写锁。请注意，<code>leaf</code>可能是文件或目录，具体取决于操作。</p>
+<p><strong>一个获取锁的例子</strong></p>
+<blockquote>
+<p>需求:如何防止以下情况: 当创建<code>/home/user</code>文件夹的快照到<code>/save/user</code>时, 文件<code>/home/user/foo被创建</code>。</p>
+</blockquote>
+<p>快照操作获取的锁:</p>
+<ul>
+<li><code>/home</code>和<code>/save</code>的读锁</li>
+<li><code>/home/user</code>和<code>/save/user</code>的写锁。<br>文件创建获取的锁</li>
+<li><code>/home</code>和<code>/home/user</code>的读锁</li>
+<li><code>/home/user/foo</code>的写锁。</li>
+</ul>
+<p>可以看出, 上述2个操作存在<code>/home/user</code>的锁冲突, 因此将被序列化。</p>
+<p><strong>误区说明</strong><br>文件创建不需要对父目录的写锁，因为没有<code>目录</code>或类似<code>inode</code>的数据结构需要防止修改。名称上的读锁足以防止父目录被删除。</p>
+<h1 id="6-小结"><a href="#6-小结" class="headerlink" title="6 小结"></a>6 小结</h1><p><code>GFS</code>论文中涉及很多的细节在此处并没有完全列出, 例如确保内容完整性的<code>checksum</code>, 主节点的<code>recover</code>等, 因为这些内容较为琐碎且个人认为不算<code>GFS</code>最出色的特性, 个人认为<code>GFS</code>最值得学习的特性包括:</p>
+<ol>
+<li>单<code>master</code>结构, <code>master</code>尽量只负责处理逻辑</li>
+<li>租约机制: 将任务指派给<code>server</code>解决, 用租约解决潜在的不一致问题</li>
+<li>数据和逻辑指令分别传送: 简化了传送的内容与逻辑复杂度</li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-GFS%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 GFS简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GFS%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 GFS架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 架构图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%9E%B6%E6%9E%84%E7%89%B9%E7%82%B9"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 架构特点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-GFS%E5%A6%82%E4%BD%95%E4%BF%9D%E8%AF%81%E4%B8%80%E8%87%B4%E6%80%A7"><span class="toc-number">3.</span> <span class="toc-text">3 GFS如何保证一致性?</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8E%9F%E5%AD%90%E6%80%A7%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E6%93%8D%E4%BD%9C"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 原子性命名空间操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%95%B0%E6%8D%AE%E5%8F%98%E6%9B%B4%E5%90%8E%E7%9A%84%E6%96%87%E4%BB%B6%E5%8C%BA%E5%9F%9F%E7%8A%B6%E6%80%81"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 数据变更后的文件区域状态</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%95%B0%E6%8D%AE%E5%8F%98%E6%9B%B4%EF%BC%9A%E5%86%99%E6%93%8D%E4%BD%9C%E5%92%8C%E8%AE%B0%E5%BD%95%E8%BF%BD%E5%8A%A0"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 数据变更：写操作和记录追加</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%A1%AE%E4%BF%9D%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E6%89%8B%E6%AE%B5"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 确保一致性的手段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E5%A4%84%E7%90%86%E6%95%85%E9%9A%9C"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 处理故障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-6-%E6%80%BB%E7%BB%93"><span class="toc-number">3.6.</span> <span class="toc-text">3.6 总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%A7%9F%E7%BA%A6-Leases-%E6%9C%BA%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">4 租约(Leases)机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%A7%9F%E7%BA%A6-Leases-%E6%9C%BA%E5%88%B6%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 租约(Leases)机制的工作流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 流程图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Master%E8%8A%82%E7%82%B9-%E5%91%BD%E5%90%8D%E7%A9%BA%E9%97%B4%E4%B8%8E%E9%94%81"><span class="toc-number">5.</span> <span class="toc-text">5 Master节点: 命名空间与锁</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">6 小结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec03笔记: GFS&body=Check out this article: http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec03笔记: GFS&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec03笔记: GFS"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

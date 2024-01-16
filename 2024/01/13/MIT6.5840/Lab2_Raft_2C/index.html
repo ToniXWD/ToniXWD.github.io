@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文将介绍lab2C部分的实现, lab2C要求实现raft中的持久化功能, 相比lab2A,和lab2B, 本节的难度其实很小, 但复杂的是lab2A,和lab2B中的一些微小的bug会在2C中显现, 并且相对不太容易注意到。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lab2: Raft 2C">
+<meta property="og:url" content="http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文将介绍lab2C部分的实现, lab2C要求实现raft中的持久化功能, 相比lab2A,和lab2B, 本节的难度其实很小, 但复杂的是lab2A,和lab2B中的一些微小的bug会在2C中显现, 并且相对不太容易注意到。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/lab2-2C-test2B.png">
+<meta property="og:image" content="http://example.com/images/lab2-2C-test2C.png">
+<meta property="og:image" content="http://example.com/images/lab2-2C-test2C-2.png">
+<meta property="article:published_time" content="2024-01-13T09:15:38.000Z">
+<meta property="article:modified_time" content="2024-01-16T08:00:31.488Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/lab2-2C-test2B.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lab2: Raft 2C</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&text=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&name=MIT6.5840(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&t=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-bug%E4%BF%AE%E5%A4%8D%EF%BC%9A%E9%87%8D%E5%A4%8D%E7%9A%84RPC"><span class="toc-number">1.</span> <span class="toc-text">1 bug修复：重复的RPC</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BC%98%E5%8C%96-%E5%BF%AB%E9%80%9F%E5%9B%9E%E9%80%80"><span class="toc-number">2.</span> <span class="toc-text">2 优化: 快速回退</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%BB%93%E6%9E%84%E4%BD%93%E5%AE%9A%E4%B9%89"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 结构体定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Follower%E4%BE%A7%E7%9A%84AppendEntries"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Follower侧的AppendEntries</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-leader%E4%BE%A7%E7%9A%84handleAppendEntries"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 leader侧的handleAppendEntries</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 持久化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%8C%81%E4%B9%85%E5%8C%96%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 持久化函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8C%81%E4%B9%85%E5%8C%96%E4%BD%8D%E7%BD%AE"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 持久化位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%8C%81%E4%B9%85%E5%8C%96%E6%97%B6%E6%98%AF%E5%90%A6%E9%9C%80%E8%A6%81%E9%94%81"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 持久化时是否需要锁?</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%B8%B8%E8%A7%84%E6%B5%8B%E8%AF%95"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 常规测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%A4%9A%E6%AC%A1%E6%B5%8B%E8%AF%95"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 多次测试</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lab2: Raft 2C
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-13T09:15:38.000Z" class="dt-published" itemprop="datePublished">2024-01-13</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/Lab%E7%AC%94%E8%AE%B0/">Lab笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Go/" rel="tag">Go</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文将介绍<code>lab2C</code>部分的实现, <code>lab2C</code>要求实现<code>raft</code>中的持久化功能, 相比<code>lab2A</code>,和<code>lab2B</code>, 本节的难度其实很小, 但复杂的是<code>lab2A</code>,和<code>lab2B</code>中的一些微小的<code>bug</code>会在<code>2C</code>中显现, 并且相对不太容易注意到。</p>
+<p><code>Lab文档</code>见: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/labs/lab-raft.html">https://pdos.csail.mit.edu/6.824/labs/lab-raft.html</a></p>
+<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab2C">https://github.com/ToniXWD/MIT6.5840/tree/lab2C</a></p>
+<p><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf">raft原论文</a></p>
+<h1 id="1-bug修复：重复的RPC"><a href="#1-bug修复：重复的RPC" class="headerlink" title="1 bug修复：重复的RPC"></a>1 <code>bug</code>修复：重复的<code>RPC</code></h1><p>在之前的<code>AppendEntries</code>中有这样的代码:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(rf.log) &gt; args.PrevLogIndex+<span class="number">1</span> &amp;&amp; rf.log[args.PrevLogIndex+<span class="number">1</span>].Term != args.Entries[<span class="number">0</span>].Term &#123;</span><br><span class="line">    <span class="comment">// 发生了冲突, 移除冲突位置开始后面所有的内容</span></span><br><span class="line">    DPrintf(<span class="string">&quot;server %v 的log与args发生冲突, 进行移除\n&quot;</span>, rf.me)</span><br><span class="line">    rf.log = rf.log[:args.PrevLogIndex+<span class="number">1</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段代码所做的事情是, 如果将要追加的位置存在日志项, 且日志项与<code>RPC</code>中的日子切片的第一个发生冲突(<code>Term</code>不匹配), 则将冲突位置及其之后的日志项清除掉。</p>
+<p>这段代码看起来没有问题，但在高并发的场景下，会存在如下问题:</p>
+<ol>
+<li><code>Leader</code>先发送了<code>AppendEntries RPC</code>, 我们记为<code>RPC1</code></li>
+<li><code>Follower</code>收到<code>RPC1</code>, 发生上述代码描述的冲突, 将冲突部分的内容清除, 并追加<code>RPC1</code>中的日志切片</li>
+<li>由于并发程度高, <code>Leader</code>在<code>RPC1</code>没有收到回复时又发送了下一个<code>AppendEntries RPC</code>, 由于<code>nextIndex</code>和<code>matchIndex</code>只有在收到回复后才会修改, 因此这个新的<code>AppendEntries RPC</code>, 我们记为<code>RPC2</code>, 与<code>RPC1</code>是一致的</li>
+<li><code>Follower</code>收到<code>RPC2</code>, 由于<code>RPC2</code>和<code>RPC1</code>完全相同, 因此其一定不会发生冲突, 结果是<code>Follower</code>将相同的一个日志项切片追加了2次!</li>
+</ol>
+<p><strong>解决方案:</strong><br>很简单, 直接截断切片, 去掉<code>if</code>判断的条件:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(rf.log) &gt; args.PrevLogIndex+<span class="number">1</span> &#123;</span><br><span class="line">    rf.log = rf.log[:args.PrevLogIndex+<span class="number">1</span>]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="2-优化-快速回退"><a href="#2-优化-快速回退" class="headerlink" title="2 优化: 快速回退"></a>2 优化: 快速回退</h1><p>在之前的回退实现中, 如果有<code>Follower</code>的日志不匹配, 每次<code>RPC</code>中, <code>Leader</code>会将其<code>nextIndex</code>自减1来重试, 但其在某些情况下会导致效率很低, 因此需要<code>AppendEntries RPC</code>的回复信息携带更多的字段以加速回退, 核心思想就是:<strong><code>Follower</code>返回更多信息给<code>Leader</code>，使其可以以<code>Term</code>为单位来回退</strong></p>
+<p>教授在课堂上已经介绍了快速回退的实现机制, 可以看我整理的<a href="/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/">笔记</a> </p>
+<p>我的实现和课堂的介绍基本一致, 只是将<code>XLen</code>从<code>空白的Log槽位数</code>改为<code>Log的长度</code>:</p>
+<h2 id="2-1-结构体定义"><a href="#2-1-结构体定义" class="headerlink" title="2.1 结构体定义"></a>2.1 结构体定义</h2><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> AppendEntriesReply <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// Your data here (2A).</span></span><br><span class="line">	Term    <span class="type">int</span>  <span class="comment">// currentTerm, for leader to update itself</span></span><br><span class="line">	Success <span class="type">bool</span> <span class="comment">// true if follower contained entry matching prevLogIndex and prevLogTerm</span></span><br><span class="line">	XTerm   <span class="type">int</span>  <span class="comment">// Follower中与Leader冲突的Log对应的Term</span></span><br><span class="line">	XIndex  <span class="type">int</span>  <span class="comment">// Follower中，对应Term为XTerm的第一条Log条目的索引</span></span><br><span class="line">	XLen    <span class="type">int</span>  <span class="comment">// Follower的log的长度</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-Follower侧的AppendEntries"><a href="#2-2-Follower侧的AppendEntries" class="headerlink" title="2.2 Follower侧的AppendEntries"></a>2.2 <code>Follower</code>侧的<code>AppendEntries</code></h2><p>发现冲突时, 回复的逻辑为:</p>
+<ol>
+<li>如果<code>PrevLogIndex</code>位置不存在日志项, 通过设置<code>reply.XTerm = -1</code>告知<code>Leader</code>, 并将<code>reply.XLen</code>设置为自身日志长度</li>
+<li>如果<code>PrevLogIndex</code>位置日志项存在但<code>Term</code>冲突, 通过<code>reply.XTerm</code>和<code>reply.XIndex</code>分别告知冲突位置的<code>Term</code>和这个<code>Term</code>在<code>Follower</code>中第一次出现的位置</li>
+</ol>
+<p>具体代码如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) &#123;</span><br><span class="line">    rf.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> rf.mu.Unlock()</span><br><span class="line">    ...</span><br><span class="line">	isConflict := <span class="literal">false</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">// 校验PrevLogIndex和PrevLogTerm不合法</span></span><br><span class="line">	<span class="comment">// 2. Reply false if log doesn’t contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)</span></span><br><span class="line">	<span class="keyword">if</span> args.PrevLogIndex &gt;= <span class="built_in">len</span>(rf.log) &#123;</span><br><span class="line">		<span class="comment">// PrevLogIndex位置不存在日志项</span></span><br><span class="line">		reply.XTerm = <span class="number">-1</span></span><br><span class="line">		reply.XLen = <span class="built_in">len</span>(rf.log) <span class="comment">// Log长度</span></span><br><span class="line">		isConflict = <span class="literal">true</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 的log在PrevLogIndex: %v 位置不存在日志项, Log长度为%v\n&quot;</span>, rf.me, args.PrevLogIndex, reply.XLen)</span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> rf.log[args.PrevLogIndex].Term != args.PrevLogTerm &#123;</span><br><span class="line">		<span class="comment">// PrevLogIndex位置的日志项存在, 但term不匹配</span></span><br><span class="line">		reply.XTerm = rf.log[args.PrevLogIndex].Term</span><br><span class="line">		i := args.PrevLogIndex</span><br><span class="line">		<span class="keyword">for</span> rf.log[i].Term == reply.XTerm &#123;</span><br><span class="line">			i -= <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">		reply.XIndex = i + <span class="number">1</span></span><br><span class="line">		isConflict = <span class="literal">true</span></span><br><span class="line">		DPrintf(<span class="string">&quot;server %v 的log在PrevLogIndex: %v 位置Term不匹配, args.Term=%v, 实际的term=%v\n&quot;</span>, rf.me, args.PrevLogIndex, args.PrevLogTerm, reply.XTerm)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> isConflict &#123;</span><br><span class="line">		reply.Term = rf.currentTerm</span><br><span class="line">		reply.Success = <span class="literal">false</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="2-3-leader侧的handleAppendEntries"><a href="#2-3-leader侧的handleAppendEntries" class="headerlink" title="2.3 leader侧的handleAppendEntries"></a>2.3 <code>leader</code>侧的<code>handleAppendEntries</code></h2><p>如果需要回退, <code>leader</code>的处理逻辑是:</p>
+<ol>
+<li>如果<code>XTerm == -1</code>, 表示<code>PrevLogIndex</code>位置在<code>Follower</code>中不存在<code>log</code>, 需要将<code>nextIndex</code>设置为<code>Follower</code>的<code>log</code>长度即<code>XLen</code></li>
+<li>如果<code>XTerm != -1</code>, 表示<code>PrevLogIndex</code>位置在<code>Follower</code>中存在<code>log</code>但其<code>Term</code>为<code>XTerm</code>, 与<code>prevLogTerm</code>不匹配, 同时<code>XIndex</code>表示这个<code>Term</code>在<code>Follower</code>中第一次出现的位置, 需要如下进行判断:<ol>
+<li>如果<code>Follower</code>中存在<code>XTerm</code>, 将<code>nextIndex</code>设置为<code>Follower</code>中最后一个<code>term == XTerm</code>的日志项的下一位</li>
+<li>否则, 将<code>nextIndex</code>设置为<code>XIndex</code></li>
+</ol>
+</li>
+</ol>
+<p>具体代码为:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> handleAppendEntries(serverTo <span class="type">int</span>, args *AppendEntriesArgs) &#123;</span><br><span class="line">	<span class="comment">// 目前的设计, 重试自动发生在下一次心跳函数, 所以这里不需要死循环</span></span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">	rf.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> rf.mu.Unlock()</span><br><span class="line">    </span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> reply.Term == rf.currentTerm &amp;&amp; rf.role == Leader &#123;</span><br><span class="line">		<span class="comment">// term仍然相同, 且自己还是leader, 表名对应的follower在prevLogIndex位置没有与prevLogTerm匹配的项</span></span><br><span class="line">		<span class="comment">// 快速回退的处理</span></span><br><span class="line">		<span class="keyword">if</span> reply.XTerm == <span class="number">-1</span> &#123;</span><br><span class="line">			<span class="comment">// PrevLogIndex这个位置在Follower中不存在</span></span><br><span class="line">			DPrintf(<span class="string">&quot;leader %v 收到 server %v 的回退请求, 原因是log过短, 回退前的nextIndex[%v]=%v, 回退后的nextIndex[%v]=%v\n&quot;</span>, rf.me, serverTo, serverTo, rf.nextIndex[serverTo], serverTo, reply.XLen)</span><br><span class="line">			rf.nextIndex[serverTo] = reply.XLen</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		i := rf.nextIndex[serverTo] - <span class="number">1</span></span><br><span class="line">		<span class="keyword">for</span> i &gt; <span class="number">0</span> &amp;&amp; rf.log[i].Term &gt; reply.XTerm &#123;</span><br><span class="line">			i -= <span class="number">1</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> rf.log[i].Term == reply.XTerm &#123;</span><br><span class="line">			<span class="comment">// 之前PrevLogIndex发生冲突位置时, Follower的Term自己也有</span></span><br><span class="line"></span><br><span class="line">			DPrintf(<span class="string">&quot;leader %v 收到 server %v 的回退请求, 冲突位置的Term为%v, server的这个Term从索引%v开始, 而leader对应的最后一个XTerm索引为%v, 回退前的nextIndex[%v]=%v, 回退后的nextIndex[%v]=%v\n&quot;</span>, rf.me, serverTo, reply.XTerm, reply.XIndex, i, serverTo, rf.nextIndex[serverTo], serverTo, i+<span class="number">1</span>)</span><br><span class="line">			rf.nextIndex[serverTo] = i + <span class="number">1</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// 之前PrevLogIndex发生冲突位置时, Follower的Term自己没有</span></span><br><span class="line">			DPrintf(<span class="string">&quot;leader %v 收到 server %v 的回退请求, 冲突位置的Term为%v, server的这个Term从索引%v开始, 而leader对应的XTerm不存在, 回退前的nextIndex[%v]=%v, 回退后的nextIndex[%v]=%v\n&quot;</span>, rf.me, serverTo, reply.XTerm, reply.XIndex, serverTo, rf.nextIndex[serverTo], serverTo, reply.XIndex)</span><br><span class="line">			rf.nextIndex[serverTo] = reply.XIndex</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-持久化"><a href="#3-持久化" class="headerlink" title="3 持久化"></a>3 持久化</h1><p>持久化的内容只包括: <code>votedFor</code>, <code>currentTerm</code>, <code>log</code>, 为什么只需要持久化这三个变量, 也可以参考<a href="/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/">课堂笔记</a></p>
+<h2 id="3-1-持久化函数"><a href="#3-1-持久化函数" class="headerlink" title="3.1 持久化函数"></a>3.1 持久化函数</h2><p><code>persist</code>函数和<code>readPersist</code>函数很简单, 只需要根据注释的提示完成即可:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> persist() &#123;</span><br><span class="line">	<span class="comment">// DPrintf(&quot;server %v 开始持久化, 最后一个持久化的log为: %v:%v&quot;, rf.me, len(rf.log)-1, rf.log[len(rf.log)-1].Cmd)</span></span><br><span class="line"></span><br><span class="line">	w := <span class="built_in">new</span>(bytes.Buffer)</span><br><span class="line">	e := labgob.NewEncoder(w)</span><br><span class="line">	e.Encode(rf.votedFor)</span><br><span class="line">	e.Encode(rf.currentTerm)</span><br><span class="line">	e.Encode(rf.log)</span><br><span class="line">	raftstate := w.Bytes()</span><br><span class="line">	rf.persister.Save(raftstate, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// restore previously persisted state.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> readPersist(data []<span class="type">byte</span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> data == <span class="literal">nil</span> || <span class="built_in">len</span>(data) &lt; <span class="number">1</span> &#123; <span class="comment">// bootstrap without any state?</span></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> data == <span class="literal">nil</span> || <span class="built_in">len</span>(data) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	r := bytes.NewBuffer(data)</span><br><span class="line">	d := labgob.NewDecoder(r)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> votedFor <span class="type">int</span></span><br><span class="line">	<span class="keyword">var</span> currentTerm <span class="type">int</span></span><br><span class="line">	<span class="keyword">var</span> log []Entry</span><br><span class="line">	<span class="keyword">if</span> d.Decode(&amp;votedFor) != <span class="literal">nil</span> ||</span><br><span class="line">		d.Decode(&amp;currentTerm) != <span class="literal">nil</span> ||</span><br><span class="line">		d.Decode(&amp;log) != <span class="literal">nil</span> &#123;</span><br><span class="line">		DPrintf(<span class="string">&quot;readPersist failed\n&quot;</span>)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		rf.votedFor = votedFor</span><br><span class="line">		rf.currentTerm = currentTerm</span><br><span class="line">		rf.log = log</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="3-2-持久化位置"><a href="#3-2-持久化位置" class="headerlink" title="3.2 持久化位置"></a>3.2 持久化位置</h2><p><code>lab</code>的持久化方案很粗糙, 只要修改了<code>votedFor</code>, <code>currentTerm</code>, <code>log</code>中的任意一个, 则进行持久化, 因此只需要在相应位置调用<code>persist</code>即可, 这里旧不给出代码了, 感兴趣可以直接看我提供的仓库。</p>
+<p>特别需要说明的是，当崩溃恢复时，其调用的函数仍然是<code>Make</code>函数, 而<code>nextIndex</code>需要在执行了<code>readPersist</code>后再初始化, 因为<code>readPersist</code>修改了<code>log</code>, 而<code>nextIndex</code>需初始化为<code>log</code>长度</p>
+<h2 id="3-3-持久化时是否需要锁"><a href="#3-3-持久化时是否需要锁" class="headerlink" title="3.3 持久化时是否需要锁?"></a>3.3 持久化时是否需要锁?</h2><p>按照我的理解, 持久化时不需要锁保护<code>log</code>, 原因如下:</p>
+<ul>
+<li><code>Leader</code>视角<br><code>Leader</code>永远不会删除自己的<code>log</code>(此时没有快照), 因此不需要锁保护</li>
+<li><code>Follower</code>视角<br>尽管<code>Follower</code>可能截断<code>log</code>, 但永远不会截断在<code>commit</code>的<code>log</code>之前, 而持久化只需要保证已经<code>commit</code>的<code>log</code>, 因此也不需要锁</li>
+</ul>
+<h1 id="4-测试"><a href="#4-测试" class="headerlink" title="4 测试"></a>4 测试</h1><h2 id="4-1-常规测试"><a href="#4-1-常规测试" class="headerlink" title="4.1 常规测试"></a>4.1 常规测试</h2><ol>
+<li><code>2B</code>测试<br>由于我们实现了快速回退, 此时可以测试<code>2B</code>, 看看是否速度有显著提升:<br>执行测试命令<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -v -run 2B</span><br></pre></td></tr></table></figure>
+结果如下:</li>
+</ol>
+<p><img src="/../../images/lab2-2C-test2B.png" alt="lab2-2C-test2B"></p>
+<p>相比于之前快了15s左右, 勉勉强强满足了任务书中的一份子以内… 看了实现还是不够精妙啊</p>
+<ol start="2">
+<li><code>2C</code>测试<br>执行测试命令<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -v -run 2C</span><br></pre></td></tr></table></figure>
+结果如下:</li>
+</ol>
+<p><img src="/../../images/lab2-2C-test2C.png" alt="lab2-2C-test2C"></p>
+<p>比官方的示例满了4s, 还不错</p>
+<h2 id="4-2-多次测试"><a href="#4-2-多次测试" class="headerlink" title="4.2 多次测试"></a>4.2 多次测试</h2><p><code>raft</code>的许多特性导致其一次测试并不准确, 有些bug需要多次测试才会出现, 编写如下脚本命名为<code>manyTest_2B.sh</code>:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">#</span><span class="language-bash">!/bin/bash</span></span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">初始化计数器</span></span><br><span class="line">count=0</span><br><span class="line">success_count=0</span><br><span class="line">fail_count=0</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">设置测试次数</span></span><br><span class="line">max_tests=50</span><br><span class="line"></span><br><span class="line">for ((i=1; i&lt;=max_tests; i++))</span><br><span class="line">do</span><br><span class="line">    echo &quot;Running test iteration $i of $max_tests...&quot;</span><br><span class="line">    </span><br><span class="line">    # 运行 go 测试命令</span><br><span class="line">    go test -v -run 2C &amp;&gt; output2C.log</span><br><span class="line">    </span><br><span class="line">    # 检查 go 命令的退出状态</span><br><span class="line">    if [ &quot;$?&quot; -eq 0 ]; then</span><br><span class="line">        # 测试成功</span><br><span class="line">        success_count=$((success_count+1))</span><br><span class="line">        echo &quot;Test iteration $i passed.&quot;</span><br><span class="line">        # 如果想保存通过的测试日志，取消下面行的注释</span><br><span class="line">        # mv output2C.log &quot;success_$i.log&quot;</span><br><span class="line">    else</span><br><span class="line">        # 测试失败</span><br><span class="line">        fail_count=$((fail_count+1))</span><br><span class="line">        echo &quot;Test iteration $i failed, check &#x27;failure2C_$i.log&#x27; for details.&quot;</span><br><span class="line">        mv output2C.log &quot;failure2C_$i.log&quot;</span><br><span class="line">    fi</span><br><span class="line">done</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">报告测试结果</span></span><br><span class="line">echo &quot;Testing completed: $max_tests iterations run.&quot;</span><br><span class="line">echo &quot;Successes: $success_count&quot;</span><br><span class="line">echo &quot;Failures: $fail_count&quot;</span><br></pre></td></tr></table></figure>
+<p>再次进行测试:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./manyTest_2C.sh</span><br></pre></td></tr></table></figure>
+<p>结果:</p>
+<p><img src="/../../images/lab2-2C-test2C-2.png" alt="lab2-2B-test2"></p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-bug%E4%BF%AE%E5%A4%8D%EF%BC%9A%E9%87%8D%E5%A4%8D%E7%9A%84RPC"><span class="toc-number">1.</span> <span class="toc-text">1 bug修复：重复的RPC</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BC%98%E5%8C%96-%E5%BF%AB%E9%80%9F%E5%9B%9E%E9%80%80"><span class="toc-number">2.</span> <span class="toc-text">2 优化: 快速回退</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%BB%93%E6%9E%84%E4%BD%93%E5%AE%9A%E4%B9%89"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 结构体定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Follower%E4%BE%A7%E7%9A%84AppendEntries"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Follower侧的AppendEntries</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-leader%E4%BE%A7%E7%9A%84handleAppendEntries"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 leader侧的handleAppendEntries</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 持久化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%8C%81%E4%B9%85%E5%8C%96%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 持久化函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8C%81%E4%B9%85%E5%8C%96%E4%BD%8D%E7%BD%AE"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 持久化位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%8C%81%E4%B9%85%E5%8C%96%E6%97%B6%E6%98%AF%E5%90%A6%E9%9C%80%E8%A6%81%E9%94%81"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 持久化时是否需要锁?</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%B8%B8%E8%A7%84%E6%B5%8B%E8%AF%95"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 常规测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%A4%9A%E6%AC%A1%E6%B5%8B%E8%AF%95"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 多次测试</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&text=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2C&body=Check out this article: http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&title=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&name=MIT6.5840(6.824) Lab2: Raft 2C&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/13/MIT6.5840/Lab2_Raft_2C/&t=MIT6.5840(6.824) Lab2: Raft 2C"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
