@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 分布式系统正确性的定义这里, 课程还是给出了一个K&#x2F;V存储的案例来说明如何定义分布式系统重操作的正确性, 并引入了线性一致性 2.1 场景描述课程中的K&#x2F;V存储的案例用Python代码描述如下: 123456789class KVStore:    def __init__(self):        self._data &#x3D; &#123;&#125;    def put(self, key">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lec09笔记: 线性一致性">
+<meta property="og:url" content="http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="1 分布式系统正确性的定义这里, 课程还是给出了一个K&#x2F;V存储的案例来说明如何定义分布式系统重操作的正确性, 并引入了线性一致性 2.1 场景描述课程中的K&#x2F;V存储的案例用Python代码描述如下: 123456789class KVStore:    def __init__(self):        self._data &#x3D; &#123;&#125;    def put(self, key">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/Lec09-KV-case1.png">
+<meta property="og:image" content="http://example.com/Lec09-KV-case2.png">
+<meta property="og:image" content="http://example.com/Lec09-KV-case3.png">
+<meta property="og:image" content="http://example.com/Lec09-KV-case4.png">
+<meta property="og:image" content="http://example.com/images/Lec09-Ring.png">
+<meta property="article:published_time" content="2024-01-16T08:26:22.000Z">
+<meta property="article:modified_time" content="2024-01-17T09:56:51.060Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="线性一致性">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/Lec09-KV-case1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lec09笔记: 线性一致性</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec09笔记: 线性一致性&body=Check out this article: http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec09笔记: 线性一致性&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%AD%A3%E7%A1%AE%E6%80%A7%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.</span> <span class="toc-text">1 分布式系统正确性的定义</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9C%BA%E6%99%AF%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">2.1 场景描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.2.</span> <span class="toc-text">2.2 线性一致性的定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%A1%88%E4%BE%8B"><span class="toc-number">1.3.</span> <span class="toc-text">2.3 案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E9%9D%9E%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E7%9A%84%E5%8F%A6%E4%B8%80%E7%A7%8D%E8%A7%A3%E9%87%8A-%E7%8E%AF"><span class="toc-number">1.4.</span> <span class="toc-text">2.4 非线性一致的另一种解释:环</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E9%87%8D%E5%A4%8D%E7%9A%84RPC%E5%92%8C%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E7%9A%84%E5%85%B3%E8%81%94"><span class="toc-number">2.</span> <span class="toc-text">3 重复的RPC和线性一致的关联</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lec09笔记: 线性一致性
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-16T08:26:22.000Z" class="dt-published" itemprop="datePublished">2024-01-16</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">课程笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>, <a class="p-category" href="/tags/%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7/" rel="tag">线性一致性</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-分布式系统正确性的定义"><a href="#1-分布式系统正确性的定义" class="headerlink" title="1 分布式系统正确性的定义"></a>1 分布式系统正确性的定义</h1><p>这里, 课程还是给出了一个<code>K/V存储</code>的案例来说明如何定义分布式系统重操作的正确性, 并引入了线性一致性</p>
+<h2 id="2-1-场景描述"><a href="#2-1-场景描述" class="headerlink" title="2.1 场景描述"></a>2.1 场景描述</h2><p>课程中的<code>K/V存储</code>的案例用<code>Python</code>代码描述如下:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">KVStore</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self</span>):</span><br><span class="line">        self._data = &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">put</span>(<span class="params">self, key, value</span>):</span><br><span class="line">        self._data[key] = value</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">self, key</span>):</span><br><span class="line">        <span class="keyword">return</span> self._data.get(key, <span class="string">&quot;&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>对于什么是正确的操作, 最直观的理解是:<strong><code>Get</code> 操作必须反映应用所有先前 <code>Put</code> 操作的结果</strong>, </p>
+<p>在非并发的单机单线程环境下, 以上要求是自然被满足的, 但我们需要考虑的是如下一个分布式场景:</p>
+<p><img src="/Lec09-KV-case1.png" alt="Lec09-KV-case1"></p>
+<p>上图的每一个操作的全过程用一个矩形条来表示, 左边表示操作开始, 右边表示操作结束。在上图的场景下， 很难确定<code>Get(&quot;x&quot;)</code>返回值究竟是多少, 因为并发场景下, 我们不知道两个<code>Put</code>操作真正被执行时<code>Get</code>操作到哪一步了。为了定义在上述场景下的操作正确性，引入了<strong>线性一致性</strong>的概念</p>
+<h2 id="2-2-线性一致性的定义"><a href="#2-2-线性一致性的定义" class="headerlink" title="2.2 线性一致性的定义"></a>2.2 线性一致性的定义</h2><p>什么是线性一致性(<code>Linearizability</code>)? 简单来说, 线性一致性是指一个系统表现得就像只有一个服务器，并且服务器没有故障，每次执行一个客户端请求，并且没有奇怪的事情发生。在线性一致性系统中，执行历史是一系列的客户端请求，可以按照一个顺序排列，并且排列顺序与客户端请求的实际时间相符合。这意味着操作是非并发的，每一个读操作都看到的是最近一次写入的值。</p>
+<h2 id="2-3-案例"><a href="#2-3-案例" class="headerlink" title="2.3 案例"></a>2.3 案例</h2><p>考虑下面的这个场景：</p>
+<p><img src="/Lec09-KV-case2.png" alt="Lec09-KV-case2"></p>
+<p>该场景是可线性化的，其结果如下：</p>
+<p><img src="/Lec09-KV-case3.png" alt="Lec09-KV-case3"></p>
+<p>但下面这个场景就是不可线性化的:</p>
+<p><img src="/Lec09-KV-case4.png" alt="Lec09-KV-case4"></p>
+<p>原因在于, 既然<code>Client 3</code>得到了1这个结果, 那么<code>Client 2</code>的<code>Put</code>操作一定在<code>Client 3</code>的<code>Get</code>操作结束前完成了, 那么<code>Client 4</code>的<code>Get</code>操作就不应该得到旧值0</p>
+<ul>
+<li>总结一下, 如何判断操作是否线性一致:<br>如果能构建一个操作序列, 满足每个才做读取的值都是前一个操作实际写入的结果, 那么其就是线性一致的</li>
+</ul>
+<p>换言之，<strong>不允许一个存储在系统中的数据有不同的演进过程。</strong></p>
+<h2 id="2-4-非线性一致的另一种解释-环"><a href="#2-4-非线性一致的另一种解释-环" class="headerlink" title="2.4 非线性一致的另一种解释:环"></a>2.4 非线性一致的另一种解释:环</h2><p><img src="/../../images/Lec09-Ring.png" alt="Lec09-ring"></p>
+<p>上图所示为<code>KV</code>场景下的一个非线性一致案例, <code>Client4</code>读取到<code>x=1</code>, 因此<code>Client1</code>的<code>Put(x,1)</code>应该先于<code>Client4</code>的第一个<code>Get</code>完成, 我们用一个从<code>Client1</code>的<code>Put</code>指向<code>Client4</code>的第一个<code>Get</code>的箭头表示这种先后关系。同理，也存在这样一条从<code>Client2</code>的<code>Put</code>指向<code>Client3</code>的第一个<code>Get</code>的箭头。由于<code>Client4</code>的第二个<code>Get</code>读取到了2, 因此第一个<code>Get</code>完成后, <code>Client2</code>的<code>Put</code>一定先于<code>Client4</code>的第2个<code>Get</code>, 因此存在从<code>Client4</code>的第一个<code>Get</code>指向<code>Client2</code>的<code>Put</code>的箭头。同理, 也存在从<code>Client3</code>的第一个<code>Get</code>指向<code>Client1</code>的第二个<code>Put</code>的箭头。</p>
+<p>到这里为止，就出现了上图所示的<strong>环</strong>，这也是另一种非线性一致的表达方式。</p>
+<h1 id="3-重复的RPC和线性一致的关联"><a href="#3-重复的RPC和线性一致的关联" class="headerlink" title="3 重复的RPC和线性一致的关联"></a>3 重复的<code>RPC</code>和线性一致的关联</h1><p>由于我们目前已经完成了<code>Lab2</code>的实验, 在<code>Lab2: raft</code>中, 请求失败后将导致<code>cleint</code>重新发送请求, 但在<code>cleint</code>侧看到的只是第一个请求失败了, 其可能的状况是:</p>
+<ol>
+<li><code>Leader</code>根本就没有执行过这个请求, 因为<code>Leader</code>发生了网络分区</li>
+<li><code>Leader</code>已经执行过这个请求了, 但回复时发生了丢包</li>
+<li><code>Leader</code>收到了第一次请求, 但执行过程中故障了</li>
+<li>第一次请求本身就发生了丢包</li>
+<li>…</li>
+</ol>
+<p>因此<code>client</code>不能判断具体的原因, 但这将导致第二个请求可能被<code>Leader</code>(可能是新的, 也可能是旧的)看做一个重复的请求, 而有些请求被再次执行将导致状态机错误, 因此服务端应该能够判断这是不是一个重复的请求, 最简单的方案就是为每一个请求加上一个全局的索引, 服务端维护一个请求索引的哈希表烂判断请求是否重复。</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E6%AD%A3%E7%A1%AE%E6%80%A7%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.</span> <span class="toc-text">1 分布式系统正确性的定义</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9C%BA%E6%99%AF%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">2.1 场景描述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">1.2.</span> <span class="toc-text">2.2 线性一致性的定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%A1%88%E4%BE%8B"><span class="toc-number">1.3.</span> <span class="toc-text">2.3 案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E9%9D%9E%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E7%9A%84%E5%8F%A6%E4%B8%80%E7%A7%8D%E8%A7%A3%E9%87%8A-%E7%8E%AF"><span class="toc-number">1.4.</span> <span class="toc-text">2.4 非线性一致的另一种解释:环</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E9%87%8D%E5%A4%8D%E7%9A%84RPC%E5%92%8C%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E7%9A%84%E5%85%B3%E8%81%94"><span class="toc-number">2.</span> <span class="toc-text">3 重复的RPC和线性一致的关联</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&text=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&is_video=false&description=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lec09笔记: 线性一致性&body=Check out this article: http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&title=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&name=MIT6.5840(6.824) Lec09笔记: 线性一致性&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/&t=MIT6.5840(6.824) Lec09笔记: 线性一致性"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
