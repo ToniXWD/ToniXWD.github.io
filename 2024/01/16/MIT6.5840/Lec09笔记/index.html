@@ -13,18 +13,17 @@
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 分布式系统正确性的定义这里, 课程还是给出了一个K&#x2F;V存储的案例来说明如何定义分布式系统重操作的正确性, 并引入了线性一致性 2.1 场景描述课程中的K&#x2F;V存储的案例用Python代码描述如下: 123456789class KVStore:    def __init__(self):        self._data &#x3D; &#123;&#125;    def put(self, key">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/Lec09-KV-case1.png">
-<meta property="og:image" content="http://example.com/Lec09-KV-case2.png">
-<meta property="og:image" content="http://example.com/Lec09-KV-case3.png">
-<meta property="og:image" content="http://example.com/Lec09-KV-case4.png">
+<meta property="og:image" content="http://example.com/images/Lec09-KV-case2.png">
+<meta property="og:image" content="http://example.com/images/Lec09-KV-case3.png">
+<meta property="og:image" content="http://example.com/images/Lec09-KV-case4.png">
 <meta property="og:image" content="http://example.com/images/Lec09-Ring.png">
 <meta property="article:published_time" content="2024-01-16T08:26:22.000Z">
-<meta property="article:modified_time" content="2024-01-17T09:56:51.060Z">
+<meta property="article:modified_time" content="2024-01-17T09:59:17.048Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="线性一致性">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/Lec09-KV-case1.png">
+<meta name="twitter:image" content="http://example.com/images/Lec09-KV-case2.png">
     
     
       
@@ -177,15 +176,15 @@
 
 <p>对于什么是正确的操作, 最直观的理解是:<strong><code>Get</code> 操作必须反映应用所有先前 <code>Put</code> 操作的结果</strong>, </p>
 <p>在非并发的单机单线程环境下, 以上要求是自然被满足的, 但我们需要考虑的是如下一个分布式场景:</p>
-<p><img src="/Lec09-KV-case1.png" alt="Lec09-KV-case1"></p>
+<p>![Lec09-KV-case1]..&#x2F;..&#x2F;images&#x2F;(Lec09-KV-case1.png)</p>
 <p>上图的每一个操作的全过程用一个矩形条来表示, 左边表示操作开始, 右边表示操作结束。在上图的场景下， 很难确定<code>Get(&quot;x&quot;)</code>返回值究竟是多少, 因为并发场景下, 我们不知道两个<code>Put</code>操作真正被执行时<code>Get</code>操作到哪一步了。为了定义在上述场景下的操作正确性，引入了<strong>线性一致性</strong>的概念</p>
 <h2 id="2-2-线性一致性的定义"><a href="#2-2-线性一致性的定义" class="headerlink" title="2.2 线性一致性的定义"></a>2.2 线性一致性的定义</h2><p>什么是线性一致性(<code>Linearizability</code>)? 简单来说, 线性一致性是指一个系统表现得就像只有一个服务器，并且服务器没有故障，每次执行一个客户端请求，并且没有奇怪的事情发生。在线性一致性系统中，执行历史是一系列的客户端请求，可以按照一个顺序排列，并且排列顺序与客户端请求的实际时间相符合。这意味着操作是非并发的，每一个读操作都看到的是最近一次写入的值。</p>
 <h2 id="2-3-案例"><a href="#2-3-案例" class="headerlink" title="2.3 案例"></a>2.3 案例</h2><p>考虑下面的这个场景：</p>
-<p><img src="/Lec09-KV-case2.png" alt="Lec09-KV-case2"></p>
+<p><img src="/../../images/Lec09-KV-case2.png" alt="Lec09-KV-case2"></p>
 <p>该场景是可线性化的，其结果如下：</p>
-<p><img src="/Lec09-KV-case3.png" alt="Lec09-KV-case3"></p>
+<p><img src="/../../images/Lec09-KV-case3.png" alt="Lec09-KV-case3"></p>
 <p>但下面这个场景就是不可线性化的:</p>
-<p><img src="/Lec09-KV-case4.png" alt="Lec09-KV-case4"></p>
+<p><img src="/../../images/Lec09-KV-case4.png" alt="Lec09-KV-case4"></p>
 <p>原因在于, 既然<code>Client 3</code>得到了1这个结果, 那么<code>Client 2</code>的<code>Put</code>操作一定在<code>Client 3</code>的<code>Get</code>操作结束前完成了, 那么<code>Client 4</code>的<code>Get</code>操作就不应该得到旧值0</p>
 <ul>
 <li>总结一下, 如何判断操作是否线性一致:<br>如果能构建一个操作序列, 满足每个才做读取的值都是前一个操作实际写入的结果, 那么其就是线性一致的</li>
