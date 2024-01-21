@@ -274,13 +274,6 @@
   </url>
   
   <url>
-    <loc>http://example.com/tags/Raft/</loc>
-    <lastmod>2024-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>http://example.com/tags/VMWare-FT/</loc>
     <lastmod>2024-01-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -288,7 +281,7 @@
   </url>
   
   <url>
-    <loc>http://example.com/tags/ZooKeeper/</loc>
+    <loc>http://example.com/tags/Raft/</loc>
     <lastmod>2024-01-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -296,6 +289,13 @@
   
   <url>
     <loc>http://example.com/tags/%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7/</loc>
+    <lastmod>2024-01-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>http://example.com/tags/ZooKeeper/</loc>
     <lastmod>2024-01-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
