@@ -13,15 +13,15 @@
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="本次课程介绍了ZooKeeper, 并且我结合教授的课程和原论文总结了ZooKeeper的关键知识点形成了本文 课程主页: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;schedule.html 原论文地址: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;papers&#x2F;zookeeper.pdf 0 引入: ZooKeeper是什么? 和Raft区别是什么">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/ZooKeeper-namespace.png">
-<meta property="og:image" content="http://example.com/ZooKeeper-components.png">
+<meta property="og:image" content="http://example.com/images/ZooKeeper-namespace.png">
+<meta property="og:image" content="http://example.com/images/ZooKeeper-components.png">
 <meta property="article:published_time" content="2024-01-19T06:22:02.000Z">
-<meta property="article:modified_time" content="2024-01-21T14:18:59.494Z">
+<meta property="article:modified_time" content="2024-01-21T14:20:15.703Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="线性一致性">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/ZooKeeper-namespace.png">
+<meta name="twitter:image" content="http://example.com/images/ZooKeeper-namespace.png">
     
     
       
@@ -225,7 +225,7 @@
 </ol>
 <p>通过以上的几项基本保证, 应用程序可以通过<code>ZooKeeper</code>构建许多的分布式服务, 如分布式锁、配置管理等。</p>
 <h2 id="1-2-命名空间"><a href="#1-2-命名空间" class="headerlink" title="1.2 命名空间"></a>1.2 命名空间</h2><p>下图所示为<code>ZooKeeper</code>的命名空间图解， 实际上就是一棵树</p>
-<p><img src="/ZooKeeper-namespace.png" alt="ZooKeeper-namespace"></p>
+<p><img src="/../../images/ZooKeeper-namespace.png" alt="ZooKeeper-namespace"></p>
 <p>树中的每一个节点用数据结构<code>Znode</code>表示, <code>Znode</code>可以有子节点，并且可以存储数据。每个<code>Znode</code>都由路径唯一标识，例如<code>/app1/myconfig/dbconfig</code>。具体而言, <code>Znode</code>有一下几个类比:</p>
 <ol>
 <li><code>Regular znodes</code>: 一旦创建，就永久存在，除非显示删除</li>
@@ -361,7 +361,7 @@
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">WHILE TRUE:</span><br><span class="line">    X, V = GETDATA(<span class="string">&quot;F&quot;</span>)</span><br><span class="line">    IF SETDATA(<span class="string">&quot;f&quot;</span>, X + <span class="number">1</span>, V):</span><br><span class="line">        BREAK</span><br></pre></td></tr></table></figure>
 
 <p>在这个循环中先调用<code>GETDATA</code>读取一次数据并记录其版本号<code>V</code>, 然后调用<code>SETDATA</code>更新数据, 且这个函数只在办好匹配的情况下才更新数据, 如果版号不匹配则进入下一次循环</p>
-<h1 id="3-ZooKeeper的实现"><a href="#3-ZooKeeper的实现" class="headerlink" title="3 ZooKeeper的实现"></a>3 <code>ZooKeeper</code>的实现</h1><h2 id="3-1-基本架构"><a href="#3-1-基本架构" class="headerlink" title="3.1 基本架构"></a>3.1 基本架构</h2><p><img src="/ZooKeeper-components.png" alt="ZooKeeper-components"></p>
+<h1 id="3-ZooKeeper的实现"><a href="#3-ZooKeeper的实现" class="headerlink" title="3 ZooKeeper的实现"></a>3 <code>ZooKeeper</code>的实现</h1><h2 id="3-1-基本架构"><a href="#3-1-基本架构" class="headerlink" title="3.1 基本架构"></a>3.1 基本架构</h2><p><img src="/../../images/ZooKeeper-components.png" alt="ZooKeeper-components"></p>
 <p>上图所示为<code>ZooKeeper </code>服务的组件: 收请求、准备执行请求的<code>request processor</code> 以及对需要多个服务器之间协调的请求（写请求）使用的一致性协议(<code>Atomic Broadcast</code>), 数据将保存在一个内存数据库中, 其包含包含完整的树结构。</p>
 <p>其处理请求的逻辑如下：</p>
 <ul>
