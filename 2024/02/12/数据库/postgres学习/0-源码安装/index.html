@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文内容包括:  如何从源码安装postgresql-14, 更多信息请参考官方文档: https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F; 如何使用gdb调试postgresql 如何在VSCode中开启postgresql代码的智能提示  1 编译源码1.1 安装依赖1sudo apt-get install libreadline-dev  1.2 克隆仓库并编译">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置">
+<meta property="og:url" content="http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文内容包括:  如何从源码安装postgresql-14, 更多信息请参考官方文档: https:&#x2F;&#x2F;www.postgresql.org&#x2F;docs&#x2F;current&#x2F; 如何使用gdb调试postgresql 如何在VSCode中开启postgresql代码的智能提示  1 编译源码1.1 安装依赖1sudo apt-get install libreadline-dev  1.2 克隆仓库并编译">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/DB/postgresql/gdb-postgres.png">
+<meta property="og:image" content="http://example.com/images/DB/postgresql/psql-pg_backend_pid.png">
+<meta property="og:image" content="http://example.com/images/DB/postgresql/attach-44765.png">
+<meta property="og:image" content="http://example.com/images/DB/postgresql/gdb-SocketBackend.png">
+<meta property="article:published_time" content="2024-02-12T01:55:30.000Z">
+<meta property="article:modified_time" content="2024-02-21T16:16:04.675Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="Postgresql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/DB/postgresql/gdb-postgres.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/12/CMU15445/proj1/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&text=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&is_video=false&description=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置&body=Check out this article: http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&name=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&t=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E8%AF%91%E6%BA%90%E7%A0%81"><span class="toc-number">1.</span> <span class="toc-text">1 编译源码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 安装依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%85%8B%E9%9A%86%E4%BB%93%E5%BA%93%E5%B9%B6%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 克隆仓库并编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E9%A2%9D%E5%A4%96%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 额外编译选项</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">2 基本配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 配置环境变量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%9D%E5%A7%8B%E5%8C%96%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 初始化数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E5%90%AF%E5%8A%A8%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E7%99%BB%E5%BD%95"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 启动数据库并登录</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%90%AF%E7%94%A8gdb%E8%B0%83%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">3 启用gdb调试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%B0%83%E8%AF%95pg-ctl"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 调试pg_ctl</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-postgres%E4%B8%BB%E7%A8%8B%E5%BA%8F%E7%9A%84%E5%90%AF%E5%8A%A8"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 postgres主程序的启动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-postgresql%E7%9A%84%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 postgresql的进程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-psql%E5%90%8E%E8%B0%83%E8%AF%95%E5%90%8E%E7%AB%AF%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 psql后调试后端进程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-VSCode%E6%99%BA%E8%83%BD%E6%8F%90%E7%A4%BA%E8%AE%BE%E7%BD%AE"><span class="toc-number">4.</span> <span class="toc-text">4 VSCode智能提示设置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%89%E8%A3%85bear"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 安装bear</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-bear%E6%8B%A6%E6%88%AA%E7%BC%96%E8%AF%91%E5%91%BD%E4%BB%A4"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 bear拦截编译命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-VSCode%E8%AE%BE%E7%BD%AEcompile-commands-json"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 VSCode设置compile_commands.json</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.3.1.</span> <span class="toc-text">参考</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-12T01:55:30.000Z" class="dt-published" itemprop="datePublished">2024-02-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a> › <a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/Postgresql%E5%AD%A6%E4%B9%A0/">Postgresql学习</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Postgresql/" rel="tag">Postgresql</a>, <a class="p-category" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文内容包括:</p>
+<ol>
+<li>如何从源码安装<code>postgresql-14</code>, 更多信息请参考官方文档: <a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/">https://www.postgresql.org/docs/current/</a></li>
+<li>如何使用<code>gdb</code>调试<code>postgresql</code></li>
+<li>如何在<code>VSCode</code>中开启<code>postgresql</code>代码的智能提示</li>
+</ol>
+<h1 id="1-编译源码"><a href="#1-编译源码" class="headerlink" title="1 编译源码"></a>1 编译源码</h1><h2 id="1-1-安装依赖"><a href="#1-1-安装依赖" class="headerlink" title="1.1 安装依赖"></a>1.1 安装依赖</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install libreadline-dev</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-2-克隆仓库并编译"><a href="#1-2-克隆仓库并编译" class="headerlink" title="1.2 克隆仓库并编译"></a>1.2 克隆仓库并编译</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://git.postgresql.org/git/postgresql.git <span class="comment"># 克隆完整仓库</span></span><br><span class="line">git checkout REL_14_STABLE <span class="comment"># 切换到14分支</span></span><br></pre></td></tr></table></figure>
+
+<p>由于我们源码安装的目的是为了查看源码调试, 所以我们不需要安装到默认的<code>/usr/local/</code>路径, 需要在<code>configure</code>中指定编译安装目录, 同时需要开启一些额外的选项允许后续的<code>gdb</code>调试:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> /home/toni/pgBuild</span><br><span class="line">./configure --prefix=/home/toni/pgBuild/ --enable-debug --enable-depend --enable-cassert CFLAGS=-O0</span><br></pre></td></tr></table></figure>
+<ol>
+<li><code>--enable-debug</code>: 编译程序时包含额外的调试信息</li>
+<li><code>--enable-depend</code>: 用于生成依赖关系。它使得编译过程中会自动生成 <code>.depend</code> 文件，这些文件包含了源文件之间的依赖信息。这对于开发者在修改代码后只重新编译改变了的部分非常有用。</li>
+<li><code>--enable-cassert</code>: 用于开启断言（assertions）。通常用于开发和调试。它会编译进一些额外的检查，这些检查在标准运行中通常是关闭的，因为它们可能会降低性能。但是在开发过程中，这些检查可以帮助捕捉到代码中的错误。</li>
+<li><code>CFLAGS=-O0</code>: 环境变量设置，用于控制 C 编译器的优化级别。<code>-O0</code> 表示不进行优化，确保了编译器不会改变代码结构，从而使得调试时的代码行为更接近源码。</li>
+</ol>
+<p>然后正常编译即可</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-3-额外编译选项"><a href="#1-3-额外编译选项" class="headerlink" title="1.3 额外编译选项"></a>1.3 额外编译选项</h2><ol>
+<li>编译后测试<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make check</span><br></pre></td></tr></table></figure></li>
+<li>安装额外模块<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make world</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h1 id="2-基本配置"><a href="#2-基本配置" class="headerlink" title="2 基本配置"></a>2 基本配置</h1><h2 id="2-1-配置环境变量"><a href="#2-1-配置环境变量" class="headerlink" title="2.1 配置环境变量"></a>2.1 配置环境变量</h2><p>将安装目录的四个文件夹添加到环境变量:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># ~/.bashrc</span></span><br><span class="line">PATH=<span class="variable">$PATH</span>:/home/toni/pgBuild/bin</span><br><span class="line">PATH=<span class="variable">$PATH</span>:/home/toni/pgBuild/include</span><br><span class="line">PATH=<span class="variable">$PATH</span>:/home/toni/pgBuild/lib</span><br><span class="line">PATH=<span class="variable">$PATH</span>:/home/toni/pgBuild/share</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-初始化数据库"><a href="#2-2-初始化数据库" class="headerlink" title="2.2 初始化数据库"></a>2.2 初始化数据库</h2><p>新建一个数据库目录并初始化</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p pgData</span><br><span class="line">initdb -D pgData</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-启动数据库并登录"><a href="#2-3-启动数据库并登录" class="headerlink" title="2.3 启动数据库并登录"></a>2.3 启动数据库并登录</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pg_ctl -D pgData/ start</span><br></pre></td></tr></table></figure>
+<p>从<code>psql</code>连接数据库</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">psql postgres</span><br></pre></td></tr></table></figure>
+<p>查看当前登录信息</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">postgres<span class="operator">=</span># \c</span><br><span class="line">You <span class="keyword">are</span> now connected <span class="keyword">to</span> database &quot;postgres&quot; <span class="keyword">as</span> <span class="keyword">user</span> &quot;toni&quot;.</span><br></pre></td></tr></table></figure>
+<p>可以看到, 初始化数据库目录后, 自动创建了名为<code>postgres</code>的数据库和安装时的用户<code>toni</code></p>
+<h1 id="3-启用gdb调试"><a href="#3-启用gdb调试" class="headerlink" title="3 启用gdb调试"></a>3 启用gdb调试</h1><h2 id="3-1-调试pg-ctl"><a href="#3-1-调试pg-ctl" class="headerlink" title="3.1 调试pg_ctl"></a>3.1 调试<code>pg_ctl</code></h2><p>进入<code>pg_ctl</code>所在的目录, 执行如下命令:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">gdb pg_ctl</span><br><span class="line">(gdb) layout src</span><br><span class="line">(gdb) set args -D /home/toni/pgData/ start</span><br><span class="line">(gdb) b main</span><br><span class="line">(gdb) run</span><br></pre></td></tr></table></figure>
+<p>如果成功, 则会看到下图的内容:</p>
+<p><img src="/../../../images/DB/postgresql/gdb-postgres.png" alt="gdb-postgres"></p>
+<h2 id="3-2-postgres主程序的启动"><a href="#3-2-postgres主程序的启动" class="headerlink" title="3.2 postgres主程序的启动"></a>3.2 postgres主程序的启动</h2><p>我们单步调试<code>pg_ctl</code>, 终于发现了程序在这个位置启动主程序:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(<span class="type">void</span>) <span class="built_in">execl</span>(<span class="string">&quot;/bin/sh&quot;</span>, <span class="string">&quot;/bin/sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, cmd, (<span class="type">char</span> *) <span class="literal">NULL</span>);</span><br></pre></td></tr></table></figure>
+
+<p>但是返现其是由<code>exec</code>执行<code>sh</code>后再启动的, 这就不方便我们进行调试了, 不过我们可以通过获取<code>pid</code>后<code>attach</code>的方式进行调试</p>
+<h2 id="3-3-postgresql的进程"><a href="#3-3-postgresql的进程" class="headerlink" title="3.3 postgresql的进程"></a>3.3 <code>postgresql</code>的进程</h2><p>使用<code>pg_ctl</code>启动后, 我们发现<code>potgresql</code>有如下几个进程:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">ps -ef | grep postgres</span><br><span class="line">toni       38492     355  0 11:18 ?        00:00:00 /home/toni/pgBuild/bin/postgres -D ../pgData</span><br><span class="line">toni       38494   38492  0 11:18 ?        00:00:00 postgres: checkpointer</span><br><span class="line">toni       38495   38492  0 11:18 ?        00:00:00 postgres: background writer</span><br><span class="line">toni       38496   38492  0 11:18 ?        00:00:00 postgres: walwriter</span><br><span class="line">toni       38497   38492  0 11:18 ?        00:00:00 postgres: autovacuum launcher</span><br><span class="line">toni       38498   38492  0 11:18 ?        00:00:00 postgres: stats collector</span><br><span class="line">toni       38499   38492  0 11:18 ?        00:00:00 postgres: logical replication launcher</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><p><code>/home/toni/pgBuild/bin/postgres -D ../pgData</code> (<code>PID 38492</code>):<br>这是 PostgreSQL 的主进程（称为 <code>postmaster</code>）。它负责管理数据库系统的整体运行，包括处理客户端连接请求、启动新的子进程来处理这些连接，以及监控所有的子进程。参数 <code>-D ../pgData</code> 指定了数据库的数据目录。</p>
+</li>
+<li><p><code>postgres: checkpointer</code> (<code>PID 38494</code>):<br>检查点进程（checkpointer）负责创建检查点，这是数据库的一个稳定状态，用于数据恢复。检查点包括将缓冲区中的所有脏页（已修改但尚未写入磁盘的数据页）刷新到磁盘中。检查点有助于减少崩溃恢复的时间。</p>
+</li>
+<li><p><code>postgres: background writer</code> (<code>PID 38495</code>):<br>后台写入程序（background writer）进程负责将脏页从缓冲区定期写入磁盘。它可以减轻前端数据库进程的 <code>I/O </code>负载，并且可以平滑 <code>I/O</code> 峰值。</p>
+</li>
+<li><p><code>postgres: walwriter</code> (<code>PID 38496</code>):<br>写前日志（<code>Write-Ahead Logging, WAL</code>）写入器进程负责将 <code>WAL</code> 缓冲区中的记录刷新到磁盘上的 <code>WAL</code> 文件中。<code>WAL</code> 是 <code>PostgreSQL</code> 实现事务持久性和崩溃恢复的关键组成部分。</p>
+</li>
+<li><p><code>postgres: autovacuum launcher</code> (<code>PID 38497</code>):<br>自动清理启动器（autovacuum launcher）进程负责启动自动清理工作进程，这些工作进程负责清理数据库中的“死”元组（即不再可达的数据），并且帮助回收空间、更新统计信息以及防止事务 ID 耗尽。</p>
+</li>
+<li><p><code>postgres: stats collector</code> (<code>PID 38498</code>):<br>统计信息收集器（stats collector）进程负责收集数据库活动的统计信息，比如对于每个表和索引的访问频率等。这些信息对于查询优化器的决策非常重要。</p>
+</li>
+<li><p><code>postgres: logical replication launcher</code> (<code>PID 38499</code>):<br>逻辑复制启动器（logical replication launcher）进程负责管理逻辑复制和订阅功能。它监控逻辑复制工作进程，并在需要时启动新的工作进程以处理逻辑复制任务。</p>
+</li>
+</ol>
+<h2 id="3-4-psql后调试后端进程"><a href="#3-4-psql后调试后端进程" class="headerlink" title="3.4 psql后调试后端进程"></a>3.4 <code>psql</code>后调试后端进程</h2><ol>
+<li><p><strong>获取后端进程<code>pid</code></strong><br>要使用 <code>gdb</code> 调试已经连接到 <code>postmaster</code> 的 <code>psql</code> 会话，需要找到该 <code>psql</code> 会话对应的后端进程 ID, 这可以通过<code>sql</code>语句实现:</p>
+<p> <img src="/../../../images/DB/postgresql/psql-pg_backend_pid.png" alt="pg_backend_pid"></p>
+<p>我得到的进程<code>pid</code>是<code>44765</code>, 此时在另一个终端再次运行<code>ps -ef | grep postgres</code>, 发现多了一个<code>44765</code>的进程, 这个后端进程是响应客户端请求的进程，每个客户端连接都会有一个对应的后端进程。</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">toni       38492     355  0 11:18 ?        00:00:00 /home/toni/pgBuild/bin/postgres -D ../pgData</span><br><span class="line">toni       38494   38492  0 11:18 ?        00:00:00 postgres: checkpointer</span><br><span class="line">toni       38495   38492  0 11:18 ?        00:00:00 postgres: background writer</span><br><span class="line">toni       38496   38492  0 11:18 ?        00:00:00 postgres: walwriter</span><br><span class="line">toni       38497   38492  0 11:18 ?        00:00:00 postgres: autovacuum launcher</span><br><span class="line">toni       38498   38492  0 11:18 ?        00:00:00 postgres: stats collector</span><br><span class="line">toni       38499   38492  0 11:18 ?        00:00:00 postgres: logical replication launcher</span><br><span class="line">toni       44765   38492  0 11:42 ?        00:00:00 postgres: toni toni [<span class="built_in">local</span>] idle</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>附加 <code>gdb</code> 到进程</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo gdb -p 44765</span><br></pre></td></tr></table></figure>
+<p>结果如下:<br><img src="/../../../images/DB/postgresql/attach-44765.png" alt="attach-44765"></p>
+<p>这将启动 <code>gdb</code> 并附加到具有指定进程 ID 的进程。</p>
+<p>此时进程在系统调用<code>epoll_wait</code>中, 因此没有源码调试文件</p>
+</li>
+<li><p><code>backtrace</code>追踪调用栈信息</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">(gdb) backtrace</span><br><span class="line"> <span class="comment">#0  0x00007fe42671ffda in epoll_wait (epfd=4, events=0x5615a6ee7c48,</span></span><br><span class="line">     maxevents=1, <span class="built_in">timeout</span>=-1) at ../sysdeps/unix/sysv/linux/epoll_wait.c:30</span><br><span class="line"> <span class="comment">#1  0x00005615a6904d70 in WaitEventSetWaitBlock (set=0x5615a6ee7bd0,</span></span><br><span class="line">     cur_timeout=-1, occurred_events=0x7fffacc2e940, nevents=1) at latch.c:1471</span><br><span class="line"> <span class="comment">#2  0x00005615a6904bd7 in WaitEventSetWait (set=0x5615a6ee7bd0, timeout=-1,</span></span><br><span class="line">     occurred_events=0x7fffacc2e940, nevents=1, wait_event_info=100663296)</span><br><span class="line">     at latch.c:1417</span><br><span class="line"> <span class="comment">#3  0x00005615a673fde1 in secure_read (port=0x5615a6f0e3f0,</span></span><br><span class="line">     ptr=0x5615a6e5b260 &lt;PqRecvBuffer&gt;, len=8192) at be-secure.c:186</span><br><span class="line"> <span class="comment">#4  0x00005615a674b86c in pq_recvbuf () at pqcomm.c:959</span></span><br><span class="line"> <span class="comment">#5  0x00005615a674b951 in pq_getbyte () at pqcomm.c:1005</span></span><br><span class="line"> <span class="comment">#6  0x00005615a693cfd2 in SocketBackend (inBuf=0x7fffacc2eaa0) at postgres.c:352</span></span><br><span class="line"> <span class="comment">#7  0x00005615a693d24f in ReadCommand (inBuf=0x7fffacc2eaa0) at postgres.c:475</span></span><br><span class="line"> <span class="comment">#8  0x00005615a6942bd4 in PostgresMain (argc=1, argv=0x7fffacc2ebd0,</span></span><br><span class="line">     dbname=0x5615a6f18758 <span class="string">&quot;toni&quot;</span>, username=0x5615a6f18738 <span class="string">&quot;toni&quot;</span>)</span><br><span class="line">     at postgres.c:4445</span><br><span class="line"> <span class="comment">#9  0x00005615a6865e1e in BackendRun (port=0x5615a6f0e3f0) at postmaster.c:4540</span></span><br><span class="line"> <span class="comment">#10 0x00005615a6865679 in BackendStartup (port=0x5615a6f0e3f0)</span></span><br><span class="line">     at postmaster.c:4262</span><br><span class="line"> <span class="comment">#11 0x00005615a6861402 in ServerLoop () at postmaster.c:1748</span></span><br><span class="line"> <span class="comment">#12 0x00005615a6860b5f in PostmasterMain (argc=3, argv=0x5615a6ee5d20)</span></span><br><span class="line">     at postmaster.c:1420</span><br><span class="line"> <span class="comment">#13 0x00005615a674f089 in main (argc=3, argv=0x5615a6ee5d20) at main.c:209</span></span><br></pre></td></tr></table></figure>
+
+
+<ul>
+<li><p><code>#0</code> - 这是当前停止点，即 <code>epoll_wait</code> 系统调用。这个函数是 <code>Linux</code> 内核提供的，用于等待多个文件描述符上的事件。这里的参数表示正在等待文件描述符 <code>4</code> 上的事件，最多等待 <code>1</code> 个事件，且超时时间设置为 <code>-1</code>，表示无限等待直到有事件发生。</p>
+</li>
+<li><p><code>#1</code> - <code>WaitEventSetWaitBlock</code> 函数是 <code>PostgreSQL</code> 内部的函数。它是封装 <code>epoll_wait</code> 的部分，用于等待一组事件中的任何一个发生。</p>
+</li>
+<li><p><code>#2</code> - <code>WaitEventSetWait</code> 函数是 <code>PostgreSQL</code> 的另一个内部函数，它负责等待事件集合中指定的事件。</p>
+</li>
+<li><p><code>#3</code> - <code>secure_read</code> 函数尝试从安全连接中读取数据。</p>
+</li>
+<li><p><code>#4</code> - <code>pq_recvbuf</code> 函数是 <code>PostgreSQL</code> 的内部通信函数，从客户端接收数据缓冲区。</p>
+</li>
+<li><p><code>#5</code> - <code>pq_getbyte</code> 函数是用于从 <code>PostgreSQL</code> 后端接收单个字节的函数。</p>
+</li>
+<li><p><code>#6</code> - <code>SocketBackend</code> 函数处理 <code>PostgreSQL</code> 后端进程中的套接字通信。</p>
+</li>
+<li><p><code>#7</code> - <code>ReadCommand</code> 函数读取从客户端发来的命令。</p>
+</li>
+<li><p><code>#8</code> - <code>PostgresMain</code> 是 <code>PostgreSQL</code> 后端主函数，处理每个数据库会话的生命周期。</p>
+</li>
+<li><p><code>#9</code> - <code>BackendRun</code> 是在 <code>PostgreSQL</code> 后端进程启动后执行的函数。</p>
+</li>
+<li><p><code>#10</code> - <code>BackendStartup</code> 函数负责在系统启动后初始化后端进程。</p>
+</li>
+<li><p><code>#11</code> - <code>ServerLoop</code> 函数是 <code>PostgreSQL</code> 主进程的主循环，负责接受新的连接并启动新的后端进程。</p>
+</li>
+<li><p><code>#12</code> - <code>PostmasterMain</code> 是 <code>PostgreSQL</code> 的主守护进程主函数，管理数据库服务器的整体运行。</p>
+</li>
+<li><p><code>#13</code> - <code>main</code> 是 <code>PostgreSQL</code> 的入口点。</p>
+</li>
+</ul>
+<p>从 <code>backtrace</code> 可以看出，<code>PostgreSQL</code> 后端进程正在等待来自客户端的新的网络活动。这是数据库服务器正常运行时的典型状态。</p>
+</li>
+<li><p>调试<code>SocketBackend</code><br><code>SocketBackend</code>接受客户端链接,因此可以在次数打断点, 先使用<code>ctrl c</code>暂停进程, 然后:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">b SocketBackend</span><br><span class="line">c</span><br></pre></td></tr></table></figure>
+<p>此时在<code>psql</code>连接客户端一侧, 使用<code>\l</code>命令使后端进行继续执行, 结果如下:<br><img src="/../../../images/DB/postgresql/gdb-SocketBackend.png" alt="gdb-SocketBackend"></p>
+<p> 此时我们就已经正常进入了<code>postgresql</code>的业务代码, 并附带了源码调试信息, 大功告成</p>
+</li>
+</ol>
+<h1 id="4-VSCode智能提示设置"><a href="#4-VSCode智能提示设置" class="headerlink" title="4 VSCode智能提示设置"></a>4 VSCode智能提示设置</h1><p>当我们完成上述操作后发现，如果我们在<code>VSCode</code>中直接打开项目文件夹, 是没有代码只能提示和补全的, 经过查阅得知, 智能跳转通常需要一个编译数据库（<code>compile_commands.json</code>）。这个文件包含了编译器在编译项目时使用的命令，它允许代码分析工具理解代码是如何被编译的，从而提供准确的智能感知。</p>
+<p><code>compile_commands.json</code>可以如下得到:</p>
+<h2 id="4-1-安装bear"><a href="#4-1-安装bear" class="headerlink" title="4.1 安装bear"></a>4.1 安装<code>bear</code></h2><p><code>bear</code> 用于在运行构建过程的同时拦截编译命令，生成 <code>compile_commands.json</code> 文件，这个文件可以被很多编辑器和工具用来提供代码索引和自动完成等功能。</p>
+<p>我使用<code>Ubuntu</code>的<code>apt</code>安装<code>bear</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install bear</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-2-bear拦截编译命令"><a href="#4-2-bear拦截编译命令" class="headerlink" title="4.2 bear拦截编译命令"></a>4.2 <code>bear</code>拦截编译命令</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make clean</span><br><span class="line">bear -- make</span><br></pre></td></tr></table></figure>
+<p>在这个命令中，<code>--</code> 表示后面的参数都将传递给实际的构建系统（在这个例子中是 <code>make</code>），而不是被 <code>bear</code> 解析。这样，<code>bear</code> 就会监听 <code>make</code> 命令的执行，捕获它的编译命令，并生成 <code>compile_commands.json</code> 文件。</p>
+<p>需要注意的是, 首先要<code>make clean</code>清理之前的编译结果, 否则如果<code>make</code>什么也没做, 那么<code>bear</code>就什么也没拦截到, 构建的<code>compile_commands.json</code> 文件就是空的。</p>
+<h2 id="4-3-VSCode设置compile-commands-json"><a href="#4-3-VSCode设置compile-commands-json" class="headerlink" title="4.3 VSCode设置compile_commands.json"></a>4.3 VSCode设置<code>compile_commands.json</code></h2><ol>
+<li><code>VSCode</code>安装<code>clangd</code>插件</li>
+<li>添加<code>compile_commands.json</code><br>在工作区的 <code>.vscode</code> 文件夹中创建或编辑 <code>settings.json</code> 文件，并添加以下内容：<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;C_Cpp.default.compileCommands&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/compile_commands.json&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>之后重启<code>VSCode</code>, 发现C文件已经有了智能提示和跳转了</p>
+<h3 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h3><p><a target="_blank" rel="noopener" href="https://www.postgresql.org/docs/">https://www.postgresql.org/docs/</a><br><a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1624079542120914944">https://www.zhihu.com/column/c_1624079542120914944</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43997331/article/details/120662533">https://blog.csdn.net/weixin_43997331/article/details/120662533</a></p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E8%AF%91%E6%BA%90%E7%A0%81"><span class="toc-number">1.</span> <span class="toc-text">1 编译源码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 安装依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%85%8B%E9%9A%86%E4%BB%93%E5%BA%93%E5%B9%B6%E7%BC%96%E8%AF%91"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 克隆仓库并编译</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E9%A2%9D%E5%A4%96%E7%BC%96%E8%AF%91%E9%80%89%E9%A1%B9"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 额外编译选项</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E6%9C%AC%E9%85%8D%E7%BD%AE"><span class="toc-number">2.</span> <span class="toc-text">2 基本配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E9%85%8D%E7%BD%AE%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 配置环境变量</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%9D%E5%A7%8B%E5%8C%96%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 初始化数据库</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E5%90%AF%E5%8A%A8%E6%95%B0%E6%8D%AE%E5%BA%93%E5%B9%B6%E7%99%BB%E5%BD%95"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 启动数据库并登录</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%90%AF%E7%94%A8gdb%E8%B0%83%E8%AF%95"><span class="toc-number">3.</span> <span class="toc-text">3 启用gdb调试</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%B0%83%E8%AF%95pg-ctl"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 调试pg_ctl</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-postgres%E4%B8%BB%E7%A8%8B%E5%BA%8F%E7%9A%84%E5%90%AF%E5%8A%A8"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 postgres主程序的启动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-postgresql%E7%9A%84%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 postgresql的进程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-psql%E5%90%8E%E8%B0%83%E8%AF%95%E5%90%8E%E7%AB%AF%E8%BF%9B%E7%A8%8B"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 psql后调试后端进程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-VSCode%E6%99%BA%E8%83%BD%E6%8F%90%E7%A4%BA%E8%AE%BE%E7%BD%AE"><span class="toc-number">4.</span> <span class="toc-text">4 VSCode智能提示设置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%89%E8%A3%85bear"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 安装bear</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-bear%E6%8B%A6%E6%88%AA%E7%BC%96%E8%AF%91%E5%91%BD%E4%BB%A4"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 bear拦截编译命令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-VSCode%E8%AE%BE%E7%BD%AEcompile-commands-json"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 VSCode设置compile_commands.json</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-number">4.3.1.</span> <span class="toc-text">参考</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&text=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&is_video=false&description=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置&body=Check out this article: http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&title=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&name=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/&t=Postgresql学习笔记0: 源码安装、gdb调试与VSCode智能提示设置"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

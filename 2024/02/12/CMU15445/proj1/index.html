@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文将介绍第一个project: buffer poll的实现思路由于课程老师不允许放出自己的代码实现, 因此我只会涉及大概的实现思路, 而不涉及代码细节 官方project文档: https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2022&#x2F;project1&#x2F; 1 项目目标本项目要实现的缓存池结构如下:  实现一个可扩展哈希表, 将数据库中的一个page从磁盘缓存到内存中,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)">
+<meta property="og:url" content="http://example.com/2024/02/12/CMU15445/proj1/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文将介绍第一个project: buffer poll的实现思路由于课程老师不允许放出自己的代码实现, 因此我只会涉及大概的实现思路, 而不涉及代码细节 官方project文档: https:&#x2F;&#x2F;15445.courses.cs.cmu.edu&#x2F;fall2022&#x2F;project1&#x2F; 1 项目目标本项目要实现的缓存池结构如下:  实现一个可扩展哈希表, 将数据库中的一个page从磁盘缓存到内存中,">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CMU15445/Extendible-Hash-Table.png">
+<meta property="article:published_time" content="2024-02-12T06:51:11.000Z">
+<meta property="article:modified_time" content="2024-02-21T16:16:04.637Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="lru-k">
+<meta property="article:tag" content="可扩展哈希">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CMU15445/Extendible-Hash-Table.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/CMU15445/proj1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/CMU15445/proj1/&text=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/CMU15445/proj1/&is_video=false&description=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)&body=Check out this article: http://example.com/2024/02/12/CMU15445/proj1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/CMU15445/proj1/&name=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/CMU15445/proj1/&t=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">1 项目目标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%8F%AF%E6%89%A9%E5%B1%95%E5%93%88%E5%B8%8C"><span class="toc-number">2.</span> <span class="toc-text">2 可扩展哈希</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B4%E4%BD%93%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 整体介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%8F%92%E5%85%A5%E6%B5%81%E7%A8%8B"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 插入流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 流程概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-%E5%9B%BE%E8%A7%A3%E6%8F%92%E5%85%A5"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 图解插入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 删除流程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-LRU-K%E6%9B%BF%E6%8D%A2%E7%AD%96%E7%95%A5"><span class="toc-number">3.</span> <span class="toc-text">3 LRU-K替换策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-LRU-K%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 LRU-K工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E8%AE%B0%E5%BD%95%E5%92%8C%E5%88%A0%E9%99%A4"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 记录和删除</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-1-%E6%96%B0%E5%A2%9E%E8%AE%BF%E9%97%AE%E8%AE%B0%E5%BD%95"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">3.2.2.1 新增访问记录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-2-%E6%9B%BF%E6%8D%A2%E7%AD%96%E7%95%A5"><span class="toc-number">3.2.2.2.</span> <span class="toc-text">3.2.2.2 替换策略</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Buffer-Pool"><span class="toc-number">4.</span> <span class="toc-text">4 Buffer Pool</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-Buffer-Pool-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 Buffer Pool 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-NewPgImp"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 NewPgImp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-FetchPgImp"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 FetchPgImp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-DeletePgImp"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 DeletePgImp</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-12T06:51:11.000Z" class="dt-published" itemprop="datePublished">2024-02-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CMU15445/">CMU15445</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/lru-k/" rel="tag">lru-k</a>, <a class="p-category" href="/tags/%E5%8F%AF%E6%89%A9%E5%B1%95%E5%93%88%E5%B8%8C/" rel="tag">可扩展哈希</a>, <a class="p-category" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文将介绍第一个<code>project: buffer poll</code>的实现思路<br>由于课程老师不允许放出自己的代码实现, 因此我只会涉及大概的实现思路, 而不涉及代码细节</p>
+<p>官方<code>project</code>文档: <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2022/project1/">https://15445.courses.cs.cmu.edu/fall2022/project1/</a></p>
+<h1 id="1-项目目标"><a href="#1-项目目标" class="headerlink" title="1 项目目标"></a>1 项目目标</h1><p>本项目要实现的缓存池结构如下:</p>
+<ol>
+<li>实现一个可扩展哈希表, 将数据库中的一个<code>page</code>从磁盘缓存到内存中, 并且维持从<code>page_id</code>到<code>page</code>得到映射关系</li>
+<li>当<code>page</code>的大小超出容量时, 使用<code>lru-k</code>进行替换</li>
+</ol>
+<h1 id="2-可扩展哈希"><a href="#2-可扩展哈希" class="headerlink" title="2 可扩展哈希"></a>2 可扩展哈希</h1><h2 id="2-1-整体介绍"><a href="#2-1-整体介绍" class="headerlink" title="2.1 整体介绍"></a>2.1 整体介绍</h2><p>可扩展哈希（Extendible Hashing）是一种动态哈希技术，适用于数据库和文件系统中的索引结构，特别是在处理大量增减变化的数据集时。可扩展哈希表的主要特点是能根据数据量的变化动态地调整其大小，这样可以维持较均匀的访问性能，无论数据量的多少。</p>
+<h2 id="2-2-工作原理"><a href="#2-2-工作原理" class="headerlink" title="2.2 工作原理"></a>2.2 工作原理</h2><ol>
+<li><p><strong>哈希函数</strong>：<br>可扩展哈希表使用哈希函数对键值进行哈希，生成固定长度的位模式。通常，这个哈希函数产生的位数要比实际使用的位数多，以便表可以在未来扩展。</p>
+</li>
+<li><p><strong>目录结构</strong>：<br>该算法使用一个称为“目录”(<code>directory</code>)的结构，它包含指向数据桶（<code>buckets</code>）的指针。目录的大小取决于当前使用的哈希键的位数，初始时通常很小。</p>
+</li>
+<li><p><strong>桶</strong>：<br> 存储实际数据项（例如键值对）的基本单元。每个桶可以存储一个或多个数据项，其容量通常是预先定义的。</p>
+</li>
+<li><p><strong>桶分裂</strong>：<br>当一个桶满时（即达到预设的装载因子），系统会进行桶分裂（<code>bucket splitting</code>）。分裂时，桶中的数据会根据新的哈希键位重新分配到两个新桶中。</p>
+</li>
+<li><p><strong>目录扩展</strong>：<br>如果所有数据项都使用了当前哈希键的全部位数，且某个桶满了需要分裂，则目录也需要扩展。目录扩展是通过增加哈希键的位数并复制当前目录项来实现的。</p>
+</li>
+<li><p><strong>局部性原理</strong>：<br>可扩展哈希表的一个关键特性是局部性原理，即桶分裂只影响某个特定桶中的记录，而不会影响到整个哈希表。</p>
+</li>
+</ol>
+<h2 id="2-3-插入流程"><a href="#2-3-插入流程" class="headerlink" title="2.3 插入流程"></a>2.3 插入流程</h2><h3 id="2-3-1-流程概述"><a href="#2-3-1-流程概述" class="headerlink" title="2.3.1 流程概述"></a>2.3.1 流程概述</h3><p>整体流程如下:<br>可扩展哈希的插入流程涉及将新的数据项（键值对）添加到哈希表中。以下是插入过程的步骤：</p>
+<ol>
+<li><p><strong>哈希函数计算</strong>：<br>对插入项的键使用哈希函数，得到一个哈希值。这个哈希值包含足够多的位，以支持未来的目录扩展。</p>
+</li>
+<li><p><strong>确定目标桶</strong>：<br>使用哈希值的前几位（称为“全局深度”）来确定目标桶。全局深度是指目录中用于索引的位数。如果哈希表的目录大小是 $2^d$，那么全局深度就是 <code>d</code>。</p>
+</li>
+<li><p><strong>将数据插入桶</strong>：</p>
+<ol>
+<li>如果目标桶没有满，即其包含的数据项少于桶的最大容量，则直接将数据项插入到该桶中。</li>
+<li><strong>处理桶溢出</strong>：<br>如果目标桶已经满了，需要进行桶分裂。桶分裂的基本流程如下：<ol>
+<li><strong>分裂桶</strong>：<br>创建一个新的空桶。将原来的桶中的所有数据项和新插入的数据项根据哈希值的下一位重新分配到这两个桶中。这通常意味着原桶和新桶会根据哈希值的那一位（原本相同的位）分别收集0和1的记录。</li>
+<li><strong>更新目录</strong>：<br>更新目录以反映新的桶分配。这可能需要增加目录的“全局深度”（即索引的位数）。如果分裂的桶的“局部深度”（该桶对应的哈希值的位数）已经等于全局深度，那么在分裂之前，目录需要加倍，即复制一遍，以增加一个位的索引深度。</li>
+<li><strong>重新指向桶指针</strong>：<br>将目录中与原桶相关的指针（那些仅在分裂位上有差异的指针）更新，使一部分指向原桶，另一部分指向新桶。</li>
+<li><strong>重复分裂（如有必要）</strong>：<br>如果在分裂后新插入的项还是无法被放入桶中（因为原桶中其他项与它有相同的新哈希值），则需要重复分裂过程。</li>
+<li><strong>完成插入</strong>：<br>当桶分裂和目录更新完成后，确保所有的数据项都被正确地放入桶中，包括新插入的数据项。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<p>这个过程确保了可扩展哈希表可以根据数据量的变化动态调整，同时保持常数时间的平均插入性能。由于目录的深度和桶指针的更新是有限的，所以插入过程通常很高效。</p>
+<h3 id="2-3-2-图解插入"><a href="#2-3-2-图解插入" class="headerlink" title="2.3.2 图解插入"></a>2.3.2 图解插入</h3><p>接下来结合插入的图例解释其工作原理:</p>
+<p><img src="/../../images/CMU15445/Extendible-Hash-Table.png"></p>
+<p>通过上图我们可以明显看到可扩展哈希的下面几个特点:</p>
+<ol>
+<li>不同目录项可以指向相同的<code>bucket</code></li>
+<li>每次超出<code>bucket</code>容量时, 只有超出<code>bucket</code>容量的那一个<code>bucket</code>需要<code>rehash</code>, 其余<code>bucket</code>保持不变</li>
+<li>每一个<code>bucket</code>有自己的深度, 全局的深度等于所有<code>bucket</code>的深度的最大值</li>
+<li><code>global_depth &lt;&lt; 1== len(directory)</code></li>
+</ol>
+<p><strong>此处详细说明图中<code>IndexOf</code>的含义:</strong><br><code>IndexOf</code>就是寻找<code>bucket</code>的序号, 将<code>key</code>进行<code>hash</code>后取<code>某几个低位</code>得到<code>bucket</code>的序号, <code>某几个低位</code>正是通过全局的<code>global_depth</code>确定的, <code>global_depth</code>就是指定了低位的数量, 以最后一次插入的<code>(5, &quot;e&quot;)</code>为例:</p>
+<ol>
+<li><code>hash(5) = 5</code>;</li>
+<li>5的二进制表示是<code>0b101</code>, 此时的<code>global_depth</code>为2, 所以取低2为<code>0b01</code>, 目标<code>bucket</code>的序号为1</li>
+<li>向1号<code>bucket</code>插入<code>(5, &quot;e&quot;)</code>, 容量足够, 插入成功</li>
+</ol>
+<h2 id="2-4-删除流程"><a href="#2-4-删除流程" class="headerlink" title="2.4 删除流程"></a>2.4 删除流程</h2><p>由于本项目不需要实现哈希的收缩, 因此删除流程只需要将指定<code>bucket</code>中的元素删除即可</p>
+<h1 id="3-LRU-K替换策略"><a href="#3-LRU-K替换策略" class="headerlink" title="3 LRU-K替换策略"></a>3 <code>LRU-K</code>替换策略</h1><h2 id="3-1-LRU-K工作原理"><a href="#3-1-LRU-K工作原理" class="headerlink" title="3.1 LRU-K工作原理"></a>3.1 <code>LRU-K</code>工作原理</h2><p><code>LRU-K</code> 是传统的最近最少使用（<code>LRU</code>）算法的扩展。在 <code>LRU</code> 算法中，当需要替换一个页面时，选择最长时间未被访问的页面进行替换。而 <code>LRU-K</code> 算法则进一步利用了页面的访问历史信息，不仅考虑最后一次访问时间，还考虑到最后 <code>K</code> 次的访问时间。</p>
+<p><code>LRU-K</code> 跟踪并记录每个页面最后 K 次被访问的时间。它使用这些历史访问数据来预测每个页面未来被访问的可能性。</p>
+<p>具体而言, <code>LRU-K</code>按照下面的规则来移除元素:</p>
+<ol>
+<li><p><strong>寻找访问次数低于 K 次的页面</strong>：首先检查是否有页面的访问次数低于 <code>K</code> 次。如果有，这些页面是候选被替换的对象，因为它们相对来说是最不常用的。在这些页面中，选取最新访问时间戳最旧的页面进行替换。</p>
+</li>
+<li><p><strong>寻找访问次数达到 K 次的页面</strong>：如果所有的页面访问次数都达到了 <code>K</code> 次，则从这些页面中选择最新的第 <code>K</code> 次访问时间戳最旧的页面进行替换。这表示即使页面被频繁访问，但如果它的“第 <code>K</code> 次”访问已经很久远了，那么它可能在未来一段时间内不会再次被访问，因此成为了替换的目标。</p>
+</li>
+</ol>
+<h2 id="3-2-实现思路"><a href="#3-2-实现思路" class="headerlink" title="3.2 实现思路"></a>3.2 实现思路</h2><h3 id="3-2-1-数据结构"><a href="#3-2-1-数据结构" class="headerlink" title="3.2.1 数据结构"></a>3.2.1 数据结构</h3><p>可以看到, 传统的<code>LRU</code>直接移除时间戳最久的一个元素, 但<code>LRU-K</code>需要分为<code>访问次数低于 K 次</code>和<code>访问次数达到 K 次</code>2中情况, 在这2种情况下, 其移除的思路和传统的<code>LRU</code>是一样的。</p>
+<p>由于我们的<code>LRU-K</code>是作为缓存池的一部分使用的，其更新、删除、读取都有时间复杂度的要求，查询最容易想到哈希表， 而插入和删除最容易想到的是链表， 因此可以结合这2个数据结构实现，由于2个情况都可以看做是传统<code>LRU</code>的实现, 因此可以用如下的数据结构实现:</p>
+<ol>
+<li>低于 <code>K</code> 次的页面记录数据结构<ol>
+<li>双向链表: <code>list_less_k</code>: 按照最新访问顺序记录页面<code>id</code></li>
+<li>哈希表: <code>map_less_k</code>: 记录页面在<code>list_less_k</code>中的位置(也就是迭代器), 以便快速删除</li>
+</ol>
+</li>
+<li>达到 <code>K</code> 次的页面记录数据结构<ol>
+<li>双向链表: <code>list_reach_k</code>: 按照最新访问顺序记录页面<code>id</code></li>
+<li>哈希表: <code>map_reach_k</code>: 记录页面在<code>list_reach_k</code>中的位置(也就是迭代器), 以便快速删除</li>
+</ol>
+</li>
+<li>全局计数器<code>map_count</code>: 记录每个页面<code>id</code>的访问次数, 控制页面从<code>list_less_k</code>&#x2F;<code>map_less_k</code>转移到<code>list_reach_k</code>&#x2F;<code>map_reach_k</code></li>
+</ol>
+<h3 id="3-2-2-记录和删除"><a href="#3-2-2-记录和删除" class="headerlink" title="3.2.2 记录和删除"></a>3.2.2 记录和删除</h3><h4 id="3-2-2-1-新增访问记录"><a href="#3-2-2-1-新增访问记录" class="headerlink" title="3.2.2.1 新增访问记录"></a>3.2.2.1 新增访问记录</h4><p>记访问记录的页面为<code>id</code></p>
+<ol>
+<li>从<code>map_count</code>中查看<code>id</code>的访问次数</li>
+<li>如果访问次数达到了<code>k</code>次<ol>
+<li>将<code>id</code>的记录从<code>list_reach_k</code>和<code>map_reach_k</code>中删除</li>
+<li>将<code>id</code>重新插入<code>list_reach_k</code>, 并更新这个新的头部或者尾部位置(取决于链表的排序是从新到旧还是从旧到新)的迭代器到<code>map_reach_k</code></li>
+<li>更新<code>map_count</code>计数</li>
+</ol>
+</li>
+<li>如果访问次数不到<code>k</code>次<ol>
+<li>如果访问次数是<code>k-1</code>次<ol>
+<li>由于这次更新后就达到了<code>k</code>次, 需要将<code>id</code>从<code>list_less_k</code>和<code>map_less_k</code>中删除</li>
+<li>将<code>id</code>插入<code>list_reach_k</code>, 并更新这个新的头部或者尾部位置(取决于链表的排序是从新到旧还是从旧到新)的迭代器到<code>map_reach_k</code></li>
+<li>更新<code>map_count</code>计数</li>
+</ol>
+</li>
+<li>如果访问次数小于<code>k-1</code>次<ol>
+<li>将<code>id</code>从<code>list_less_k</code>和<code>map_less_k</code>中删除</li>
+<li>将<code>id</code>重新插入<code>list_less_k</code>, 并更新这个新的头部或者尾部位置(取决于链表的排序是从新到旧还是从旧到新)的迭代器到<code>map_less_k</code></li>
+<li>更新<code>map_count</code>计数</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h4 id="3-2-2-2-替换策略"><a href="#3-2-2-2-替换策略" class="headerlink" title="3.2.2.2 替换策略"></a>3.2.2.2 替换策略</h4><ol>
+<li>如果<code>list_less_k</code>不为空<ol>
+<li>移除<code>list_less_k</code>头部或尾部的最旧页面号, 同时移除对应的<code>map_less_k</code></li>
+<li>更新对应<code>map_count</code>计数为0, 表示没有在缓存池中</li>
+</ol>
+</li>
+<li>如果<code>list_less_k</code>为空<ol>
+<li>移除<code>list_reach_k</code>头部或尾部的最旧页面号, 同时移除对应的<code>map_reach_k</code></li>
+<li>更新对应<code>map_count</code>计数为0, 表示没有在缓存池中</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<blockquote>
+<p>以上的新增和替换思路没有考虑到页面在逻辑上是否可以移除, 因为一个页面尽管长时间没有被访问, 但其数据和加载到内存时发生了变化, 还没有刷入磁盘, 因此不能被移除。在项目代码中， 还需要增加相应的判断，不过这个判断很简单，就没有写到上面的流程里了</p>
+</blockquote>
+</blockquote>
+<h1 id="4-Buffer-Pool"><a href="#4-Buffer-Pool" class="headerlink" title="4 Buffer Pool"></a>4 Buffer Pool</h1><p>之前我们只是一股脑地实现了可扩展哈希和<code>LRU-K</code>, 但实际上却不知道或者不完全知道这些东西和最后实现的缓存池有什么联系, 做完这一小节后这一切都有了答案</p>
+<h2 id="4-1-Buffer-Pool-数据结构"><a href="#4-1-Buffer-Pool-数据结构" class="headerlink" title="4.1 Buffer Pool 数据结构"></a>4.1 Buffer Pool 数据结构</h2><p>首先需要说明<code>Buffer Pool</code>的数据结构:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/** Number of pages in the buffer pool. */</span></span><br><span class="line"><span class="type">const</span> <span class="type">size_t</span> pool_size_;</span><br><span class="line"><span class="comment">/** The next page id to be allocated  */</span></span><br><span class="line">std::atomic&lt;<span class="type">page_id_t</span>&gt; next_page_id_ = <span class="number">0</span>;</span><br><span class="line"><span class="comment">/** Bucket size for the extendible hash table */</span></span><br><span class="line"><span class="type">const</span> <span class="type">size_t</span> bucket_size_ = <span class="number">4</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/** Array of buffer pool pages. */</span></span><br><span class="line">Page *pages_;</span><br><span class="line"><span class="comment">/** Pointer to the disk manager. */</span></span><br><span class="line">DiskManager *disk_manager_ __attribute__((__unused__));</span><br><span class="line"><span class="comment">/** Pointer to the log manager. Please ignore this for P1. */</span></span><br><span class="line">LogManager *log_manager_ __attribute__((__unused__));</span><br><span class="line"><span class="comment">/** Page table for keeping track of buffer pool pages. */</span></span><br><span class="line">ExtendibleHashTable&lt;<span class="type">page_id_t</span>, <span class="type">frame_id_t</span>&gt; *page_table_;</span><br><span class="line"><span class="comment">/** Replacer to find unpinned pages for replacement. */</span></span><br><span class="line">LRUKReplacer *replacer_;</span><br><span class="line"><span class="comment">/** List of free frames that don&#x27;t have any pages on them. */</span></span><br><span class="line">std::list&lt;<span class="type">frame_id_t</span>&gt; free_list_;</span><br><span class="line"><span class="comment">/** This latch protects shared data structures. We recommend updating this comment to describe what it protects. */</span></span><br><span class="line">std::mutex latch_;</span><br></pre></td></tr></table></figure>
+<p>上面这些都是<code>src/include/buffer/buffer_pool_manager_instance.h</code>中定义的类成员变量, 对其中主要的成员变量说明如下:</p>
+<ol>
+<li><code>pool_size_</code>: 缓存池的容量, 也是之前的<code>LRU-K</code>中的<code>num_frames</code></li>
+<li><code>bucket_size_</code>: 之前的可扩展哈希的桶的容量</li>
+<li><code>pages_</code>: 实际缓存池的页的内容, 是一个数组</li>
+<li><code>disk_manager_</code>: 官方已经实现的从硬盘加载页面的类的实例, 相关函数的作用可以去看头文件</li>
+<li><code>page_table_</code>: 之前实现的可扩展哈希表, 用于快速查找指定的<code>page_id_t</code>在<code>pages_</code>数组中的位置</li>
+<li><code>replacer_</code>: 之前实现的替换类, 用于记录读写记录并在缓存池满时进行替换</li>
+<li><code>free_list_</code>: 空闲链表, 记录的是空闲的页的索引, 也就是在 <code>pages_</code>数组中的下标</li>
+</ol>
+<p>通过上面的分析, 我们对之前实现的可扩展哈希表和<code>LRU-K</code>的作用就已经很明白了, 而且在实现了可扩展哈希表和<code>LRU-K</code>后, 最后这一部分的任务已经很简单了, 简单阅读一下<code>proj</code>文档, 应该就能试着写出来了</p>
+<h2 id="4-2-实现思路"><a href="#4-2-实现思路" class="headerlink" title="4.2 实现思路"></a>4.2 实现思路</h2><h3 id="4-2-1-NewPgImp"><a href="#4-2-1-NewPgImp" class="headerlink" title="4.2.1 NewPgImp"></a>4.2.1 <code>NewPgImp</code></h3><p>要求在缓存池中创建一个新页, 逻辑如下:</p>
+<ol>
+<li>如果<code>pages_</code>中的所有页都不能被替换(<code>GetPinCount() &gt; 0</code>), 返回空指针</li>
+<li>此时创建新页, 如下获取一个新页<ol>
+<li>如果空闲列表<code>free_list_</code>不为空, 从中取一个页</li>
+<li>否则用替换类<code>replacer_</code>驱逐一个页<ol>
+<li>如果驱逐页是脏页, 还需要用<code>disk_manager_</code>写回磁盘</li>
+<li>缓存池哈希表<code>page_table_</code>移除驱逐页</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>在缓存池哈希表<code>page_table_</code>记录新页位置</li>
+<li>更新页的<code>pin_count_</code>和页号</li>
+<li>用替换类<code>replacer_</code>更新新页的访问记录, 并设置其不可驱逐(马上要被使用)</li>
+</ol>
+<h3 id="4-2-2-FetchPgImp"><a href="#4-2-2-FetchPgImp" class="headerlink" title="4.2.2 FetchPgImp"></a>4.2.2 <code>FetchPgImp</code></h3><p>要求从缓存池取出指定页号的页面, 如果页面不存在于缓存池但缓存池没有可以驱逐的页面, 返回空指针, 逻辑如下:</p>
+<ol>
+<li>如果哈希表中存在映射, 说明页存在:<ol>
+<li>自增其<code>pin_count_</code></li>
+<li>用替换类<code>replacer_</code>更新页的访问记录, 并设置其不可驱逐(马上要被使用)</li>
+<li>返回</li>
+</ol>
+</li>
+<li>不存在映射, 需要驱逐<ol>
+<li>如果<code>pages_</code>中的所有页都不能被替换(<code>GetPinCount() &gt; 0</code>), 返回空指针</li>
+<li>分配新页<ol>
+<li>如果空闲列表<code>free_list_</code>不为空, 从中取一个页</li>
+<li>否则用替换类<code>replacer_</code>驱逐一个页<ol>
+<li>如果驱逐页是脏页, 还需要用<code>disk_manager_</code>写回磁盘</li>
+<li>缓存池哈希表<code>page_table_</code>移除驱逐页</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>更新新页的<code>pin_count_</code>和页号</li>
+<li>用替换类<code>replacer_</code>更新新页的访问记录, 并设置其不可驱逐(马上要被使用)</li>
+<li>调用<code>disk_manager_</code>的相关方法从硬盘上读取指定页的内容到这个新页</li>
+</ol>
+<h3 id="4-2-3-DeletePgImp"><a href="#4-2-3-DeletePgImp" class="headerlink" title="4.2.3 DeletePgImp"></a>4.2.3 <code>DeletePgImp</code></h3><p>要求在缓存池删除指定页号的页, 逻辑如下:</p>
+<ol>
+<li>如果该页不存在于缓存池, 返回<code>true</code>表示删除成功</li>
+<li>如果该页被占用(<code>GetPinCount() &gt; 0</code>), 返回<code>false</code>表示删除失败</li>
+<li>删除该页<ol>
+<li>从哈希表从移除</li>
+<li>从替换类<code>replacer_</code>中移除</li>
+<li>更新删除页的页号为<code>INVALID_PAGE_ID</code>, 更新<code>pin_count_ = 0</code>, 标记<code>is_dirty_ = false</code></li>
+<li>将该页的索引号放回空闲列表</li>
+<li>返回<code>true</code>表示删除成功</li>
+</ol>
+</li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">1 项目目标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%8F%AF%E6%89%A9%E5%B1%95%E5%93%88%E5%B8%8C"><span class="toc-number">2.</span> <span class="toc-text">2 可扩展哈希</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B4%E4%BD%93%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 整体介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%8F%92%E5%85%A5%E6%B5%81%E7%A8%8B"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 插入流程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 流程概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-%E5%9B%BE%E8%A7%A3%E6%8F%92%E5%85%A5"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 图解插入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E5%88%A0%E9%99%A4%E6%B5%81%E7%A8%8B"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 删除流程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-LRU-K%E6%9B%BF%E6%8D%A2%E7%AD%96%E7%95%A5"><span class="toc-number">3.</span> <span class="toc-text">3 LRU-K替换策略</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-LRU-K%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 LRU-K工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E8%AE%B0%E5%BD%95%E5%92%8C%E5%88%A0%E9%99%A4"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 记录和删除</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-1-%E6%96%B0%E5%A2%9E%E8%AE%BF%E9%97%AE%E8%AE%B0%E5%BD%95"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">3.2.2.1 新增访问记录</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-2-%E6%9B%BF%E6%8D%A2%E7%AD%96%E7%95%A5"><span class="toc-number">3.2.2.2.</span> <span class="toc-text">3.2.2.2 替换策略</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Buffer-Pool"><span class="toc-number">4.</span> <span class="toc-text">4 Buffer Pool</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-Buffer-Pool-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 Buffer Pool 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-NewPgImp"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 NewPgImp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-FetchPgImp"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 FetchPgImp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-DeletePgImp"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 DeletePgImp</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/CMU15445/proj1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/CMU15445/proj1/&text=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/CMU15445/proj1/&is_video=false&description=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)&body=Check out this article: http://example.com/2024/02/12/CMU15445/proj1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/CMU15445/proj1/&title=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/CMU15445/proj1/&name=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/CMU15445/proj1/&t=CMU15445 2022 project1: 缓存池(可扩展哈希+LRU-K)"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文不会将原本rCore文档的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中 这一章在之前的章节中更进一步, 实现了任务调度的功能, 也就是任务不再是之前的批处理系统那样一个接一个地运行, 而是受到OS的调度。为了实现这一目标， 本章实现了下面的功能或机制：  将应用程序加载到不同的内存位置， 并且同时存在于内存中 内核添加上下文相关的数据结构，存储">
+<meta property="og:type" content="article">
+<meta property="og:title" content="清华大学开源操作系统训练营: rCore chapter3笔记">
+<meta property="og:url" content="http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文不会将原本rCore文档的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中 这一章在之前的章节中更进一步, 实现了任务调度的功能, 也就是任务不再是之前的批处理系统那样一个接一个地运行, 而是受到OS的调度。为了实现这一目标， 本章实现了下面的功能或机制：  将应用程序加载到不同的内存位置， 并且同时存在于内存中 内核添加上下文相关的数据结构，存储">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/LearningOS/ch3-switch.png">
+<meta property="article:published_time" content="2024-02-15T00:18:24.000Z">
+<meta property="article:modified_time" content="2024-02-21T16:16:04.678Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="riscv">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/LearningOS/ch3-switch.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>清华大学开源操作系统训练营: rCore chapter3笔记</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&text=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter3笔记&body=Check out this article: http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&name=清华大学开源操作系统训练营: rCore chapter3笔记&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&t=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">1 应用程序数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%8A%A0%E8%BD%BD%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 应用程序加载位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E6%A0%88"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 应用程序的栈</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.</span> <span class="toc-text">2 上下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BB%80%E4%B9%88%E6%98%AF%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 什么是上下文切换?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 什么时候会上下文切换?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 上下文切换的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-switch%E5%87%BD%E6%95%B0"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 __switch函数</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">3 任务调度</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 任务调度</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%8A%A2%E5%8D%A0"><span class="toc-number">4.</span> <span class="toc-text">4 抢占</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 时钟中断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 时钟中断的工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%BC%95%E5%85%A5%E4%B8%AD%E6%96%AD%E5%90%8E%E7%9A%84%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 引入中断后的任务调度</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-%E4%B8%AD%E6%96%AD%E6%9C%BA%E5%88%B6%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 中断机制的初始化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 任务调度</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        清华大学开源操作系统训练营: rCore chapter3笔记
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-15T00:18:24.000Z" class="dt-published" itemprop="datePublished">2024-02-15</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/">训练营笔记</a> › <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/OS/" rel="tag">OS</a>, <a class="p-category" href="/tags/Rust/" rel="tag">Rust</a>, <a class="p-category" href="/tags/riscv/" rel="tag">riscv</a>, <a class="p-category" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文不会将原本<code>rCore文档</code>的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中</p>
+<p>这一章在之前的章节中更进一步, 实现了任务调度的功能, 也就是任务不再是之前的批处理系统那样一个接一个地运行, 而是受到<code>OS</code>的调度。为了实现这一目标， 本章实现了下面的功能或机制：</p>
+<ol>
+<li>将应用程序加载到不同的内存位置， 并且同时存在于内存中</li>
+<li>内核添加上下文相关的数据结构，存储应用调度时的上下文信息，基于这些数据结构实现上下文切换函数</li>
+<li>通过时钟中断实现抢占式调度</li>
+</ol>
+<p>完整版官方文档： <a target="_blank" rel="noopener" href="https://rcore-os.cn/rCore-Tutorial-Book-v3/chapter3/index.html">https://rcore-os.cn/rCore-Tutorial-Book-v3/chapter3/index.html</a></p>
+<p>精简版文档： <a target="_blank" rel="noopener" href="https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter3/index.html">https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter3/index.html</a></p>
+<h1 id="1-应用程序数据结构"><a href="#1-应用程序数据结构" class="headerlink" title="1 应用程序数据结构"></a>1 应用程序数据结构</h1><h2 id="1-1-应用程序加载位置"><a href="#1-1-应用程序加载位置" class="headerlink" title="1.1 应用程序加载位置"></a>1.1 应用程序加载位置</h2><p>这一过程相比之前的章节变化很小，就是将不同的应用程序链接到了操作系统的不同的位置，应用程序加载的位置是一个基址加上指定的偏移量。</p>
+<h2 id="1-2-应用程序的栈"><a href="#1-2-应用程序的栈" class="headerlink" title="1.2 应用程序的栈"></a>1.2 应用程序的栈</h2><p>这一由于我们需要实现任务的切换，应用程序运行的<strong>上下文</strong>包括了各种寄存器、函数调用栈等， 这些应用程序在应用程序被切换时需要被保存好，保存的位置通常是应用程序的内核栈，因此应用程序需要在上一章的基础上添加内核栈。</p>
+<p>项目代码中，内核栈的初始化是咋<code>init_app_cx</code>中完成的:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/loader.rs</span></span><br><span class="line"><span class="keyword">static</span> KERNEL_STACK: [KernelStack; MAX_APP_NUM] = [KernelStack &#123;</span><br><span class="line">    data: [<span class="number">0</span>; KERNEL_STACK_SIZE],</span><br><span class="line">&#125;; MAX_APP_NUM];</span><br><span class="line"><span class="keyword">static</span> USER_STACK: [UserStack; MAX_APP_NUM] = [UserStack &#123;</span><br><span class="line">    data: [<span class="number">0</span>; USER_STACK_SIZE],</span><br><span class="line">&#125;; MAX_APP_NUM];</span><br><span class="line">...</span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">init_app_cx</span>(app_id: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">usize</span> &#123;</span><br><span class="line">    KERNEL_STACK[app_id].<span class="title function_ invoke__">push_context</span>(TrapContext::<span class="title function_ invoke__">app_init_context</span>(</span><br><span class="line">        <span class="title function_ invoke__">get_base_i</span>(app_id),</span><br><span class="line">        USER_STACK[app_id].<span class="title function_ invoke__">get_sp</span>(),</span><br><span class="line">    ))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到, 每个程序有一个自己的<strong>内核栈和用户栈</strong>, 其内存空间就是一个全局变量数组的与<code>app</code>序号相同的索引处, 在初始化栈时, 每个应用程序的栈顶存放了其上下文信息(后面的章节会介绍)和用户栈指针。</p>
+<h1 id="2-上下文切换"><a href="#2-上下文切换" class="headerlink" title="2 上下文切换"></a>2 上下文切换</h1><p>这一部分是非常重要的概念，其思想几乎适用于所有的操作系统而不仅仅是<code>rCore</code></p>
+<h2 id="2-1-什么是上下文切换"><a href="#2-1-什么是上下文切换" class="headerlink" title="2.1 什么是上下文切换?"></a>2.1 什么是上下文切换?</h2><p><strong>上下文</strong>指的是一个进程或线程(这里我们还没有实现进程或者线程, 但是我们的应用程序可以类比进程)可以执行所需的所有信息的集合, 包括CPU寄存器的值、程序计数器（PC），堆栈指针以及操作系统为该进程或线程维护的内存分配信息等。</p>
+<p>当操作系统执行任务切换（<code>context switch</code>）时，它会保存当前任务的上下文，并加载另一个任务的上下文，以便恢复该任务的执行, 这一过程称为<strong>上下文切换</strong>, 步骤包括:</p>
+<ol>
+<li><strong>保存CPU状态</strong>：保存当前执行任务的所有CPU寄存器，包括程序计数器和堆栈指针。</li>
+<li><strong>保存进程状态</strong>：将当前进程的其他状态信息（如打开的文件描述符、进程的权限、记账信息等）保存到进程控制块（PCB）。</li>
+<li><strong>加载新的进程状态</strong>：从另一个进程的PCB中读取其CPU寄存器和其他状态信息，并将其恢复到CPU和内存中。</li>
+<li><strong>恢复执行</strong>：开始或恢复执行选定的新进程。</li>
+</ol>
+<h2 id="2-2-什么时候会上下文切换"><a href="#2-2-什么时候会上下文切换" class="headerlink" title="2.2 什么时候会上下文切换?"></a>2.2 什么时候会上下文切换?</h2><p>上面介绍了上下文切换, 但实际上我们的上下文切换是何时发生的呢? 其发生的原因在本章实现的<code>OS</code>中有2中:</p>
+<ol>
+<li>应用程序主动通过<code>yield</code>让出<code>CPU</code></li>
+<li>应用程序运行了过长的时间, 被操作系统抢占(后面章节会介绍)</li>
+</ol>
+<h2 id="2-3-上下文切换的实现"><a href="#2-3-上下文切换的实现" class="headerlink" title="2.3 上下文切换的实现"></a>2.3 上下文切换的实现</h2><h3 id="2-3-1-数据结构"><a href="#2-3-1-数据结构" class="headerlink" title="2.3.1 数据结构"></a>2.3.1 数据结构</h3><p>直接先贴代码:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/task/context.rs</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">TaskContext</span> &#123;</span><br><span class="line">    <span class="comment">/// Ret position after task switching</span></span><br><span class="line">    ra: <span class="type">usize</span>,</span><br><span class="line">    <span class="comment">/// Stack pointer</span></span><br><span class="line">    sp: <span class="type">usize</span>,</span><br><span class="line">    <span class="comment">/// s0-11 register, callee saved</span></span><br><span class="line">    s: [<span class="type">usize</span>; <span class="number">12</span>],</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">TaskContext</span> &#123;</span><br><span class="line">    <span class="comment">/// Create a new empty task context</span></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">zero_init</span>() <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        <span class="keyword">Self</span> &#123;</span><br><span class="line">            ra: <span class="number">0</span>,</span><br><span class="line">            sp: <span class="number">0</span>,</span><br><span class="line">            s: [<span class="number">0</span>; <span class="number">12</span>],</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/// Create a new task context with a trap return addr and a kernel stack pointer</span></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">goto_restore</span>(kstack_ptr: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">            <span class="keyword">fn</span> <span class="title function_">__restore</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">Self</span> &#123;</span><br><span class="line">            ra: __restore <span class="keyword">as</span> <span class="type">usize</span>,</span><br><span class="line">            sp: kstack_ptr,</span><br><span class="line">            s: [<span class="number">0</span>; <span class="number">12</span>],</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>TaskContext</code>这个结构体就是保存上下文的结构体, 保存的结构体包括<code>s0-s11</code>寄存器, 栈指针<code>sp</code>, 返回地址<code>ra</code>。<br>另外需要注意的是， 程序还没运行时，其上下文信息中的<code>ra</code>是上一章介绍的从<code>trap</code>恢复的<code>__restore</code>, 这和之前的逻辑是一样的</p>
+<h3 id="2-3-2-switch函数"><a href="#2-3-2-switch函数" class="headerlink" title="2.3.2 __switch函数"></a>2.3.2 <code>__switch</code>函数</h3><p><code>__switch</code>函数完成了上下文切换, 其是由汇编代码编写的:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">.altmacro</span><br><span class="line">.macro SAVE_SN n</span><br><span class="line">    sd s\n, (\n+2)*8(a0)</span><br><span class="line">.endm</span><br><span class="line">.macro LOAD_SN n</span><br><span class="line">    ld s\n, (\n+2)*8(a1)</span><br><span class="line">.endm</span><br><span class="line">    .section .text</span><br><span class="line">    .globl __switch</span><br><span class="line">__switch:</span><br><span class="line">    <span class="comment"># __switch(</span></span><br><span class="line">    <span class="comment">#     current_task_cx_ptr: *mut TaskContext,</span></span><br><span class="line">    <span class="comment">#     next_task_cx_ptr: *const TaskContext</span></span><br><span class="line">    <span class="comment"># )</span></span><br><span class="line">    <span class="comment"># save kernel stack of current task</span></span><br><span class="line">    sd sp, 8(a0)</span><br><span class="line">    <span class="comment"># save ra &amp; s0~s11 of current execution</span></span><br><span class="line">    sd ra, 0(a0)</span><br><span class="line">    .<span class="built_in">set</span> n, 0</span><br><span class="line">    .rept 12</span><br><span class="line">        SAVE_SN %n</span><br><span class="line">        .<span class="built_in">set</span> n, n + 1</span><br><span class="line">    .endr</span><br><span class="line">    <span class="comment"># restore ra &amp; s0~s11 of next execution</span></span><br><span class="line">    ld ra, 0(a1)</span><br><span class="line">    .<span class="built_in">set</span> n, 0</span><br><span class="line">    .rept 12</span><br><span class="line">        LOAD_SN %n</span><br><span class="line">        .<span class="built_in">set</span> n, n + 1</span><br><span class="line">    .endr</span><br><span class="line">    <span class="comment"># restore kernel stack of next task</span></span><br><span class="line">    ld sp, 8(a1)</span><br><span class="line">    ret</span><br></pre></td></tr></table></figure>
+<p>这段汇编代码的<code>a0</code> 和 <code>a1</code> 是函数参数寄存器，在<code>RISC-V</code>调用约定中用来传递第一个和第二个参数。在<code>__switch</code>函数中，它们分别代表<code>current_task_cx_ptr</code>（当前任务上下文指针）和<code>next_task_cx_ptr</code>（下一个任务上下文指针）。</p>
+<ul>
+<li><p><code>sd sp, 8(a0)</code>：存储当前任务的堆栈指针（<code>sp</code>）到<code>current_task_cx_ptr</code>所指向的结构体的第二个位置（假设结构体的起始位置为0，每个存储单元为8字节，栈指针保存在偏移量为8字节的位置）。</p>
+</li>
+<li><p><code>sd ra, 0(a0)</code>：存储当前任务的返回地址（<code>ra</code>）到<code>current_task_cx_ptr</code>所指向的结构体的起始位置。</p>
+</li>
+<li><p><code>.set n, 0</code> 和 <code>.rept 12</code> 循环：这是一个宏循环，它重复执行12次，用于保存寄存器<code>s0</code>到<code>s11</code>的值。<code>SAVE_SN</code>是一个宏，用于保存寄存器<code>s0</code>到<code>s11</code>到<code>current_task_cx_ptr</code>所指向的结构体中，对应的偏移量从16字节开始，每次增加8字节。</p>
+</li>
+<li><p><code>ld ra, 0(a1)</code>：加载下一个任务的返回地址到<code>ra</code>寄存器，这个地址来自<code>next_task_cx_ptr</code>所指向的结构体的起始位置。</p>
+</li>
+<li><p><code>.set n, 0</code> 和 <code>.rept 12</code> 循环：这是另一个宏循环，用于从<code>next_task_cx_ptr</code>所指向的结构体中恢复寄存器<code>s0</code>到<code>s11</code>的值。<code>LOAD_SN</code>宏执行相应的加载操作。</p>
+</li>
+<li><p><code>ld sp, 8(a1)</code>：加载下一个任务的堆栈指针到<code>sp</code>寄存器，这个堆栈指针来自<code>next_task_cx_ptr</code>所指向的结构体的第二个位置。</p>
+</li>
+<li><p><code>ret</code>：返回指令，它会跳转到<code>ra</code>寄存器中的地址，这里是下一个任务的继续执行点。</p>
+</li>
+</ul>
+<p>这段汇编代码的主要任务是保存当前执行环境的关键状态（堆栈指针和寄存器），然后恢复下一个任务的状态，从而实现任务之间的切换。</p>
+<h1 id="3-任务调度"><a href="#3-任务调度" class="headerlink" title="3 任务调度"></a>3 任务调度</h1><h2 id="3-1-数据结构"><a href="#3-1-数据结构" class="headerlink" title="3.1 数据结构"></a>3.1 数据结构</h2><p>本章引入了<code>TASK_MANAGER</code>这个全局变量来实现任务的调度, 其结构体为:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/task/mod.rs</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">TaskManager</span> &#123;</span><br><span class="line">    num_app: <span class="type">usize</span>,</span><br><span class="line">    inner: UPSafeCell&lt;TaskManagerInner&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">TaskManagerInner</span> &#123;</span><br><span class="line">    tasks: [TaskControlBlock; MAX_APP_NUM],</span><br><span class="line">    current_task: <span class="type">usize</span>,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其使用<code>current_task</code>标记当前运行的结构体</p>
+<p>每个任务用<code>TaskControlBlock</code>标记:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">TaskControlBlock</span> &#123;</span><br><span class="line">    <span class="comment">/// The task status in it&#x27;s lifecycle</span></span><br><span class="line">    <span class="keyword">pub</span> task_status: TaskStatus,</span><br><span class="line">    <span class="comment">/// The task context</span></span><br><span class="line">    <span class="keyword">pub</span> task_cx: TaskContext,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// The status of a task</span></span><br><span class="line"><span class="meta">#[derive(Copy, Clone, PartialEq)]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">TaskStatus</span> &#123;</span><br><span class="line">    <span class="comment">/// uninitialized</span></span><br><span class="line">    UnInit,</span><br><span class="line">    <span class="comment">/// ready to run</span></span><br><span class="line">    Ready,</span><br><span class="line">    <span class="comment">/// running</span></span><br><span class="line">    Running,</span><br><span class="line">    <span class="comment">/// exited</span></span><br><span class="line">    Exited,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这一部分很同意理解, 就是将任务的状态和上下文记录在一起, 以便于任务调度</p>
+<h2 id="3-2-任务调度"><a href="#3-2-任务调度" class="headerlink" title="3.2 任务调度"></a>3.2 任务调度</h2><p>调度任务的过程就是找到当前任务的上下文(或者第一个任务运行时的初始化的上下文)和下一个任务的上下文, 将其作为参数传递给<code>__switch</code>函数, 其发生场景有3种:</p>
+<ol>
+<li><p>第一次运行程序:</p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/task/mod.rs</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">run_first_task</span>(&amp;<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> ! &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">inner</span> = <span class="keyword">self</span>.inner.<span class="title function_ invoke__">exclusive_access</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">task0</span> = &amp;<span class="keyword">mut</span> inner.tasks[<span class="number">0</span>];</span><br><span class="line">    task0.task_status = TaskStatus::Running;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">next_task_cx_ptr</span> = &amp;task0.task_cx <span class="keyword">as</span> *<span class="keyword">const</span> TaskContext;</span><br><span class="line">    <span class="title function_ invoke__">drop</span>(inner);</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">_unused</span> = TaskContext::<span class="title function_ invoke__">zero_init</span>();</span><br><span class="line">    <span class="comment">// before this, we should drop local variables that must be dropped manually</span></span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        __switch(&amp;<span class="keyword">mut</span> _unused <span class="keyword">as</span> *<span class="keyword">mut</span> TaskContext, next_task_cx_ptr);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;unreachable in run_first_task!&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 这里是选择序号为0的程序运行</p>
+</li>
+<li><p>程序主动让出<code>CPU</code>或被抢占</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/task/mod.rs</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">suspend_current_and_run_next</span>() &#123;</span><br><span class="line">    <span class="title function_ invoke__">mark_current_suspended</span>();</span><br><span class="line">    <span class="title function_ invoke__">run_next_task</span>();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/// Change the status of current `Running` task into `Ready`.</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">mark_current_suspended</span>(&amp;<span class="keyword">self</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">inner</span> = <span class="keyword">self</span>.inner.<span class="title function_ invoke__">exclusive_access</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">current</span> = inner.current_task;</span><br><span class="line">    inner.tasks[current].task_status = TaskStatus::Ready;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>程序运行结束</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">    <span class="comment">// os/src/task/mod.rs</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">exit_current_and_run_next</span>() &#123;</span><br><span class="line">    <span class="title function_ invoke__">mark_current_exited</span>();</span><br><span class="line">    <span class="title function_ invoke__">run_next_task</span>();</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/// Change the status of current `Running` task into `Exited`.</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">mark_current_exited</span>(&amp;<span class="keyword">self</span>) &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">inner</span> = <span class="keyword">self</span>.inner.<span class="title function_ invoke__">exclusive_access</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">current</span> = inner.current_task;</span><br><span class="line">    inner.tasks[current].task_status = TaskStatus::Exited;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>其中<code>run_next_task</code>最终会调用下面的函数<code>run_next_task</code>方法:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">run_next_task</span>(&amp;<span class="keyword">self</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(next) = <span class="keyword">self</span>.<span class="title function_ invoke__">find_next_task</span>() &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">inner</span> = <span class="keyword">self</span>.inner.<span class="title function_ invoke__">exclusive_access</span>();</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">current</span> = inner.current_task;</span><br><span class="line">        inner.tasks[next].task_status = TaskStatus::Running;</span><br><span class="line">        inner.current_task = next;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">current_task_cx_ptr</span> = &amp;<span class="keyword">mut</span> inner.tasks[current].task_cx <span class="keyword">as</span> *<span class="keyword">mut</span> TaskContext;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">next_task_cx_ptr</span> = &amp;inner.tasks[next].task_cx <span class="keyword">as</span> *<span class="keyword">const</span> TaskContext;</span><br><span class="line">        <span class="title function_ invoke__">drop</span>(inner);</span><br><span class="line">        <span class="comment">// before this, we should drop local variables that must be dropped manually</span></span><br><span class="line">        <span class="keyword">unsafe</span> &#123;</span><br><span class="line">            __switch(current_task_cx_ptr, next_task_cx_ptr);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// go back to user mode</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">panic!</span>(<span class="string">&quot;All applications completed!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其过程包括:</p>
+<ol>
+<li><code>find_next_task</code>选择一个就绪的任务</li>
+<li>标记这个就绪的任务为<code>TaskStatus::Running</code></li>
+<li>传递2个任务的上下文结构体给<code>__switch</code>完成上下文切换</li>
+</ol>
+<h1 id="4-抢占"><a href="#4-抢占" class="headerlink" title="4 抢占"></a>4 抢占</h1><p>截止到目前, 大部分多任务调度的机制已经实现, 但还缺少抢占的机制实现</p>
+<h2 id="4-1-时钟中断"><a href="#4-1-时钟中断" class="headerlink" title="4.1 时钟中断"></a>4.1 时钟中断</h2><p>时钟中断是操作系统实现抢占式多任务处理的关键机制。它允许操作系统定期从当前执行的任务（或线程）中断开，以便操作系统的调度器可以决定是否继续执行当前任务或切换到另一个任务。这种机制确保了所有任务都有机会在处理器上运行，进而使得操作系统能够提供一个看似同时运行多个任务的环境, 并且避免了一个应用程序运行时间过长的场景。中断的主要作用有：</p>
+<ol>
+<li><strong>公平的CPU时间分配</strong>：确保所有任务都有公平的机会使用CPU，根据它们的优先级和CPU时间需求进行调度。</li>
+<li><strong>响应性</strong>：即使一个任务在执行一个长时间的操作，时钟中断也确保系统保持响应，因为操作系统可以在两个连续的时钟中断之间切换到其他任务。</li>
+<li><strong>多任务处理</strong>：允许多个任务看似同时进行，提高了系统的利用率和吞吐量。</li>
+</ol>
+<h2 id="4-2-时钟中断的工作原理"><a href="#4-2-时钟中断的工作原理" class="headerlink" title="4.2 时钟中断的工作原理"></a>4.2 时钟中断的工作原理</h2><ol>
+<li><p><strong>硬件时钟</strong>：硬件时钟（通常是一个定时器设备）被配置为在固定的时间间隔发出信号。这个时间间隔可以是毫秒级别，具体取决于操作系统的设计和配置。</p>
+</li>
+<li><p><strong>中断信号</strong>：当硬件时钟达到预设的时间间隔时，它会向处理器发送一个中断信号。这个信号提示处理器当前正在执行的指令流应该被暂时中断。在我们的代码中， 我们进行了如下设置：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// Set the next timer interrupt</span></span><br><span class="line"> <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">set_next_trigger</span>() &#123;</span><br><span class="line">     <span class="title function_ invoke__">set_timer</span>(<span class="title function_ invoke__">get_time</span>() + CLOCK_FREQ / TICKS_PER_SEC);</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p> <code>set_timer</code>是<code>rustsbi</code>提供的中断设置接口, 其可以实则指定时间的中断</p>
+</li>
+<li><p><strong>中断服务例程（ISR）</strong>：处理器接收到中断信号后，会跳转执行一个特定的中断服务例程。这个ISR是由操作系统提供的，并且在中断向量表中有一个特定的入口。在许多处理器架构和操作系统中，<strong>中断服务例程（ISR）和异常处理程序通常通过一个统一的入口点处理，这个入口点被称为陷阱（trap）处理程序，也就是在我们的项目中存储在<code>stvec</code>中的<code>__alltraps</code></strong>, 我们可以在<code>os/src/trap/mod.rs</code>中看到下面的初始化:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">init</span>() &#123;</span><br><span class="line">     <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">         <span class="keyword">fn</span> <span class="title function_">__alltraps</span>();</span><br><span class="line">     &#125;</span><br><span class="line">     <span class="keyword">unsafe</span> &#123;</span><br><span class="line">         stvec::<span class="title function_ invoke__">write</span>(__alltraps <span class="keyword">as</span> <span class="type">usize</span>, TrapMode::Direct);</span><br><span class="line">     &#125;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+<p> 换句话说</p>
+</li>
+<li><p><strong>中断异常处理</strong>：在<code>ISR</code>中，操作系统的调度器可以检测当前运行的任务是否应该继续运行，或者是另一个任务的运行优先级更高。如果决定进行任务切换，操作系统会保存当前任务的状态（上下文切换），然后加载下一个任务的状态并开始执行它。目前我们的中断是时钟中断, 实际上还有更多类型的中断, 不是每一个中断都和上下文切换相关, 比如有的中断只是外设鼠标或键盘的硬件中断</p>
+</li>
+<li><p><strong>返回正常执行</strong>：完成调度决策和任何必要的任务切换后，<code>ISR</code>结束，并指示处理器恢复到中断前的状态，继续执行被中断的任务或开始执行新的任务。</p>
+</li>
+</ol>
+<h2 id="4-3-引入中断后的任务调度"><a href="#4-3-引入中断后的任务调度" class="headerlink" title="4.3 引入中断后的任务调度"></a>4.3 引入中断后的任务调度</h2><h3 id="4-3-1-中断机制的初始化"><a href="#4-3-1-中断机制的初始化" class="headerlink" title="4.3.1 中断机制的初始化"></a>4.3.1 中断机制的初始化</h3><p>中断相关的初始化很简单, 就是在<code>rust_main</code>中调用<code>set_next_trigger</code>设置一次中断时间。</p>
+<h3 id="4-3-2-任务调度"><a href="#4-3-2-任务调度" class="headerlink" title="4.3.2 任务调度"></a>4.3.2 任务调度</h3><p>由于中断使用的入口就是<code>__alltraps</code>，因此我们只需要关注<code>__alltraps</code>调用的<code>trap_handler</code>即可:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">trap_handler</span>(cx: &amp;<span class="keyword">mut</span> TrapContext) <span class="punctuation">-&gt;</span> &amp;<span class="keyword">mut</span> TrapContext &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">scause</span> = scause::<span class="title function_ invoke__">read</span>(); <span class="comment">// get trap cause</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">stval</span> = stval::<span class="title function_ invoke__">read</span>(); <span class="comment">// get extra value</span></span><br><span class="line">                               <span class="comment">// trace!(&quot;into &#123;:?&#125;&quot;, scause.cause());</span></span><br><span class="line">    <span class="keyword">match</span> scause.<span class="title function_ invoke__">cause</span>() &#123;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::UserEnvCall) =&gt; &#123;</span><br><span class="line">            <span class="comment">// jump to next instruction anyway</span></span><br><span class="line">            cx.sepc += <span class="number">4</span>;</span><br><span class="line">            <span class="comment">// get system call return value</span></span><br><span class="line">            cx.x[<span class="number">10</span>] = <span class="title function_ invoke__">syscall</span>(cx.x[<span class="number">17</span>], [cx.x[<span class="number">10</span>], cx.x[<span class="number">11</span>], cx.x[<span class="number">12</span>]]) <span class="keyword">as</span> <span class="type">usize</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::StoreFault) | Trap::<span class="title function_ invoke__">Exception</span>(Exception::StorePageFault) =&gt; &#123;</span><br><span class="line">            <span class="built_in">println!</span>(<span class="string">&quot;[kernel] PageFault in application, bad addr = &#123;:#x&#125;, bad instruction = &#123;:#x&#125;, kernel killed it.&quot;</span>, stval, cx.sepc);</span><br><span class="line">            <span class="title function_ invoke__">exit_current_and_run_next</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::IllegalInstruction) =&gt; &#123;</span><br><span class="line">            <span class="built_in">println!</span>(<span class="string">&quot;[kernel] IllegalInstruction in application, kernel killed it.&quot;</span>);</span><br><span class="line">            <span class="title function_ invoke__">exit_current_and_run_next</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Interrupt</span>(Interrupt::SupervisorTimer) =&gt; &#123;</span><br><span class="line">            <span class="title function_ invoke__">set_next_trigger</span>();</span><br><span class="line">            <span class="title function_ invoke__">suspend_current_and_run_next</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        _ =&gt; &#123;</span><br><span class="line">            <span class="built_in">panic!</span>(</span><br><span class="line">                <span class="string">&quot;Unsupported trap &#123;:?&#125;, stval = &#123;:#x&#125;!&quot;</span>,</span><br><span class="line">                scause.<span class="title function_ invoke__">cause</span>(),</span><br><span class="line">                stval</span><br><span class="line">            );</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    cx</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到, <code>match</code>多了一个<code>SupervisorTimer</code>分支, 处理方式就是简单地再次设置下一次中断时间, 并且挂起当前任务, 找下一个任务运行</p>
+<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>之前说了这么多, 可能思路还是比较乱, 比如<code>trap</code>和中断之前的处理调用逻可能不清楚, 这里我梳理了下面的流程图:</p>
+<p><img src="/../../../images/LearningOS/ch3-switch.png" alt="ch3-switch"></p>
+<p>可以看到, <code>task0</code>第一次主动让出CPU, 通过<code>ecall</code>简介调用了<code>_switch</code>, 调用的序号为10, 后来在序号19时, <code>task0</code>又从<code>_switch</code>中返回, <strong>这也是<code>_switch</code>的一个核心性质: 调用时和返回时可能经历了多个控制流(不同的线程或进程)</strong></p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">1 应用程序数据结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E5%8A%A0%E8%BD%BD%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 应用程序加载位置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E7%9A%84%E6%A0%88"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 应用程序的栈</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.</span> <span class="toc-text">2 上下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BB%80%E4%B9%88%E6%98%AF%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 什么是上下文切换?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 什么时候会上下文切换?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 上下文切换的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-switch%E5%87%BD%E6%95%B0"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 __switch函数</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">3 任务调度</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 数据结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 任务调度</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%8A%A2%E5%8D%A0"><span class="toc-number">4.</span> <span class="toc-text">4 抢占</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 时钟中断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%97%B6%E9%92%9F%E4%B8%AD%E6%96%AD%E7%9A%84%E5%B7%A5%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 时钟中断的工作原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%BC%95%E5%85%A5%E4%B8%AD%E6%96%AD%E5%90%8E%E7%9A%84%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 引入中断后的任务调度</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-%E4%B8%AD%E6%96%AD%E6%9C%BA%E5%88%B6%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 中断机制的初始化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 任务调度</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&text=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter3笔记&body=Check out this article: http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&name=清华大学开源操作系统训练营: rCore chapter3笔记&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/&t=清华大学开源操作系统训练营: rCore chapter3笔记"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

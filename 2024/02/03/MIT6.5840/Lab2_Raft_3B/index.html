@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="最新的更新在博客 ToniBlog 本文将介绍lab3B部分的实现, lab3B要求基于在lab3A的基础上实现快照, 仅从lab本省来讲其实很简单, 可以说是目前我做的所有lab里面难度最小的一个模块了, 但实际上遇到了很多困难, 调试的时间比lab3A还久, 核心原因就是自己的lab2实现的raft底层有一些问题(真真真真太折磨了, 即时过了所有单元测试, 还是时不时地在后续的lab暴露出问题">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lab3: 分布式KV数据库 3B">
+<meta property="og:url" content="http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="最新的更新在博客 ToniBlog 本文将介绍lab3B部分的实现, lab3B要求基于在lab3A的基础上实现快照, 仅从lab本省来讲其实很简单, 可以说是目前我做的所有lab里面难度最小的一个模块了, 但实际上遇到了很多困难, 调试的时间比lab3A还久, 核心原因就是自己的lab2实现的raft底层有一些问题(真真真真太折磨了, 即时过了所有单元测试, 还是时不时地在后续的lab暴露出问题">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/MIT6.5840/lab3B/lab3-3B-test.png">
+<meta property="og:image" content="http://example.com/images/MIT6.5840/lab3B/lab3-3-test.png">
+<meta property="og:image" content="http://example.com/images/MIT6.5840/lab3B/lab3-2-test.png">
+<meta property="article:published_time" content="2024-02-03T10:19:25.000Z">
+<meta property="article:modified_time" content="2024-02-22T02:09:39.950Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/MIT6.5840/lab3B/lab3-3B-test.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lab3: 分布式KV数据库 3B</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/05/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch1%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&text=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&is_video=false&description=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B&body=Check out this article: http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&name=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&t=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BF%AB%E7%85%A7%E7%9A%84%E7%94%9F%E6%88%90%E5%92%8C%E4%BC%A0%E9%80%92%E9%80%BB%E8%BE%91"><span class="toc-number">1.</span> <span class="toc-text">1 快照的生成和传递逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%BF%AB%E7%85%A7%E5%BA%94%E8%AF%A5%E5%8C%85%E5%90%AB%E4%BB%80%E4%B9%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 快照应该包含什么?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A0%E8%BD%BD%E5%92%8C%E7%94%9F%E6%88%90%E5%BF%AB%E7%85%A7"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 加载和生成快照</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%94%9F%E6%88%90%E5%BF%AB%E7%85%A7%E7%9A%84%E6%97%B6%E6%9C%BA%E5%88%A4%E6%96%AD"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 生成快照的时机判断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E5%8A%A0%E8%BD%BD%E5%BF%AB%E7%85%A7%E7%9A%84%E6%97%B6%E6%9C%BA%E5%88%A4%E6%96%AD"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 加载快照的时机判断</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%B0%83%E8%AF%95Bug%E5%92%8C%E4%BF%AE%E5%A4%8D"><span class="toc-number">3.</span> <span class="toc-text">3 调试Bug和修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-raft%E5%B1%82%E4%BC%98%E5%8C%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 raft层优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E4%BF%AE%E5%A4%8D%E8%BF%87%E5%A4%9A%E7%9A%84AppendEntries-RPC"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 修复过多的AppendEntries RPC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E4%BF%AE%E5%A4%8D%E8%BF%87%E5%A4%9A%E7%9A%84InstallSnapshot-RPC"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 修复过多的InstallSnapshot RPC</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-server%E5%B1%82%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 server层优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E8%B0%83%E7%94%A8Start%E5%89%8D%E8%BF%87%E6%BB%A4"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 调用Start前过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%87%8F%E5%B0%91GetState%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 减少GetState的调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-clerk%E5%85%88sleep%E5%86%8D%E9%87%8D%E8%AF%95"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 clerk先sleep再重试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lab3: 分布式KV数据库 3B
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-03T10:19:25.000Z" class="dt-published" itemprop="datePublished">2024-02-03</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/Lab%E7%AC%94%E8%AE%B0/">Lab笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Go/" rel="tag">Go</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><em>最新的更新在博客 <a target="_blank" rel="noopener" href="https://tonixwd.github.io/">ToniBlog</a></em></p>
+<p>本文将介绍<code>lab3B</code>部分的实现, <code>lab3B</code>要求基于在<code>lab3A</code>的基础上实现快照, 仅从<code>lab</code>本省来讲其实很简单, 可以说是目前我做的所有<code>lab</code>里面难度最小的一个模块了, 但实际上遇到了很多困难, 调试的时间比<code>lab3A</code>还久, 核心原因就是自己的<code>lab2</code>实现的<code>raft</code>底层有一些问题(真真真真太折磨了, 即时过了所有单元测试, 还是时不时地在后续的<code>lab</code>暴露出问题来, 并且这些问题还挺难定位, 得仔细分析海量的<code>log</code>输出才可以)</p>
+<p><code>Lab</code>文档见: <a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.5840/2023/labs/lab-kvraft.html">http://nil.csail.mit.edu/6.5840/2023/labs/lab-kvraft.html</a></p>
+<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab3B">https://github.com/ToniXWD/MIT6.5840/tree/lab3B</a></p>
+<h1 id="1-快照的生成和传递逻辑"><a href="#1-快照的生成和传递逻辑" class="headerlink" title="1 快照的生成和传递逻辑"></a>1 快照的生成和传递逻辑</h1><p>简单说, <code>lab3B</code>就是要在底层<code>raft</code>的<code>log</code>过大时生成快照并截断日志, 从而节省内存空间, 并且快照会持久化存储到本地。因此， 原来的代码结构只需要在以下几个方面做出调整：</p>
+<ol>
+<li>需要再某个地方定期地判断底层<code>raft</code>的日志大小, 决定是否要生成快照, 生成快照直接调用我们在<code>lab2</code>中实现的接口<code>Snapshot</code>即可</li>
+<li>由于<code>follower</code>的底层<code>raft</code>会出现无法从<code>Leader</code>获取<code>log</code>的情况, 这时<code>Leader</code>会发送给<code>follower</code>的<code>raft</code>层一个快照, <code>raft</code>层会将其上交给<code>server</code>, <code>server</code>通过快照改变自己的状态机</li>
+<li><code>server</code>启动时需要判断是否有持久化的快照需要加载, 如果有就加载</li>
+</ol>
+<h1 id="2-代码实现"><a href="#2-代码实现" class="headerlink" title="2 代码实现"></a>2 代码实现</h1><h2 id="2-1-快照应该包含什么"><a href="#2-1-快照应该包含什么" class="headerlink" title="2.1 快照应该包含什么?"></a>2.1 快照应该包含什么?</h2><p>快照首先应该包含的肯定是内存中的<code>KV</code>数据库, 也就是自己维护的<code>map</code>, 但是还应该包含对每个<code>clerk</code>序列号的记录信息, 因为从快照恢复后的<code>server</code>应该具备判断重复的客户端请求的能力, 同时也应该记录最近一次应用到状态机的日志索引, 凡是低于这个索引的日志都是包含在快照中</p>
+<p>因此, <code>server</code>结构体需要添加如下成员:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> KVServer <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">	persister    *raft.Persister</span><br><span class="line">	lastApplied  <span class="type">int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="2-2-加载和生成快照"><a href="#2-2-加载和生成快照" class="headerlink" title="2.2 加载和生成快照"></a>2.2 加载和生成快照</h2><p>通过上述分析, 快照的加载和生成就很简单了,代码如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> GenSnapShot() []<span class="type">byte</span> &#123;</span><br><span class="line">	<span class="comment">// 调用时必须持有锁mu</span></span><br><span class="line">	w := <span class="built_in">new</span>(bytes.Buffer)</span><br><span class="line">	e := labgob.NewEncoder(w)</span><br><span class="line"></span><br><span class="line">	e.Encode(kv.db)</span><br><span class="line">	e.Encode(kv.historyMap)</span><br><span class="line"></span><br><span class="line">	serverState := w.Bytes()</span><br><span class="line">	<span class="keyword">return</span> serverState</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> LoadSnapShot(snapShot []<span class="type">byte</span>) &#123;</span><br><span class="line">	<span class="comment">// 调用时必须持有锁mu</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(snapShot) == <span class="number">0</span> || snapShot == <span class="literal">nil</span> &#123;</span><br><span class="line">		ServerLog(<span class="string">&quot;server %v LoadSnapShot: 快照为空&quot;</span>, kv.me)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	r := bytes.NewBuffer(snapShot)</span><br><span class="line">	d := labgob.NewDecoder(r)</span><br><span class="line"></span><br><span class="line">	tmpDB := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span>)</span><br><span class="line">	tmpHistoryMap := <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="type">int64</span>]*Result)</span><br><span class="line">	<span class="keyword">if</span> d.Decode(&amp;tmpDB) != <span class="literal">nil</span> ||</span><br><span class="line">		d.Decode(&amp;tmpHistoryMap) != <span class="literal">nil</span> &#123;</span><br><span class="line">		ServerLog(<span class="string">&quot;server %v LoadSnapShot 加载快照失败\n&quot;</span>, kv.me)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		kv.db = tmpDB</span><br><span class="line">		kv.historyMap = tmpHistoryMap</span><br><span class="line">		ServerLog(<span class="string">&quot;server %v LoadSnapShot 加载快照成功\n&quot;</span>, kv.me)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>GenSnapShot</code>和<code>LoadSnapShot</code>分别生成和加载快照, 唯一需要注意的就是这两个函数应当在持有锁时才能调用</p>
+<h2 id="2-3-生成快照的时机判断"><a href="#2-3-生成快照的时机判断" class="headerlink" title="2.3 生成快照的时机判断"></a>2.3 生成快照的时机判断</h2><p>由于<code>ApplyHandler</code>协程会不断地读取<code>raft commit</code>的通道, 所以每收到一个<code>log</code>后进行判断即可:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> ApplyHandler() &#123;</span><br><span class="line">	<span class="keyword">for</span> !kv.killed() &#123;</span><br><span class="line">		log := &lt;-kv.applyCh</span><br><span class="line">		<span class="keyword">if</span> log.CommandValid &#123;</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">// 如果在follower一侧, 可能这个log包含在快照中, 直接跳过</span></span><br><span class="line">			<span class="keyword">if</span> log.CommandIndex &lt;= kv.lastApplied &#123;</span><br><span class="line">				kv.mu.Unlock()</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			...</span><br><span class="line">			<span class="comment">// 每收到一个log就检测是否需要生成快照</span></span><br><span class="line">			<span class="keyword">if</span> kv.maxraftstate != <span class="number">-1</span> &amp;&amp; kv.persister.RaftStateSize() &gt;= kv.maxraftstate/<span class="number">100</span>*<span class="number">95</span> &#123;</span><br><span class="line">				<span class="comment">// 当达到95%容量时需要生成快照</span></span><br><span class="line">				snapShot := kv.GenSnapShot()</span><br><span class="line">				kv.rf.Snapshot(log.CommandIndex, snapShot)</span><br><span class="line">			&#125;</span><br><span class="line">			kv.mu.Unlock()</span><br><span class="line">		&#125;</span><br><span class="line">        ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里还需要进行之前提到的判断: 低于<code>lastApplied</code>索引的日志都是包含在快照中, 在尽显<code>lab3A</code>的操作之后, 再判断是否需要生成快照, 在我的实现中, 如果仅仅比较<code>maxraftstate</code>和<code>persister.RaftStateSize()</code>相等才生成快照的话, 无法通过测例, 因为可能快照<code>RPC</code>存在一定延时, 所以我采用的手段是只要达到阈值的95%, 就生成快照</p>
+<h2 id="2-4-加载快照的时机判断"><a href="#2-4-加载快照的时机判断" class="headerlink" title="2.4 加载快照的时机判断"></a>2.4 加载快照的时机判断</h2><p>首先启动时需要判断是否需要加载快照, 然后就是<code>ApplyHandler</code>从通道收到快照时需要判断加载, 都很简单:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">StartKVServer</span><span class="params">(servers []*labrpc.ClientEnd, me <span class="type">int</span>, persister *raft.Persister, maxraftstate <span class="type">int</span>)</span></span> *KVServer &#123;</span><br><span class="line">	...</span><br><span class="line">	kv.persister = persister</span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 先在启动时检查是否有快照</span></span><br><span class="line">	kv.mu.Lock()</span><br><span class="line">	kv.LoadSnapShot(persister.ReadSnapshot())</span><br><span class="line">	kv.mu.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> kv.ApplyHandler()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> kv</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> ApplyHandler() &#123;</span><br><span class="line">	<span class="keyword">for</span> !kv.killed() &#123;</span><br><span class="line">		log := &lt;-kv.applyCh</span><br><span class="line">		<span class="keyword">if</span> log.CommandValid &#123;</span><br><span class="line">            ...</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> log.SnapshotValid &#123;</span><br><span class="line">			<span class="comment">// 日志项是一个快照</span></span><br><span class="line">			kv.mu.Lock()</span><br><span class="line">			<span class="keyword">if</span> log.SnapshotIndex &gt;= kv.lastApplied &#123;</span><br><span class="line">				kv.LoadSnapShot(log.Snapshot)</span><br><span class="line">				kv.lastApplied = log.SnapshotIndex</span><br><span class="line">			&#125;</span><br><span class="line">			kv.mu.Unlock()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-调试Bug和修复"><a href="#3-调试Bug和修复" class="headerlink" title="3 调试Bug和修复"></a>3 调试Bug和修复</h1><p>这里才是这个<code>lab</code>的重头戏, 我在完成上述所有修改后, 会在<code>TestSnapshotUnreliable3B</code>这个单元测试中大概率卡死, 一直会卡到<code>go</code>默认的十分钟单元测试时间截止后才报错退出, 在反复检查了<strong>死锁</strong>和<strong>持锁接发通道消息</strong>等常见问题并确认无误后, 我再次观察超时报错的堆栈信息和日志输出, 得到结论就是:<br><strong><code>raft</code>层因为无法承受测试的高并发程度而导致大量的<code>RPC</code>请求失败, 从而导致<code>clerk</code>无限重复发送请求<code>RPC</code>(我的实现是<code>RPC</code>请求失败)就重试</strong></p>
+<p>……陷入了沉思, 自己还是菜啊, 但代码还得慢慢修, 总不能把<code>raft</code>推倒重来吧……</p>
+<p>我最后分别从<code>raft</code>层和<code>server</code>层进行了优化</p>
+<h2 id="3-1-raft层优化"><a href="#3-1-raft层优化" class="headerlink" title="3.1 raft层优化"></a>3.1 <code>raft</code>层优化</h2><h3 id="3-1-1-修复过多的AppendEntries-RPC"><a href="#3-1-1-修复过多的AppendEntries-RPC" class="headerlink" title="3.1.1 修复过多的AppendEntries RPC"></a>3.1.1 修复过多的<code>AppendEntries RPC</code></h3><p>通过对日志的调试发现, <code>AppendEntries RPC</code>数量太多了, 这是因为我在<code>lab3A</code>中做了如下修改:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> Start(command <span class="keyword">interface</span>&#123;&#125;) (<span class="type">int</span>, <span class="type">int</span>, <span class="type">bool</span>) &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		rf.ResetHeartTimer(<span class="number">1</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> rf.VirtualLogIdx(<span class="built_in">len</span>(rf.log) - <span class="number">1</span>), rf.currentTerm, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>也就是在接受一个请求并追加一个<code>log</code>后立即发送<code>AppendEntries RPC</code>, 但是如果在高并发的场景下, 新的请求绵绵不断地到来, 每到达一个请求都发一个<code>RPC</code>, 并且每个<code>RPC</code>可能只包含了长度为1的日志切片, 这是不太合理的设计, 过多的<code>RPC</code>使得<code>raft</code>无法及时处理而出现<code>RPC</code>卡死的情况, 因此, 我手动修改了重置定时器的时间为<code>15ms</code>, 这个值比心跳间隔小很多, 但又不是很小, 足以在满足响应速度的前提下摊销多个命令, 使一次<code>AppendEntries RPC</code>包含多个新的日志项:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> Start(command <span class="keyword">interface</span>&#123;&#125;) (<span class="type">int</span>, <span class="type">int</span>, <span class="type">bool</span>) &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		rf.ResetHeartTimer(<span class="number">15</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> rf.VirtualLogIdx(<span class="built_in">len</span>(rf.log) - <span class="number">1</span>), rf.currentTerm, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>至于为什么是<code>15ms</code>…, 我自己也说不出理由, 随便设的, 比心跳小很多, 但又不太小就是了, <strong>本质目的就是积攒多个<code>AppendEntries RPC</code>后一次性发送, 避免<code>AppendEntries RPC</code>数量过大</strong></p>
+<h3 id="3-1-2-修复过多的InstallSnapshot-RPC"><a href="#3-1-2-修复过多的InstallSnapshot-RPC" class="headerlink" title="3.1.2 修复过多的InstallSnapshot RPC"></a>3.1.2 修复过多的<code>InstallSnapshot RPC</code></h3><p>在我原来的设计中, <code>InstallSnapshot RPC</code>的发送有2中情形:</p>
+<ol>
+<li><code>handleAppendEntries</code>在处理<code>AppendEntries RPC</code>回复时发现<code>follower</code>需要的日志项背快照截断, 立即调用<code>go rf.handleInstallSnapshot(serverTo)</code>协程发送快照</li>
+<li>心跳函数发送时发现<code>PrevLogIndex &lt; rf.lastIncludedIndex</code>, 则发送快照</li>
+</ol>
+<p>这和之前的情形类似, 在高并发的场景下，<code>follower</code>和<code>Leader</code>之间的日志复制也很频繁, 如果某一个日志触发了<code>InstallSnapshot RPC</code>的发送, 接下来连续很多个日志也会触发<code>InstallSnapshot RPC</code>的发送, 因为<code>InstallSnapshot RPC</code>的发送时间消耗更大, 这样以来, 又加大了<code>raft</code>的压力, 所以, 我对<code>InstallSnapshot RPC</code>的发送做出修改:</p>
+<ol>
+<li><code>handleAppendEntries</code>在处理<code>AppendEntries RPC</code>回复时发现<code>follower</code>需要的日志项背快照截断, 仅仅设置<code>rf.nextIndex[serverTo] = rf.lastIncludedIndex</code>, 这将导致下一次心跳时调用<code>go rf.handleInstallSnapshot(serverTo)</code>协程发送快照</li>
+<li>心跳函数发送时发现<code>PrevLogIndex &lt; rf.lastIncludedIndex</code>, 则发送快照</li>
+</ol>
+<p>代码如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> handleAppendEntries(serverTo <span class="type">int</span>, args *AppendEntriesArgs) &#123;</span><br><span class="line">    ...</span><br><span class="line">	<span class="keyword">if</span> reply.Term == rf.currentTerm &amp;&amp; rf.role == Leader &#123;</span><br><span class="line">		<span class="comment">// term仍然相同, 且自己还是leader, 表名对应的follower在prevLogIndex位置没有与prevLogTerm匹配的项</span></span><br><span class="line">		<span class="comment">// 快速回退的处理</span></span><br><span class="line">		<span class="keyword">if</span> reply.XTerm == <span class="number">-1</span> &#123;</span><br><span class="line">			<span class="comment">// PrevLogIndex这个位置在Follower中不存在</span></span><br><span class="line">			DPrintf(<span class="string">&quot;leader %v 收到 server %v 的回退请求, 原因是log过短, 回退前的nextIndex[%v]=%v, 回退后的nextIndex[%v]=%v\n&quot;</span>, rf.me, serverTo, serverTo, rf.nextIndex[serverTo], serverTo, reply.XLen)</span><br><span class="line">			<span class="keyword">if</span> rf.lastIncludedIndex &gt;= reply.XLen &#123;</span><br><span class="line">				<span class="comment">// 由于snapshot被截断</span></span><br><span class="line">				<span class="comment">// 下一次心跳添加InstallSnapshot的处理</span></span><br><span class="line">				rf.nextIndex[serverTo] = rf.lastIncludedIndex</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				rf.nextIndex[serverTo] = reply.XLen</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		...</span><br><span class="line">		<span class="keyword">if</span> i == rf.lastIncludedIndex &amp;&amp; rf.log[rf.RealLogIdx(i)].Term &gt; reply.XTerm &#123;</span><br><span class="line">			<span class="comment">// 要找的位置已经由于snapshot被截断</span></span><br><span class="line">			<span class="comment">// 下一次心跳添加InstallSnapshot的处理</span></span><br><span class="line">			rf.nextIndex[serverTo] = rf.lastIncludedIndex</span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> rf.log[rf.RealLogIdx(i)].Term == reply.XTerm &#123;</span><br><span class="line">			...</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// 之前PrevLogIndex发生冲突位置时, Follower的Term自己没有</span></span><br><span class="line">			<span class="keyword">if</span> reply.XIndex &lt;= rf.lastIncludedIndex &#123;</span><br><span class="line">				<span class="comment">// XIndex位置也被截断了</span></span><br><span class="line">				<span class="comment">// 添加InstallSnapshot的处理</span></span><br><span class="line">				rf.nextIndex[serverTo] = rf.lastIncludedIndex</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				rf.nextIndex[serverTo] = reply.XIndex</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-2-server层优化"><a href="#3-2-server层优化" class="headerlink" title="3.2 server层优化"></a>3.2 <code>server</code>层优化</h2><p><code>server</code>层应该尽量减小对<code>raft</code>层的接口的调用, 因为大量的接口调用将获取<code>raft</code>层的一把大锁, 从而阻碍<code>RPC</code>的响应</p>
+<h3 id="3-2-1-调用Start前过滤"><a href="#3-2-1-调用Start前过滤" class="headerlink" title="3.2.1 调用Start前过滤"></a>3.2.1 调用<code>Start</code>前过滤</h3><p>之前的实现中, 无论是<code>Put/Append</code>还是<code>Get</code>, 都是封装成<code>OP</code>结构体, 在<code>HandleOp</code>中一股脑调用<code>Start</code>扔给<code>raft</code>层处理, 然后在<code>ApplyHandler</code>处进行去重判断, 现在可以在调用<code>raft</code>层的<code>Start</code>之前就从<code>historyMap</code>中判断是否有历史记录可以直接返回:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> HandleOp(opArgs *Op) (res Result) &#123;</span><br><span class="line">	<span class="comment">// 先判断是否有历史记录</span></span><br><span class="line">	kv.mu.Lock()</span><br><span class="line">	<span class="keyword">if</span> hisMap, exist := kv.historyMap[opArgs.Identifier]; exist &amp;&amp; hisMap.LastSeq == opArgs.Seq &#123;</span><br><span class="line">		kv.mu.Unlock()</span><br><span class="line">		ServerLog(<span class="string">&quot;leader %v HandleOp: identifier %v Seq %v 的请求: %s(%v, %v) 从历史记录返回\n&quot;</span>, kv.me, opArgs.Identifier, opArgs.OpType, opArgs.Key, opArgs.Val)</span><br><span class="line">		<span class="keyword">return</span> *hisMap</span><br><span class="line">	&#125;</span><br><span class="line">	kv.mu.Unlock()</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-2-减少GetState的调用"><a href="#3-2-2-减少GetState的调用" class="headerlink" title="3.2.2 减少GetState的调用"></a>3.2.2 减少<code>GetState</code>的调用</h3><p><code>ratf</code>的<code>GetState</code>也会获取锁, 从而阻碍<code>RPC</code>的响应速度, 我原来的实现中, <code>GetState</code>会在2个地方调用:</p>
+<ol>
+<li><code>Get</code>和<code>PutAppend</code>调用<code>GetState</code>判断是否是<code>leader</code>, 不是则返回错误</li>
+<li><code>ApplyHandler</code>在通过通道唤醒<code>HandleOp</code>时, 需要判断当前节点是不是<code>leader</code>, 不是<code>leader</code>则不需要唤醒</li>
+</ol>
+<p>以上2不操作看似合理, 但实际上是冗余的:</p>
+<ol>
+<li>首先, <code>Get</code>和<code>PutAppend</code>在后续的<code>HandleOp</code>会调用<code>Start</code>, <code>Start</code>也会因为当前节点不是<code>leader</code>而返回, 所以<code>GetState</code>是冗余的, 反而阻碍<code>RPC</code>响应速度</li>
+<li>其次, <code>ApplyHandler</code>在通过通道唤醒<code>HandleOp</code>时, 日志项本身有<code>term</code>的记录, <code>HandleOp</code>会调用<code>Start</code>时也会获取那时的<code>term</code>, <code>HandleOp</code>只需要在被唤醒后比较前后的<code>term</code>是否相同, 就可以判断出当前的节点是不是一个过时的<code>leader</code></li>
+</ol>
+<p>以上2处修改很简单, 由于是删代码而不是新增和修改, 就不贴代码了, 感兴趣可以看仓库</p>
+<h3 id="3-2-3-clerk先sleep再重试"><a href="#3-2-3-clerk先sleep再重试" class="headerlink" title="3.2.3 clerk先sleep再重试"></a>3.2.3 <code>clerk</code>先<code>sleep</code>再重试</h3><p>这个修改也很简单, 如果<code>server</code>返回了需要重试类型的错误, <code>clerk</code>先<code>sleep</code>一会, 再重试, 代码如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> Get(key <span class="type">string</span>) <span class="type">string</span> &#123;</span><br><span class="line">	args := &amp;GetArgs&#123;Key: key, Seq: ck.GetSeq(), Identifier: ck.identifier&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		reply := &amp;GetReply&#123;&#125;</span><br><span class="line">		ok := ck.servers[ck.leaderId].Call(<span class="string">&quot;KVServer.Get&quot;</span>, args, reply)</span><br><span class="line">		<span class="keyword">if</span> !ok || reply.Err == ErrNotLeader || reply.Err == ErrLeaderOutDated &#123;</span><br><span class="line">			<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				reply.Err = ERRRPCFailed</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> reply.Err != ErrNotLeader &#123;</span><br><span class="line">				DPrintf(<span class="string">&quot;clerk %v Seq %v 重试Get(%v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Key, reply.Err)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			ck.leaderId += <span class="number">1</span></span><br><span class="line">			ck.leaderId %= <span class="built_in">len</span>(ck.servers)</span><br><span class="line">			time.Sleep(RpcRetryInterval)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">switch</span> reply.Err &#123;</span><br><span class="line">		<span class="keyword">case</span> ErrChanClose:</span><br><span class="line">			DPrintf(<span class="string">&quot;clerk %v Seq %v 重试Get(%v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Key, reply.Err)</span><br><span class="line">			time.Sleep(time.Microsecond * <span class="number">5</span>)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrHandleOpTimeOut:</span><br><span class="line">			DPrintf(<span class="string">&quot;clerk %v Seq %v 重试Get(%v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Key, reply.Err)</span><br><span class="line">			time.Sleep(RpcRetryInterval)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrKeyNotExist:</span><br><span class="line">			DPrintf(<span class="string">&quot;clerk %v Seq %v 成功: Get(%v)=%v, Err=%s&quot;</span>, args.Identifier, args.Key, args.Key, reply.Value, reply.Err)</span><br><span class="line">			<span class="keyword">return</span> reply.Value</span><br><span class="line">		&#125;</span><br><span class="line">		DPrintf(<span class="string">&quot;clerk %v Seq %v 成功: Get(%v)=%v, Err=%s&quot;</span>, args.Identifier, args.Key, args.Key, reply.Value, reply.Err)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> reply.Value</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> PutAppend(key <span class="type">string</span>, value <span class="type">string</span>, op <span class="type">string</span>) &#123;</span><br><span class="line">	<span class="comment">// You will have to modify this function.</span></span><br><span class="line">	args := &amp;PutAppendArgs&#123;Key: key, Value: value, Op: op, Seq: ck.GetSeq(), Identifier: ck.identifier&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		reply := &amp;PutAppendReply&#123;&#125;</span><br><span class="line">		ok := ck.servers[ck.leaderId].Call(<span class="string">&quot;KVServer.PutAppend&quot;</span>, args, reply)</span><br><span class="line">		<span class="keyword">if</span> !ok || reply.Err == ErrNotLeader || reply.Err == ErrLeaderOutDated &#123;</span><br><span class="line">			<span class="keyword">if</span> !ok &#123;</span><br><span class="line">				reply.Err = ERRRPCFailed</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> reply.Err != ErrNotLeader &#123;</span><br><span class="line">				DPrintf(<span class="string">&quot;clerk %v Seq %v 重试%s(%v, %v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Op, args.Key, args.Value, reply.Err)</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			ck.leaderId += <span class="number">1</span></span><br><span class="line">			ck.leaderId %= <span class="built_in">len</span>(ck.servers)</span><br><span class="line">			time.Sleep(RpcRetryInterval)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">switch</span> reply.Err &#123;</span><br><span class="line">		<span class="keyword">case</span> ErrChanClose:</span><br><span class="line">			DPrintf(<span class="string">&quot;clerk %v Seq %v 重试%s(%v, %v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Op, args.Key, args.Value, reply.Err)</span><br><span class="line">			time.Sleep(RpcRetryInterval)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrHandleOpTimeOut:</span><br><span class="line">			DPrintf(<span class="string">&quot;clerk %v Seq %v 重试%s(%v, %v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Op, args.Key, args.Value, reply.Err)</span><br><span class="line">			time.Sleep(RpcRetryInterval)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		DPrintf(<span class="string">&quot;clerk %v Seq %v 成功: %s(%v, %v), Err=%s&quot;</span>, args.Identifier, args.Key, args.Op, args.Key, args.Value, reply.Err)</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-测试"><a href="#4-测试" class="headerlink" title="4 测试"></a>4 测试</h1><ol>
+<li>执行测试命令测试<code>lab3B</code><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -run 3B</span><br></pre></td></tr></table></figure>
+结果如下:<br><img src="/../../images/MIT6.5840/lab3B/lab3-3B-test.png" alt="Alt text"><br>可以看出, 取消立即发送心跳广播导致前3个测例满了不少, 但也就凑活吧(<del>不想优化了, 麻木了</del>)</li>
+</ol>
+<p>该代码经过150次测试没有报错</p>
+<ol>
+<li><p>执行测试命令测试整个<code>lab3</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -run 3</span><br></pre></td></tr></table></figure>
+<p>结果如下:<br><img src="/../../images/MIT6.5840/lab3B/lab3-3-test.png" alt="Alt text"><br>该代码经过150次测试没有报错</p>
+</li>
+<li><p>修改后再次测试<code>lab2</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cd</span> ../raft/</span><br><span class="line">go <span class="built_in">test</span> -run 2</span><br></pre></td></tr></table></figure>
+<p>结果如下:<br><img src="/../../images/MIT6.5840/lab3B/lab3-2-test.png" alt="Alt text"></p>
+</li>
+</ol>
+<p>该代码经过150次测试没有报错</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%BF%AB%E7%85%A7%E7%9A%84%E7%94%9F%E6%88%90%E5%92%8C%E4%BC%A0%E9%80%92%E9%80%BB%E8%BE%91"><span class="toc-number">1.</span> <span class="toc-text">1 快照的生成和传递逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%BF%AB%E7%85%A7%E5%BA%94%E8%AF%A5%E5%8C%85%E5%90%AB%E4%BB%80%E4%B9%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 快照应该包含什么?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A0%E8%BD%BD%E5%92%8C%E7%94%9F%E6%88%90%E5%BF%AB%E7%85%A7"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 加载和生成快照</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%94%9F%E6%88%90%E5%BF%AB%E7%85%A7%E7%9A%84%E6%97%B6%E6%9C%BA%E5%88%A4%E6%96%AD"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 生成快照的时机判断</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E5%8A%A0%E8%BD%BD%E5%BF%AB%E7%85%A7%E7%9A%84%E6%97%B6%E6%9C%BA%E5%88%A4%E6%96%AD"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 加载快照的时机判断</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%B0%83%E8%AF%95Bug%E5%92%8C%E4%BF%AE%E5%A4%8D"><span class="toc-number">3.</span> <span class="toc-text">3 调试Bug和修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-raft%E5%B1%82%E4%BC%98%E5%8C%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 raft层优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E4%BF%AE%E5%A4%8D%E8%BF%87%E5%A4%9A%E7%9A%84AppendEntries-RPC"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 修复过多的AppendEntries RPC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E4%BF%AE%E5%A4%8D%E8%BF%87%E5%A4%9A%E7%9A%84InstallSnapshot-RPC"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 修复过多的InstallSnapshot RPC</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-server%E5%B1%82%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 server层优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E8%B0%83%E7%94%A8Start%E5%89%8D%E8%BF%87%E6%BB%A4"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 调用Start前过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%87%8F%E5%B0%91GetState%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 减少GetState的调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-clerk%E5%85%88sleep%E5%86%8D%E9%87%8D%E8%AF%95"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 clerk先sleep再重试</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%B5%8B%E8%AF%95"><span class="toc-number">4.</span> <span class="toc-text">4 测试</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&text=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&is_video=false&description=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B&body=Check out this article: http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&name=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/03/MIT6.5840/Lab2_Raft_3B/&t=MIT6.5840(6.824) Lab3: 分布式KV数据库 3B"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

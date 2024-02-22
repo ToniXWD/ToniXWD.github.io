@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文将从原理介绍红黑树的实现思路，尽量做到图文并茂 具体的cpp代码实现在这里, 就不在文章里代码了, 自己写的实在太丑 0 引入: 为什么需要红黑树?通常, 基本的数据结构课程和Leetcode中主要关注的是普通二叉树或者完全二叉树。我们知道其各自存在一些优缺点:  普通二叉树BST 优点: 实现简单 缺点: 如果插入的节点恰好是有序的，那么BST将会退化成一个链表，导致搜索、插入和删除的操作的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="红黑树1: 插入、删除原理详解与代码实现">
+<meta property="og:url" content="http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文将从原理介绍红黑树的实现思路，尽量做到图文并茂 具体的cpp代码实现在这里, 就不在文章里代码了, 自己写的实在太丑 0 引入: 为什么需要红黑树?通常, 基本的数据结构课程和Leetcode中主要关注的是普通二叉树或者完全二叉树。我们知道其各自存在一些优缺点:  普通二叉树BST 优点: 实现简单 缺点: 如果插入的节点恰好是有序的，那么BST将会退化成一个链表，导致搜索、插入和删除的操作的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_insert_uncle_red.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_insert_uncle_black.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_10.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_5.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_50.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_1.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_2.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_3.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_6.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_6_2.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_30_6_3.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_4.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_delete_change_sibling_to_black.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_delete.set_sibling_red.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_delete_change_red.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_delete_exchange_parent_sibling_blacking_red_child_of_sibling.png">
+<meta property="og:image" content="http://example.com/images/data_structures/rbTree_delete_rotate_after_exchange_parent_sibling_blacking_red_child_of_sibling.png">
+<meta property="og:image" content="http://example.com/images/data_structures/insert_4.png">
+<meta property="og:image" content="http://example.com/images/data_structures/remove_36.png">
+<meta property="og:image" content="http://example.com/images/data_structures/remove_30_1.png">
+<meta property="og:image" content="http://example.com/images/data_structures/remove_10_1.png">
+<meta property="og:image" content="http://example.com/images/data_structures/remove_10_2.png">
+<meta property="article:published_time" content="2024-02-02T02:01:07.000Z">
+<meta property="article:modified_time" content="2024-02-22T02:09:39.943Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="数据结构">
+<meta property="article:tag" content="红黑树">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/data_structures/rbTree_insert_uncle_red.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>红黑树1: 插入、删除原理详解与代码实现</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/03/MIT6.5840/Lab2_Raft_3B/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/30/MIT6.5840/Lab2_Raft_3A/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&text=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&is_video=false&description=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=红黑树1: 插入、删除原理详解与代码实现&body=Check out this article: http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&name=红黑树1: 插入、删除原理详解与代码实现&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&t=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%BC%95%E5%85%A5-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="toc-number">1.</span> <span class="toc-text">0 引入: 为什么需要红黑树?</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%80%A7%E8%B4%A8"><span class="toc-number">2.</span> <span class="toc-text">1 红黑树的性质</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%9F%A5%E6%89%BE"><span class="toc-number">3.</span> <span class="toc-text">2 红黑树的查找</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%8F%92%E5%85%A5"><span class="toc-number">4.</span> <span class="toc-text">3 红黑树的插入</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%8F%92%E5%85%A5%E5%8E%9F%E7%90%86"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 插入原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8F%92%E5%85%A5%E6%A1%88%E4%BE%8B"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 插入案例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E5%88%A0%E9%99%A4"><span class="toc-number">5.</span> <span class="toc-text">4 红黑树的删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E4%BF%AE%E5%A4%8D%E5%89%8D%E7%9A%84%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 修复前的替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E4%BF%AE%E5%A4%8D%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 修复红黑树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%88%A0%E9%99%A4%E6%A1%88%E4%BE%8B"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 删除案例</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        红黑树1: 插入、删除原理详解与代码实现
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-02T02:01:07.000Z" class="dt-published" itemprop="datePublished">2024-02-02</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">数据结构</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a>, <a class="p-category" href="/tags/%E7%BA%A2%E9%BB%91%E6%A0%91/" rel="tag">红黑树</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文将从原理介绍红黑树的实现思路，尽量做到图文并茂</p>
+<p>具体的<code>cpp</code>代码实现在<a target="_blank" rel="noopener" href="https://github.com/ToniXWD/cppDataStructure/blob/main/include/rbTree.hpp">这里</a>, 就不在文章里代码了, 自己写的实在太丑</p>
+<h1 id="0-引入-为什么需要红黑树"><a href="#0-引入-为什么需要红黑树" class="headerlink" title="0 引入: 为什么需要红黑树?"></a>0 引入: 为什么需要红黑树?</h1><p>通常, 基本的数据结构课程和<code>Leetcode</code>中主要关注的是普通二叉树或者完全二叉树。我们知道其各自存在一些优缺点:</p>
+<ul>
+<li>普通二叉树<code>BST</code><ul>
+<li>优点: 实现简单</li>
+<li>缺点: 如果插入的节点恰好是有序的，那么<code>BST</code>将会退化成一个链表，导致搜索、插入和删除的操作的时间复杂度都下降到<code>O(n)</code></li>
+</ul>
+</li>
+<li>均衡二叉树<code>AVL</code><ul>
+<li>优点: 查询时时间复杂度一定是<code>O(log n)</code>, 不能存在退化成一个链表的情况</li>
+<li>缺点: 维护均衡二叉树消耗很大</li>
+</ul>
+</li>
+</ul>
+<p>为了解决普通<code>BST</code>在最坏情况下性能下降的问题，需要一种能够保持树平衡的数据结构，红黑树就是这样一种结构。红黑树通过节点着色和在插入或删除后进行特定的旋转操作，来保证树基本平衡。这种自平衡机制保证了在最坏情况下，树的高度保持在<code>O(log n)</code>，使得搜索、插入和删除操作的时间复杂度也都是<code>O(log n)</code>。</p>
+<p>红黑树的自平衡特性使得它在实现许多数据结构（如关联数组、映射和集合）时非常有用，这些数据结构在<code>STL</code>（标准模板库）中被广泛使用。它为那些需要高效搜索、插入和删除操作的场景提供了一种可靠的解决方案，无论数据是如何插入的。</p>
+<h1 id="1-红黑树的性质"><a href="#1-红黑树的性质" class="headerlink" title="1 红黑树的性质"></a>1 红黑树的性质</h1><p>红黑树是一种自平衡的二叉搜索树，它保持树的平衡通过确保任何从根到叶子的最长路径不会超过最短路径的两倍。为了实现这一点，红黑树维护以下性质：</p>
+<ol>
+<li><p><strong>节点颜色</strong>：每个节点要么是红色，要么是黑色。</p>
+</li>
+<li><p><strong>根节点性质</strong>：根节点总是黑色。</p>
+</li>
+<li><p><strong>叶子节点性质</strong>：所有叶子节点（NIL节点，通常表示为哨兵节点）都是黑色。</p>
+</li>
+<li><p><strong>红色节点性质</strong>：如果一个节点是红色的，那么它的两个子节点都是黑色的（也就是说，红色节点不能有红色的父节点或子节点，即不会有两个连续的红色节点）。</p>
+</li>
+<li><p><strong>黑色高度性质</strong>：从任何给定节点到其任何叶子节点的路径中，经过的黑色节点的数量是相同的（这个数量称为该节点的黑色高度）。</p>
+</li>
+</ol>
+<p>这些性质确保了红黑树的关键优势：在最坏的情况下，树的高度保持在<code>O(log N)</code>，其中N是树中节点的数量。这意味着查找、插入和删除操作都可以在对数时间内完成，保持了高效性。红黑树通过旋转和重新着色来维持这些性质。当执行插入和删除等修改操作时，通过一系列的树旋转和重新着色来修复可能被破坏的红黑树性质，从而保持树结构的平衡。</p>
+<h1 id="2-红黑树的查找"><a href="#2-红黑树的查找" class="headerlink" title="2 红黑树的查找"></a>2 红黑树的查找</h1><p>红黑树的查找和<code>BST</code>没有区别, 直接略过吧…</p>
+<h1 id="3-红黑树的插入"><a href="#3-红黑树的插入" class="headerlink" title="3 红黑树的插入"></a>3 红黑树的插入</h1><h2 id="3-1-插入原理"><a href="#3-1-插入原理" class="headerlink" title="3.1 插入原理"></a>3.1 插入原理</h2><blockquote>
+<p>草图说明:</p>
+<ol>
+<li>圆圈表示节点, 矩形表示子树</li>
+<li>黑色和红色代表红黑树的颜色, 蓝色表示颜色未知</li>
+<li>阴影表示操作节点</li>
+<li>子树的颜色表示了子树的根节点的颜色</li>
+<li>删除的时候, 初始操作节点的颜色是不确定的</li>
+</ol>
+</blockquote>
+<p>插入过程:</p>
+<ol>
+<li><p><strong>插入新节点</strong>：</p>
+<ul>
+<li>将新节点插入到红黑树中，就像在普通的二叉搜索树中那样。新节点的颜色初始化为<strong>红色</strong>。</li>
+</ul>
+</li>
+<li><p><strong>检查红黑树性质</strong>：</p>
+<ol>
+<li>如果新插入的节点是根节点，仅将其颜色改为黑色即可满足所有性质。</li>
+<li>如果新节点的父节点是黑色，不违反红黑树的性质，不需要做任何额外的操作。</li>
+<li>如果新节点的父节点是红色，就需要进行一些调整来修复树的性质，因为这违反了性质: 红色节点的子节点必须是黑色。</li>
+</ol>
+</li>
+<li><p><strong>调整红黑树</strong>：<br> 如果新节点的父节点是红色的，有以下几种情况需要处理：</p>
+<ol>
+<li><p>叔叔节点为红色</p>
+<ol>
+<li>更改叔叔节点和父节点为黑色</li>
+<li>将爷爷节点设为红色</li>
+<li>以爷爷节点为目标继续判断是否需要调整<br>上述操作可参考下图, 将叔叔和父亲设为黑色是避免连续的红色节点, 将爷爷节点设为红色目的是确保<strong>黑色高度</strong>不变, 因为爷爷的父亲可能还是红色, 所以需要继续判断:<br><img src="/../../images/data_structures/rbTree_insert_uncle_red.png" alt="rbTree_insert_uncle_red"></li>
+</ol>
+</li>
+<li><p>叔叔节点为黑色或者不存在</p>
+<ol>
+<li>如果新节点相对父节点的方向和父节点相对爷爷节点的<strong>方向不一致</strong>, 将操作的目标节点变为其父亲, 并进行左旋或右旋, 使者三代节点<strong>方向一致</strong>,</li>
+<li>将操作节点(可能因为上一步的左旋或右旋, 操作节点发生了变化)的父节点设为黑色, 爷爷节点设为红色</li>
+<li>右旋或左旋爷爷节点(父节点是爷爷节点的右孩子就左旋, 反之右旋), 修复完成, 不需要进一步判断<br>上述操作可参考下图, 目的其实就是化3层为2层, 从而避免原来2-3层连续的红节点, 需要注意的是, 如果是第一次检查修复, 叔叔节点一定是不存在的, 叔叔节点存在且为黑色只会出现在<code>叔叔节点为红色</code>这个条件下的递归修复过程中<br><img src="/../../images/data_structures/rbTree_insert_uncle_black.png" alt="rbTree_insert_uncle_black"></li>
+</ol>
+</li>
+</ol>
+<p> 递归向上进行修复，直到根节点，或满足红黑树性质, 注意,<strong>最后需要将根节点重置为黑色, 因为之前的调整可能改变了根节点的颜色</strong></p>
+</li>
+</ol>
+<p><strong>名词解释：</strong></p>
+<ul>
+<li><strong>左旋</strong>：将父节点的右孩子设为新的父节点, 原来的父节点变为新的父节点的左孩子</li>
+<li><strong>右旋</strong>：与左旋相反，将父节点的左孩子设为新的父节点, 原来的父节点变为新的父节点的右孩子</li>
+<li><strong>方向不一致</strong>: 新节点是父节点的右孩子而父节点是祖父节点的左孩子，或者新节点是父节点的左孩子而父节点是祖父节点的右孩子</li>
+</ul>
+<h2 id="3-2-插入案例"><a href="#3-2-插入案例" class="headerlink" title="3.2 插入案例"></a>3.2 插入案例</h2><p>上面的流程看起来很抽象, 因此我们结合实际的案例来说明, 我使用了<a href="../../images/data_structures/https://algo.hufeifei.cn/RedBlack.html">这个网站</a>演示红黑树插入的逻辑:<br><strong>1. 首先创建一个空的红黑树:</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">RedBlackTree&lt;<span class="type">int</span>&gt; tree; <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><strong>2. 再插入10</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">10</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_10.png" alt="insert_10"><br>新的节点是根节点, 置为黑色</p>
+<p><strong>3. 再插入5</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">10</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_5.png" alt="insert_5"><br>插入后没有改变红黑树性质, 无需调整</p>
+<p><strong>4. 再插入50</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">50</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_50.png" alt="insert_50"><br>插入后没有改变红黑树性质, 无需调整</p>
+<p><strong>5. 再插入30</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">30</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_30_1.png" alt="insert_30_1"><br>插入后30的父节点50是连续的红节点, 需要调整</p>
+<p><img src="/../../images/data_structures/insert_30_2.png" alt="insert_30_2"><br>叔叔节是红色, 将叔叔和父亲置为黑色, 爷爷节点设为红色</p>
+<p><img src="/../../images/data_structures/insert_30_3.png" alt="insert_30_3"><br>从爷爷节点继续判断, 爷爷节点是根节点, 重新置为黑色</p>
+<blockquote>
+<p>小结: 为什么<code>父亲和叔叔节点都是红色</code>下的这种策略能有效地修复红黑树?<br>因为将父亲和叔叔变黑就已经修复了<strong>红色节点性质</strong>, 但增加了黑色节点高度怎么办呢? 再把爷爷节点变红就修复了<strong>黑色高度性质</strong>, 但需要从爷爷节点还是继续判断是否需要修复</p>
+</blockquote>
+<p><strong>6. 再插入36</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">36</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_30_6.png" alt="insert_30_6"><br>插入后36的父节点30是连续的红节点, 需要调整</p>
+<p><img src="/../../images/data_structures/insert_30_6_2.png" alt="insert_30_6_2"><br>50, 30和36方向不一致, 左旋父节点30使其方向和50与36的方向一致: 向左, 左旋后, 将30置为操作节点</p>
+<p><img src="/../../images/data_structures/insert_30_6_3.png" alt="insert_30_6_3"><br>将操作节点30的父节点36设为黑色, 爷爷几点50设为红色, 右旋爷爷节点50</p>
+<blockquote>
+<p>小结: </p>
+<ol>
+<li>为什么<code>叔叔节点为黑色或者不存在</code>这个情况下旋转爷爷节点有效?<br>实际上就是将原来以爷爷节点为起点的3个分布在3层的节点压缩层了2层, 原来第二层和第三层连续的2个红色节点调整后就不连续了, 因为其中一个更大的一个节点变到了原来的爷爷节点的位置并变黑了, 原来的爷爷节点变成了儿子并且变成了红色, 所以满足了<strong>黑色高度性质</strong>的性质和<strong>红色节点性质</strong></li>
+<li>为什么需要判断<strong>方向一致</strong>?<br>方便后续统一操作而已</li>
+</ol>
+</blockquote>
+<p><strong>7. 再插入4</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">insert</span>(<span class="number">4</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/insert_4.png" alt="insert_4"><br>插入后4后不需要调整(主要是为了后续删除的演示)</p>
+<h1 id="4-红黑树的删除"><a href="#4-红黑树的删除" class="headerlink" title="4 红黑树的删除"></a>4 红黑树的删除</h1><p>红黑树的删除比插入复杂很多, 整体分3步:</p>
+<ol>
+<li>找到删除节点</li>
+<li>找到一个替换节点接替删除节点的位置</li>
+<li>修复红黑树高度</li>
+</ol>
+<p>这里分删除和修复2部分说明</p>
+<h2 id="4-1-修复前的替换"><a href="#4-1-修复前的替换" class="headerlink" title="4.1 修复前的替换"></a>4.1 修复前的替换</h2><p><strong>1. 查找要删除的节点</strong><br>就像在普通的二叉搜索树中那样, 查找要删除的节点。</p>
+<p><strong>2. 替换节点</strong><br>红黑树需要用于一个节点来替换要删除的节点, 具体分情况如下:</p>
+<ol>
+<li><p><strong>删除节点有两个非空子节点</strong><br>   在这种情况下，通常会找到该节点的后继或前驱（中序遍历下的下一个节点或上一个节点），这将是该节点右子树中的最小值(或左子树的最大值)。然后，将后继或前驱的值复制到要删除的节点中，并删除后继或前驱节点。因为后继节点(或前驱节点)至多只有一个非空子节点，所以这步骤将问题简化为删除有一个或没有子节点的节点。<strong>本文采取使用前驱替代的策略</strong></p>
+</li>
+<li><p><strong>删除节点最多有一个非空子节点：</strong><br>   任意找到一个空子节点, 然后将另一个子节点(可能也是空的, 也可能是非空), 替代当前节点,</p>
+</li>
+</ol>
+<p>删除红色节点不需要判断修复, 但删除黑色节点后, 需要从一个节点开始判断红黑树是否需要修复, 具体有以下情况:</p>
+<ol>
+<li><strong>删除节点有两个非空子节点</strong><br>由于前驱节点是实际被删除的黑色节点, 因此从它开始就违反了<strong>黑色高度性质</strong>, 具体分类如下:<ol>
+<li>如果前驱节点有孩子, 孩子将替代前驱节点原来的位置, 这个位置就是修复判断的起始位置</li>
+<li>如果前驱节点没有孩子, 那么也就是替代者是空指针, 虽然这个节点也是判断的其实位置, 但从这个节点开始不能进行修复判断, 因为空指针无法索引到它的父节点, 因此, 额外用一个<strong>哨兵节点Nil</strong>来代替这个空指针, 哨兵节点除了包含原来前驱的父节点指针外, 本身不算是红黑树的有效成员, 只是在删除修复时临时使用, <strong>哨兵节点Nil</strong>就是修复判断的起始位置</li>
+</ol>
+</li>
+<li><strong>删除节点最多有一个非空子节点：</strong><br>任意找到一个空子节点, 然后将另一个子节点(可能也是空的, 也可能是非空), 替代当前节点, 当前节点被替代的位置就是判断的其实位置, 当然这个位置现在也可能是空的, 所以这种情况也需要使用<strong>哨兵节点Nil</strong>来处理</li>
+</ol>
+<p><strong>替换完成后, 还需要将替换的节点的颜色置为原来删除位置节点的颜色</strong></p>
+<h2 id="4-2-修复红黑树"><a href="#4-2-修复红黑树" class="headerlink" title="4.2 修复红黑树"></a>4.2 修复红黑树</h2><p>删除节点后，可能会违反红黑树的性质。如果删除的是红色节点，通常不需要进一步的修复，因为红色节点的删除不会影响黑色节点的平衡。但如果删除的是黑色节点，就可能需要通过一系列复杂的树的旋转和重新着色来进行修复。</p>
+<p>修复过程是从某个节点开始进行判断的, 这个判断的节点的含义是: 这个节点开始的子树的<strong>黑色高度</strong>比删除前减小了1</p>
+<p>修复的目标是重新分配树中的黑色高度, 修复过程遵循以下原则：</p>
+<ol>
+<li><strong>兄弟节点是红色：</strong> <ol>
+<li>兄弟节点是红色意味着父节点一定是黑色, 先交换父节点和兄弟节点的颜色。</li>
+<li>将父节点进行旋转, 方向朝着修复判断的操作节点</li>
+<li>旋转后操作节点的新兄弟节点就是黑色了, 可以继续下面的判断修复<br>这一过程可参考下图, 需要注意的是, 这个过程仅仅是将兄弟节点变黑, 并没有完成修复, 需要后续进一步操作<br><img src="/../../images/data_structures/rbTree_delete_change_sibling_to_black.png" alt="rbTree_delete_change_sibling_to_black"></li>
+</ol>
+</li>
+<li><strong>兄弟节点是黑色，其子节点也都是黑色：</strong> <ol>
+<li><p>将兄弟节点设为红色, 此时兄弟节点开始的子树和操作节点开始的子树的<strong>黑色高度</strong>已经一样了</p>
+</li>
+<li><p>由于上述原因, 可以将操作节点向上移动到父节点, 继续判断修复:</p>
+<ol>
+<li>如果父节点是红色, 将其置为黑色, 修复完成</li>
+<li>否则, 从父节点开始继续判断</li>
+</ol>
+<p>这一过程可参考下图, 此时操作节点变成了原来的父节点, 继续判断:</p>
+</li>
+</ol>
+<p><img src="/../../images/data_structures/rbTree_delete.set_sibling_red.png" alt="rbTree_delete.set_sibling_red"></p>
+</li>
+<li><strong>兄弟节点是黑色，且至少有一个红色子节点：</strong> <ol>
+<li><p>无论兄弟节点的红色节点是哪一侧, 都可以通过旋转操作统一到某一侧一定有红色节点, 这里将红色节点位置统一为操作节点的相反侧(如果操作节点是左节点, 就把兄弟节点的红色节点放在右孩子), 如果需要调整兄弟节点的子节点的位置的话</p>
+<ol>
+<li>将兄弟节点和兄弟节点的红色孩子交换颜色</li>
+<li>将兄弟节点向与操作节点向反的方向旋转<br>这一过程可参考下图<br><img src="/../../images/data_structures/./rbTree_delete_change_red.png" alt="delete_change_red"></li>
+</ol>
+</li>
+<li><p>将兄弟节点(可能因旋转发生了变化)设置为操作节点的父节点的颜色，将操作节点的父节点设置为黑色，将兄弟节点的与操作节点相反方向的孩子(之前的操作确保其为红)设置为黑色<br>这一过程可参考下图<br><img src="/../../images/data_structures/rbTree_delete_exchange_parent_sibling_blacking_red_child_of_sibling.png" alt="rbTree_delete_exchange_parent_sibling_blacking_red_child_of_sibling"></p>
+</li>
+<li><p>将操作节点的父节点向操作节点方向旋转<br>这一过程可参考下图, 此时操作节点的路径上多了一个黑色节点, 其<strong>黑色高度</strong>被修复, 而操作节点的兄弟节点由于红色节点被置为黑色, 补充了被转移到原来操作节点一侧的黑节点, 因此高度也不变化, 此时, 完成了修复, 可以退出循环<br><img src="/../../images/data_structures/rbTree_delete_rotate_after_exchange_parent_sibling_blacking_red_child_of_sibling.png" alt="rbTree_delete_rotate_after_exchange_parent_sibling_blacking_red_child_of_sibling"></p>
+</li>
+</ol>
+</li>
+</ol>
+<p>删除修复可能会在树上向上递归，直到到达根节点，或者遇到可以修复树平衡的情况。</p>
+<p>同时, 修复完成后还需要重新将<strong>哨兵节点</strong>卸载掉</p>
+<blockquote>
+<p>有一个很重要的特性值得观察: 就是初始状态的修复判断的操作节点的颜色是未知的, 但通过以上的修复逻辑, 最终效果一定会将初始的操作节点安排一个黑色父节点从而避免连续的红色节点</p>
+</blockquote>
+<h2 id="4-3-删除案例"><a href="#4-3-删除案例" class="headerlink" title="4.3 删除案例"></a>4.3 删除案例</h2><p>使用我们之前插入案例最后状态的红黑树:<br><img src="/../../images/data_structures/insert_4.png" alt="insert_4"><br><strong>1. 删除36</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">remove</span>(<span class="number">36</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/remove_36.png" alt="remove_36"><br>删除的36左右孩子都不为空, 所以找到其前驱30, 用30替代36, 并且替代的节点需要设置成和原来位置节点相同的颜色</p>
+<p>替换的30节点是红色, 无需修复 </p>
+<p><strong>2. 删除30</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">remove</span>(<span class="number">30</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/remove_30_1.png" alt="remove_30_1"></p>
+<p>删除的30节点用50节点来代替, 并将50节点设置为黑色<br>替换的50节点是红色, 不需要修复</p>
+<p><strong>3. 删除10</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tree.<span class="built_in">remove</span>(<span class="number">10</span>); <span class="comment">// 伪代码</span></span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/data_structures/remove_10_1.png" alt="remove_10_1"><br>删除的10的左右孩子不为空, 用前驱5替代10, 并将10节点设置为黑色<br>替换的5节点是黑色, 需要修复</p>
+<p><img src="/../../images/data_structures/remove_10_2.png" alt="remove_10_2"><br>兄弟节点是黑色, 且孩子都是黑色(空节点也是黑色), 所以将兄弟节点染红, 操作节点置为其父节点</p>
+<blockquote>
+<p>在线可视化的网页是将其4染成黑色, 都可以, 我按照我总结的思路将50染红, 所以P了下图</p>
+</blockquote>
+<p>操作节点此时是根节点, 再次置为黑色, 结束修复</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%BC%95%E5%85%A5-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="toc-number">1.</span> <span class="toc-text">0 引入: 为什么需要红黑树?</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%80%A7%E8%B4%A8"><span class="toc-number">2.</span> <span class="toc-text">1 红黑树的性质</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%9F%A5%E6%89%BE"><span class="toc-number">3.</span> <span class="toc-text">2 红黑树的查找</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E6%8F%92%E5%85%A5"><span class="toc-number">4.</span> <span class="toc-text">3 红黑树的插入</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%8F%92%E5%85%A5%E5%8E%9F%E7%90%86"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 插入原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8F%92%E5%85%A5%E6%A1%88%E4%BE%8B"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 插入案例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%BA%A2%E9%BB%91%E6%A0%91%E7%9A%84%E5%88%A0%E9%99%A4"><span class="toc-number">5.</span> <span class="toc-text">4 红黑树的删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E4%BF%AE%E5%A4%8D%E5%89%8D%E7%9A%84%E6%9B%BF%E6%8D%A2"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 修复前的替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E4%BF%AE%E5%A4%8D%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 修复红黑树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%88%A0%E9%99%A4%E6%A1%88%E4%BE%8B"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 删除案例</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&text=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&is_video=false&description=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=红黑树1: 插入、删除原理详解与代码实现&body=Check out this article: http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&title=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&name=红黑树1: 插入、删除原理详解与代码实现&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/&t=红黑树1: 插入、删除原理详解与代码实现"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

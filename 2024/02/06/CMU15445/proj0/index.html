@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这是对个人在2022年秋的CMU15445的project总结, 算是补档, 所有很多代码也忘了, 这里也就值只介绍其中的思路, 不涉及具体代码细节, 不过CMU15445的老师Andy本来也禁止个人公开代码实现的。 本次实验是实现一个字典树Trie, 但难度主要不在这个数据结构, 更多是通过这个项目熟悉C++常见的新特性。 官方project指导书: https:&#x2F;&#x2F;15445.courses.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CMU15445 2022 project0: C++ Primer: 字典树">
+<meta property="og:url" content="http://example.com/2024/02/06/CMU15445/proj0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="这是对个人在2022年秋的CMU15445的project总结, 算是补档, 所有很多代码也忘了, 这里也就值只介绍其中的思路, 不涉及具体代码细节, 不过CMU15445的老师Andy本来也禁止个人公开代码实现的。 本次实验是实现一个字典树Trie, 但难度主要不在这个数据结构, 更多是通过这个项目熟悉C++常见的新特性。 官方project指导书: https:&#x2F;&#x2F;15445.courses.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CMU15445/trie.png">
+<meta property="og:image" content="http://example.com/images/CMU15445/trie-kv.png">
+<meta property="article:published_time" content="2024-02-06T09:37:18.000Z">
+<meta property="article:modified_time" content="2024-02-21T16:16:04.636Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Trie">
+<meta property="article:tag" content="数据结构">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CMU15445/trie.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>CMU15445 2022 project0: C++ Primer: 字典树</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/05/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch1%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/06/CMU15445/proj0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/06/CMU15445/proj0/&text=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/06/CMU15445/proj0/&is_video=false&description=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CMU15445 2022 project0: C++ Primer: 字典树&body=Check out this article: http://example.com/2024/02/06/CMU15445/proj0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/06/CMU15445/proj0/&name=CMU15445 2022 project0: C++ Primer: 字典树&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/06/CMU15445/proj0/&t=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Trie%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">1 Trie数据结构介绍</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 代码实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 数据结构解析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Insert%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.2.</span> <span class="toc-text">2.3 Insert函数实现思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Remove%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.3.</span> <span class="toc-text">2.2 Remove函数实现思路</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86-%E7%94%A8%E5%88%B0%E7%9A%84C-%E6%96%B0%E7%89%B9%E6%80%A7"><span class="toc-number">3.</span> <span class="toc-text">3 补充知识: 用到的C++新特性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8F%B3%E5%80%BC"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 右值</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%8F%B3%E5%80%BC%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 右值的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E8%B5%8B%E5%80%BC%E5%90%8E%E7%9A%84%E5%8F%B3%E5%80%BC"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 赋值后的右值</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-3-%E5%8F%B3%E5%80%BC%E7%9A%84%E4%BD%BF%E7%94%A8%E2%80%94%E2%80%94%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91"><span class="toc-number">3.2.</span> <span class="toc-text">3.1.3 右值的使用——完美转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="toc-number">3.3.</span> <span class="toc-text">3.2 智能指针</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-1-unique-ptr"><span class="toc-number">3.4.</span> <span class="toc-text">3.2.1 unique_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-2-shared-ptr"><span class="toc-number">3.5.</span> <span class="toc-text">3.2.2 shared_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-3-weak-ptr"><span class="toc-number">3.6.</span> <span class="toc-text">3.2.3 weak_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="toc-number">3.7.</span> <span class="toc-text">3.3 类型转换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-static-cast"><span class="toc-number">3.7.1.</span> <span class="toc-text">3.3.1 static_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-dynamic-cast"><span class="toc-number">3.7.2.</span> <span class="toc-text">3.3.2 dynamic_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-const-cast"><span class="toc-number">3.7.3.</span> <span class="toc-text">3.3.3 const_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-reinterpret-cast"><span class="toc-number">3.7.4.</span> <span class="toc-text">3.3.4 reinterpret_cast</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CMU15445 2022 project0: C++ Primer: 字典树
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-06T09:37:18.000Z" class="dt-published" itemprop="datePublished">2024-02-06</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CMU15445/">CMU15445</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/Trie/" rel="tag">Trie</a>, <a class="p-category" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这是对个人在2022年秋的<code>CMU15445</code>的<code>project</code>总结, 算是补档, 所有很多代码也忘了, 这里也就值只介绍其中的思路, 不涉及具体代码细节, 不过<code>CMU15445</code>的老师<code>Andy</code>本来也禁止个人公开代码实现的。</p>
+<p>本次实验是实现一个字典树<code>Trie</code>, 但难度主要不在这个数据结构, 更多是通过这个项目熟悉<code>C++</code>常见的新特性。</p>
+<p><code>官方project指导书</code>: <a target="_blank" rel="noopener" href="https://15445.courses.cs.cmu.edu/fall2022/project0/">https://15445.courses.cs.cmu.edu/fall2022/project0/</a></p>
+<h1 id="1-Trie数据结构介绍"><a href="#1-Trie数据结构介绍" class="headerlink" title="1 Trie数据结构介绍"></a>1 <code>Trie</code>数据结构介绍</h1><p>下面是摘自官方文档的数据结构示意图:</p>
+<p><img src="/../../images/CMU15445/trie.png" alt="trie"></p>
+<p>在上面的图中可以看到, 字典树每个节点实际上存储的就是字符串的一个字符, 这个树结构从根路径到叶子结点路径上的字符一起组成了字符串, 如<code>hello</code>, <code>have</code>, <code>hat</code></p>
+<p>另一方面, 还可以在特定的节点存储<code>value</code>形成<code>KV</code>存储的数据结构, 下面是摘自官方文档的数据结构示意图:</p>
+<blockquote>
+<p>另外, 如果不存在某个字符是所有字符串的祖先(第一个字符), 就设一个空的<code>root</code>节点替代</p>
+</blockquote>
+<p><img src="/../../images/CMU15445/trie-kv.png" alt="trie-k"></p>
+<p>这个数据结构存储了<code>(&quot;ab&quot;, 1)</code> 和 <code>(&quot;ac&quot;, &quot;val&quot;)</code>2个数据结构</p>
+<p>可以看出, 这种数据结构的核心思想就是: <strong>将公共的前缀压缩在树的公共祖先路径上</strong>, 路径形成<code>key</code>, 再在节点上存储<code>value</code></p>
+<h1 id="2-代码实现思路"><a href="#2-代码实现思路" class="headerlink" title="2 代码实现思路"></a>2 代码实现思路</h1><h2 id="2-1-数据结构解析"><a href="#2-1-数据结构解析" class="headerlink" title="2.1 数据结构解析"></a>2.1 数据结构解析</h2><p>给出的代码框架中, <code>TrieNode</code>就对应不包含值的节点, <code>TrieNodeWithValue</code>就是包含了值的节点, 二者是继承关系, 而<code>TrieNode</code>使用<code>unordered_map</code>存储指向每个节点的<code>unique_ptr</code></p>
+<h2 id="2-3-Insert函数实现思路"><a href="#2-3-Insert函数实现思路" class="headerlink" title="2.3 Insert函数实现思路"></a>2.3 <code>Insert</code>函数实现思路</h2><p><code>Insert</code> 函数是一个模板函数，用于插入键值对。它接受一个字符串 <code>key</code> 作为要插入的键，以及一个 <code>value</code> 作为与键关联的值。流程如下：</p>
+<ol>
+<li><p>检查键 (<code>key</code>) 是否为空。如果为空，直接返回 <code>false</code></p>
+</li>
+<li><p>使用迭代器<code>c</code> 循环遍历 <code>key</code> 中的每个字符，直至迭代器 <code>c</code> 到达 <code>key</code> 的末尾。</p>
+</li>
+<li><p>在循环中，<code>cur</code> 存储当前迭代器 <code>c</code> 的值，并立即将 <code>c</code> 增加。如果 <code>c</code> 到达 <code>key</code> 的末尾，则跳出循环。</p>
+</li>
+<li><p>检查前一个子节点 <code>pre_child</code> 是否有当前字符 <code>*cur</code> 对应的子节点。</p>
+<ol>
+<li>如果没有，使用 <code>InsertChildNode</code> 创建一个新的 <code>TrieNode</code> 子节点，并更新 <code>pre_child</code> 指向新节点。</li>
+<li>如果 <code>pre_child</code> 已经有当前字符 <code>*cur</code> 对应的子节点，那么就获取这个子节点，并更新 <code>pre_child</code> 指向它。</li>
+</ol>
+</li>
+<li><p>循环结束后，<code>c</code> 递减，指向 <code>key</code> 的最后一个字符。</p>
+</li>
+<li><p>尝试获取最后一个字符对应的子节点 <code>end_node</code>。</p>
+<ol>
+<li>如果 <code>end_node</code> 已经存在并且是一个结束节点（即已经存储了一个值），则释放写锁并返回 <code>false</code>，表示键已存在。</li>
+<li>如果 <code>end_node</code> 存在但不是结束节点，创建一个带有值 <code>value</code> 的新 <code>TrieNodeWithValue</code> 节点，并使用 <code>std::move</code> 把 <code>end_node</code> 的数据移动到新节点。然后用 <code>reset</code> 方法替换 <code>end_node</code> 中的指针。</li>
+<li>如果 <code>end_node</code> 不存在，使用 <code>InsertChildNode</code> 在 <code>pre_child</code> 下插入一个新的 <code>TrieNode</code>，然后创建一个新的 <code>TrieNodeWithValue</code> 实例，将 <code>pre_child</code> 的数据移动到新节点，并设置值 <code>value</code>。</li>
+</ol>
+</li>
+<li><p>最后，函数释放写锁，并返回 <code>true</code>，表示键值对已成功插入字典树。</p>
+</li>
+</ol>
+<p>上面的代码其实说的太详细了, <code>Tie</code>的插入其实也很简单, 之所以说这么复杂, 主要是要提到使用的<code>C++11\14\17</code>的新特性</p>
+<h2 id="2-2-Remove函数实现思路"><a href="#2-2-Remove函数实现思路" class="headerlink" title="2.2 Remove函数实现思路"></a>2.2 <code>Remove</code>函数实现思路</h2><ol>
+<li><p>检查键是否为空：<br>如果提供的键 <code>key</code> 为空字符串，函数返回 <code>false</code>，因为无法从Trie中移除一个不存在的键。</p>
+</li>
+<li><p>使用栈跟踪路径：<br>  代码初始化了一个栈 <code>s</code> 来存储遍历过程中的路径。栈中的元素是一个包含字符和指向<code>TrieNode</code>指针的<code>pair</code>。</p>
+</li>
+<li><p>遍历键中的每个字符：</p>
+<ol>
+<li>使用一个迭代器 <code>c</code> 遍历键 <code>key</code> 的每个字符。</li>
+<li>检查是否存在当前字符对应的子节点。如果存在：<ol>
+<li>将当前字符和指向父节点的指针存入栈中。</li>
+<li>更新 <code>pre_child</code> 指向当前字符的子节点。</li>
+</ol>
+</li>
+<li>如果不存在当前字符对应的子节点，说明键不在Trie中，返回 <code>false</code>。</li>
+</ol>
+</li>
+<li><p>检查并移除没有子节点的节点：</p>
+<ol>
+<li>从栈中弹出元素，这样就可以从键的末尾向根节点遍历。</li>
+<li>对于每一个弹出的元素，检查当前节点（通过 <code>(*node)-&gt;GetChildNode(key)</code> 获取）是否存在子节点。</li>
+<li>如果当前节点没有子节点，使用 <code>(*node)-&gt;RemoveChildNode(key)</code> 方法移除它。</li>
+<li>如果当前节点有子节点，说明该节点是其他键的前缀，或者其子节点中有其他键的后续部分，因此不能移除该节点。</li>
+</ol>
+</li>
+<li><p>返回成功：<br>  如果整个键已经被遍历，并且相关节点已被移除，函数返回 <code>true</code> 表示键已成功从Trie中移除。</p>
+</li>
+</ol>
+<p>在这个过程中，推荐使用后进先出（LIFO）的栈结构来保存遍历过程中的路径。这是因为在移除过程中，可能需要从叶子节点回溯到根节点，去除沿途的任何不再有用的节点。这种回溯机制确保只有当<strong>一个节点不再表示任何其他键时，它才会被移除</strong>。如果在回溯过程中<strong>遇到一个有子节点的节点，这意味着该节点仍然是其他键的一部分</strong>，因此该节点和它的祖先节点都不应该被移除。</p>
+<p>这个代码实际写起来应该很简单, 本项目的目的也就是对C++17进行练手而已</p>
+<h1 id="3-补充知识-用到的C-新特性"><a href="#3-补充知识-用到的C-新特性" class="headerlink" title="3 补充知识: 用到的C++新特性"></a>3 补充知识: 用到的C++新特性</h1><h2 id="3-1-右值"><a href="#3-1-右值" class="headerlink" title="3.1 右值"></a>3.1 右值</h2><h3 id="3-1-1-右值的定义"><a href="#3-1-1-右值的定义" class="headerlink" title="3.1.1 右值的定义"></a>3.1.1 右值的定义</h3><p>在C++中，右值（rvalue）是指一个临时的、非持久的对象，它通常出现在赋值表达式的右侧。右值表示对象的值，而不是对象的身份（位置），这意味着它们不具有可识别的内存地址。</p>
+<p>C++中的值可以分为两大类：左值（lvalue）和右值（rvalue）。左值是指那些具有持久状态的对象，这些对象通常可以<strong>通过它们的地址来标识</strong>。它们可以出现在赋值表达式的左侧。例如，一个变量或者一个数组的元素都是左值。</p>
+<p>而右值分为两类：</p>
+<ol>
+<li><p>纯右值：表示表达式完全不对应任何对象存储位置。例如，数字字面量（如<code>42</code>）、算术表达式的结果（如<code>3+4</code>）、返回非引用类型的函数调用等。</p>
+</li>
+<li><p>将亡值：C++11中引入的概念，是一种特殊的右值，它对应于即将被销毁、或者可以“移动”的对象。这类右值允许将资源（比如动态分配的内存）从一个对象转移到另一个对象，这样可以提升效率，避免不必要的复制。例如，使用<code>std::move</code>函数可以将一个左值转换为将亡值。</p>
+</li>
+</ol>
+<p>右值的一个关键特性是它们可以被移动而非复制，这是C++11中引入的右值引用（<code>&amp;&amp;</code>）的主要用途。右值引用允许开发者重用即将销毁的对象的资源，例如在移动构造函数（<code>T(T&amp;&amp;)</code>）和移动赋值操作符（<code>T&amp; operator=(T&amp;&amp;)</code>）中。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> a = <span class="number">42</span>; <span class="comment">// 42是一个纯右值</span></span><br><span class="line"><span class="type">int</span> b = a;  <span class="comment">// a是一个左值</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span>&amp;&amp; rvalue_ref = a * <span class="number">2</span>; <span class="comment">// a * 2是一个纯右值，rvalue_ref是对它的右值引用</span></span><br><span class="line"><span class="type">int</span>&amp;&amp; moved_ref = std::<span class="built_in">move</span>(b); <span class="comment">// 使用std::move将b转换为一个将亡值，moved_ref是对它的右值引用</span></span><br></pre></td></tr></table></figure>
+
+<p>在上面的例子中，<code>42</code>是一个纯右值，<code>a * 2</code>是一个临时结果，也是一个纯右值，而<code>std::move(b)</code>将<code>b</code>转换为一个将亡值，这允许将<code>b</code>的资源移动到另一个对象中。</p>
+<h3 id="3-1-2-赋值后的右值"><a href="#3-1-2-赋值后的右值" class="headerlink" title="3.1.2 赋值后的右值"></a>3.1.2 赋值后的右值</h3><p>这里有个非常容易误解的地方, 涉及到C++中的一个微妙之处。当创建一个右值引用，比如 <code>int&amp;&amp; rvalue_ref</code>，并将一个右值表达式 <code>a * 2</code> 绑定到它上面时，<code>rvalue_ref</code> 本身成为一个具名的引用，它的身份可以被识别，因此在某种意义上它表现得像一个左值。</p>
+<p>然而，<code>rvalue_ref</code> 仍然保持着与它所绑定的右值的联系，这意味着可以使用它来“移动”所绑定的临时对象的资源，正如右值引用的初衷那样。C++标准规定，即使是具名的右值引用，也应该被视为一个右值，以允许移动语义和其他对右值的操作。</p>
+<p>在函数重载解析中，<code>rvalue_ref</code> 会被当作一个右值来处理。举个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(<span class="type">int</span>&amp; x)</span> </span>&#123; <span class="comment">/* ... */</span> &#125; <span class="comment">// 针对左值的重载</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(<span class="type">int</span>&amp;&amp; x)</span> </span>&#123; <span class="comment">/* ... */</span> &#125; <span class="comment">// 针对右值的重载</span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> a = <span class="number">42</span>;</span><br><span class="line"><span class="type">int</span>&amp;&amp; rvalue_ref = a * <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">foo</span>(rvalue_ref); <span class="comment">// 这里会调用 foo(int&amp;&amp; x)</span></span><br></pre></td></tr></table></figure>
+
+<p>在上面的代码中，即使 <code>rvalue_ref</code> 是一个具名的变量，<code>foo(rvalue_ref)</code> 依然会调用接受右值引用的重载版本 <code>foo(int&amp;&amp; x)</code>，因为 <code>rvalue_ref</code> 在表达式中被视为右值。</p>
+<p>然而，如果尝试对 <code>rvalue_ref</code> 取地址或者再次对其赋值，它就会表现得像一个左值：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>* p = &amp;rvalue_ref; <span class="comment">// 现在取得了它的地址，它表现得像一个左值</span></span><br><span class="line"></span><br><span class="line">rvalue_ref = <span class="number">100</span>; <span class="comment">// 可以对它赋值，它表现得像一个左值</span></span><br></pre></td></tr></table></figure>
+
+<p>在这些情况下，<code>rvalue_ref</code> 的行为与左值没有区别，因为它是一个具名的对象，可以对它进行操作，例如取地址和赋值，这是标准左值操作。</p>
+<p>下面的陈述不一定复合编译器的事实, 但阐述了右值的思想: <strong>右值引用的出现可以延长一个右值的生命周期，并提供了对这个右值的直接访问。</strong>:<br>比较<code>int&amp;&amp; rvalue_ref = a * 2;</code>和<code>int&amp; rvalue_ref = a * 2;</code>这2句代码的执行, </p>
+<ul>
+<li><code>int rvalue_ref = a * 2;</code>的执行</li>
+</ul>
+<ol>
+<li><code>a * 2</code>这个临时的右值存放在栈上</li>
+<li><code>rvalue_ref</code>是个左值,  <code>a * 2</code>会被复制到<code>rvalue_ref</code>的地址中</li>
+<li><code>rvalue_ref</code>的地址被释放</li>
+</ol>
+<ul>
+<li><code>int&amp;&amp; rvalue_ref = a * 2;</code>的执行</li>
+</ul>
+<ol>
+<li><code>a * 2</code>这个临时的右值存放在栈上</li>
+<li><code>rvalue_ref</code>是个右值引用, 其内存地址直接和存放<code>a * 2</code>这个临时的右值的地址相同</li>
+<li>由于原来临时右值将要被继续使用, 所以不需要释放</li>
+</ol>
+<h2 id="3-1-3-右值的使用——完美转发"><a href="#3-1-3-右值的使用——完美转发" class="headerlink" title="3.1.3 右值的使用——完美转发"></a>3.1.3 右值的使用——完美转发</h2><p>完美转发（<code>Perfect forwarding</code>）是C++11引入的一个概念，简单说就是: <strong>允许函数模板将其接收到的参数以原始的值类别（即保持其是左值还是右值的特性）转发到另一个函数</strong>。其目的也是减少复制的数量。</p>
+<p>完美转发的关键在于<code>std::forward</code>函数模板和右值引用的结合使用。右值引用独自并不能实现完美转发，因为当一个右值引用被传递时，它变成了一个左值。为了解决这个问题，<code>std::forward</code>用于保持参数的原始值类别。</p>
+<p>以下是使用右值引用和<code>std::forward</code>实现完美转发的一个例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;utility&gt;</span> <span class="comment">// For std::forward</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> F, <span class="keyword">typename</span>... Args&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">forwarder</span><span class="params">(F&amp;&amp; f, Args&amp;&amp;... args)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">f</span>(std::forward&lt;Args&gt;(args)...);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">g</span><span class="params">(<span class="type">int</span>&amp;&amp; n)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 只有当n是一个右值时，这里的代码才会被执行</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    forwarder(g, <span class="number">42</span>); <span class="comment">// 42是一个右值，forwarder能够完美转发它到g</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，<code>forwarder</code>是一个函数模板，它接受任意类型的函数<code>f</code>和参数<code>args</code>。它用<code>std::forward</code>来转发参数<code>args</code>到函数<code>f</code>，同时保持每个参数的左值或右值属性。</p>
+<p><code>std::forward</code>的作用是这样的：</p>
+<ul>
+<li>当参数是一个左值时，<code>std::forward</code>将其转换为左值引用类型。</li>
+<li>当参数是一个右值时，<code>std::forward</code>将其转换为右值引用类型，允许移动语义的发生。</li>
+</ul>
+<h2 id="3-2-智能指针"><a href="#3-2-智能指针" class="headerlink" title="3.2 智能指针"></a>3.2 智能指针</h2><p>所有的智能指针都是自动回收资源, 这一点是最重要的。</p>
+<h2 id="3-2-1-unique-ptr"><a href="#3-2-1-unique-ptr" class="headerlink" title="3.2.1 unique_ptr"></a>3.2.1 <code>unique_ptr</code></h2><p>在任何给定时间，只有一个 <code>unique_ptr</code> 实例可以指向一个特定的对象。这个特性使得 <code>unique_ptr</code> 成为管理动态分配内存的理想选择，因为它可以确保对象被正确删除，并且防止了资源泄露。</p>
+<p><code>unique_ptr</code> 是一个模板类，提供了一系列用于管理动态分配的资源的接口函数。以下是一些常用的接口函数及其用法：</p>
+<ol>
+<li><strong>初始化</strong></li>
+</ol>
+<ul>
+<li><p><strong>构造函数</strong>：可以用来创建 <code>unique_ptr</code>，有多种构造方式，包括默认构造、从原始指针构造等。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">std::unique_ptr&lt;<span class="type">int</span>&gt; ptr1; <span class="comment">// 默认构造，初始化为空</span></span><br><span class="line"><span class="function">std::unique_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr2</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>(<span class="number">5</span>))</span></span>; <span class="comment">// 从原始指针构造</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>移动构造函数</strong>：允许从另一个 <code>unique_ptr</code> 转移所有权。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr3</span><span class="params">(std::move(ptr2))</span></span>; <span class="comment">// ptr2 为空，ptr3 拥有原始资源</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>make_unique</strong>：C++14 引入了 <code>std::make_unique</code> 函数模板，用于在堆上创建一个对象，并返回这个对象的 <code>unique_ptr</code>。这是创建 <code>unique_ptr</code> 的推荐方式，因为它可以防止原始指针的泄露，并且可以提供异常安全。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> ptr7 = std::<span class="built_in">make_unique</span>&lt;<span class="type">int</span>&gt;(<span class="number">30</span>); <span class="comment">// 使用 make_unique 创建</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>构造函数 with deleter</strong>：创建一个带有自定义删除器的 <code>unique_ptr</code>。</p>
+  <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> deleter = [](<span class="type">int</span>* ptr)&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Custom deleter is called.&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">delete</span> ptr;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function">std::unique_ptr&lt;<span class="type">int</span>, <span class="title">decltype</span><span class="params">(deleter)</span>&gt; <span class="title">ptr6</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>, deleter)</span></span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="2">
+<li><p><strong>赋值</strong></p>
+<ul>
+<li><strong>移动赋值操作符</strong>：允许转移所有权。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::unique_ptr&lt;<span class="type">int</span>&gt; ptr4 = std::<span class="built_in">move</span>(ptr3); <span class="comment">// ptr3 为空，ptr4 拥有原始资源</span></span><br></pre></td></tr></table></figure></li>
+<li><p><strong>资源管理</strong></p>
+<ul>
+<li><strong>reset</strong>：替换管理的对象，或设置为空。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ptr4.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">int</span>(<span class="number">10</span>)); <span class="comment">// ptr4 现在拥有一个新的 int 对象</span></span><br><span class="line">ptr4.<span class="built_in">reset</span>(); <span class="comment">// 自动删除管理的对象，并将 ptr4 设置为空</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>release</strong>：释放对对象的所有权，并返回原始指针，之后 <code>unique_ptr</code> 将为空。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>* rawPtr = ptr4.<span class="built_in">release</span>(); <span class="comment">// 现在 rawPtr 是裸指针，需要手动管理</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>swap</strong>：交换两个 <code>unique_ptr</code> 的管理的对象。</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::unique_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr5</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>(<span class="number">20</span>))</span></span>;</span><br><span class="line">ptr4.<span class="built_in">swap</span>(ptr5); <span class="comment">// 现在 ptr4 管理一个 int(20)，ptr5 为空</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>裸指针获取</strong></p>
+<ul>
+<li><strong>get</strong>：返回管理的对象的裸指针。</li>
+</ul>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>* rawPtr = ptr5.<span class="built_in">get</span>(); <span class="comment">// 不释放所有权，仅返回指针</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>**<code>operator*</code> 和 <code>operator-&gt;</code>**：提供对管理对象的访问。</li>
+</ul>
+ <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> value = *ptr5; <span class="comment">// 访问 int 值</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="3-2-2-shared-ptr"><a href="#3-2-2-shared-ptr" class="headerlink" title="3.2.2 shared_ptr"></a>3.2.2 <code>shared_ptr</code></h2><p>与 <code>unique_ptr</code> 不同，多个 <code>shared_ptr</code> 实例可以共享同一个对象，引用计数会跟踪有多少个 <code>shared_ptr</code> 拥有同一个资源，当最后一个 <code>shared_ptr</code> 被销毁时，资源会被自动释放。</p>
+<ol>
+<li><strong>构造函数</strong></li>
+</ol>
+<ul>
+<li><p><strong>默认构造函数</strong>：构造一个空的 <code>shared_ptr</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::shared_ptr&lt;<span class="type">int</span>&gt; ptr;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>从原始指针构造</strong>：创建一个 <code>shared_ptr</code> 管理一个新的对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>(<span class="number">10</span>))</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>拷贝构造函数</strong>：构造一个新的 <code>shared_ptr</code>，它与另一个 <code>shared_ptr</code> 共享对象，并增加引用计数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr2</span><span class="params">(ptr)</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>移动构造函数</strong>：从另一个 <code>shared_ptr</code> 移动构造，转移所有权并将原 <code>shared_ptr</code> 设置为空。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr3</span><span class="params">(std::move(ptr2))</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>构造函数 with deleter</strong>：创建一个带有自定义删除器的 <code>shared_ptr</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> deleter = [](<span class="type">int</span>* p)&#123; <span class="keyword">delete</span> p; &#125;;</span><br><span class="line"><span class="function">std::shared_ptr&lt;<span class="type">int</span>&gt; <span class="title">ptr6</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>, deleter)</span></span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>make_shared</strong>：C++11 引入了 <code>std::make_shared</code> 函数模板，用于在堆上创建一个对象，并返回这个对象的 <code>shared_ptr</code>。这是创建 <code>shared_ptr</code> 的推荐方式，因为它通常更高效，并可以减少内存分配次数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> ptr7 = std::<span class="built_in">make_shared</span>&lt;<span class="type">int</span>&gt;(<span class="number">30</span>);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="2">
+<li><strong>赋值运算符</strong></li>
+</ol>
+<ul>
+<li><p><strong>拷贝赋值运算符</strong>：允许将一个 <code>shared_ptr</code> 的所有权赋值给另一个 <code>shared_ptr</code>，原 <code>shared_ptr</code> 的引用计数减一，新 <code>shared_ptr</code> 的引用计数加一。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">std::shared_ptr&lt;<span class="type">int</span>&gt; ptr4;</span><br><span class="line">ptr4 = ptr;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>移动赋值运算符</strong>：将一个 <code>shared_ptr</code> 的所有权移动给另一个 <code>shared_ptr</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">std::shared_ptr&lt;<span class="type">int</span>&gt; ptr5;</span><br><span class="line">ptr5 = std::<span class="built_in">move</span>(ptr4);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li><strong>资源管理</strong></li>
+</ol>
+<ul>
+<li><p><strong>reset</strong>：更换 <code>shared_ptr</code> 所管理的对象，或者放弃对当前对象的所有权。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ptr.<span class="built_in">reset</span>(<span class="keyword">new</span> <span class="built_in">int</span>(<span class="number">20</span>)); <span class="comment">// ptr 现在指向新的 int 对象</span></span><br><span class="line">ptr.<span class="built_in">reset</span>(); <span class="comment">// 放弃所有权，如果 ptr 是最后一个引用，将释放对象</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>use_count</strong>：返回当前共享同一个对象的 <code>shared_ptr</code> 数量。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> count = ptr.<span class="built_in">use_count</span>(); <span class="comment">// 获取引用计数</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>unique</strong>：检查 <code>shared_ptr</code> 是否是管理对象的唯一拥有者。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> isUnique = ptr.<span class="built_in">unique</span>(); <span class="comment">// 如果引用计数为1，则返回 true</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="4">
+<li><strong>裸指针获取</strong></li>
+</ol>
+<ul>
+<li><p><strong>get</strong>：返回管理的对象的原始指针。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span>* rawPtr = ptr.<span class="built_in">get</span>(); <span class="comment">// 获取裸指针</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>**<code>operator*</code> 和 <code>operator-&gt;</code>**：提供对管理对象的访问。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> value = *ptr; <span class="comment">// 解引用</span></span><br><span class="line"><span class="type">int</span> value = ptr-&gt;<span class="built_in">someMethod</span>(); <span class="comment">// 访问对象成员</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="5">
+<li><strong>检查</strong></li>
+</ol>
+<ul>
+<li><p><strong>operator bool</strong>：检查 <code>shared_ptr</code> 是否拥有一个对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (ptr) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;ptr is not empty.&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="3-2-3-weak-ptr"><a href="#3-2-3-weak-ptr" class="headerlink" title="3.2.3 weak_ptr"></a>3.2.3 <code>weak_ptr</code></h2><p><code>weak_ptr</code> 用来解决智能指针间的循环引用问题。<code>weak_ptr</code> 持有对 <code>shared_ptr</code> 管理对象的非拥有（弱）引用，即它不会增加对象的引用计数。这意味着 <code>weak_ptr</code> 的存在不会阻止其所指向的对象被销毁。</p>
+<p><code>weak_ptr</code> 主要用于监视 <code>shared_ptr</code>，而不是拥有资源。它通常用于缓存、观察者模式、和防止 <code>shared_ptr</code> 之间的循环引用导致的内存泄漏。</p>
+<p><strong>一个循环引用的例子</strong><br>如果有两个类 <code>A</code> 和 <code>B</code>，它们互相持有对方的 <code>shared_ptr</code>，那么它们将永远不会被释放，因为它们的引用计数永远不会降到零。使用 <code>weak_ptr</code> 可以打破这种循环：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">B</span>; <span class="comment">// 前向声明</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">A</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    std::shared_ptr&lt;B&gt; b_ptr;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">B</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    std::weak_ptr&lt;A&gt; a_ptr; <span class="comment">// 使用 weak_ptr 而不是 shared_ptr</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，即使 <code>A</code> 和 <code>B</code> 相互引用，一旦外部对 <code>A</code> 和 <code>B</code> 的 <code>shared_ptr</code> 被销毁，它们最终也能被正确清理。</p>
+<ol>
+<li><strong>构造函数</strong></li>
+</ol>
+<ul>
+<li><p><strong>默认构造函数</strong>：创建一个不指向任何对象的 <code>weak_ptr</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::weak_ptr&lt;<span class="type">int</span>&gt; wp;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>从 shared_ptr 构造</strong>：创建一个 <code>weak_ptr</code> 实例，它指向由 <code>shared_ptr</code> 管理的对象，但不增加引用计数。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;<span class="type">int</span>&gt; <span class="title">sp</span><span class="params">(<span class="keyword">new</span> <span class="type">int</span>(<span class="number">42</span>))</span></span>;</span><br><span class="line"><span class="function">std::weak_ptr&lt;<span class="type">int</span>&gt; <span class="title">wp</span><span class="params">(sp)</span></span>;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="2">
+<li><strong>资源管理</strong></li>
+</ol>
+<ul>
+<li><p><strong>reset</strong>：重置 <code>weak_ptr</code> 实例，放弃对对象的引用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wp.<span class="built_in">reset</span>();</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>use_count</strong>：返回与此 <code>weak_ptr</code> 共享对象的 <code>shared_ptr</code> 实例的数量。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> count = wp.<span class="built_in">use_count</span>(); <span class="comment">// 如果对象已经被删除，则返回 0</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>expired</strong>：检查所管理的对象是否已经被删除。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">bool</span> isExpired = wp.<span class="built_in">expired</span>(); <span class="comment">// 如果对象已经被删除，则返回 true</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li><strong>获得 <code>shared_ptr</code></strong></li>
+</ol>
+<ul>
+<li><strong>lock</strong>：尝试从 <code>weak_ptr</code> 创建一个 <code>shared_ptr</code> 实例。如果对象还存在，这将返回一个有效的 <code>shared_ptr</code>，否则返回一个空的 <code>shared_ptr</code>。<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">std::shared_ptr&lt;<span class="type">int</span>&gt; sp = wp.<span class="built_in">lock</span>();</span><br><span class="line"><span class="keyword">if</span> (sp) &#123;</span><br><span class="line">    <span class="comment">// 对象仍然存在，可以安全使用 sp</span></span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 对象已被删除</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="3-3-类型转换"><a href="#3-3-类型转换" class="headerlink" title="3.3 类型转换"></a>3.3 类型转换</h2><p>C++ 提供了四种类型转换运算符来覆盖不同的类型转换场景：<code>static_cast</code>、<code>dynamic_cast</code>、<code>const_cast</code> 和 <code>reinterpret_cast</code>。</p>
+<h3 id="3-3-1-static-cast"><a href="#3-3-1-static-cast" class="headerlink" title="3.3.1 static_cast"></a>3.3.1 <code>static_cast</code></h3><p><code>static_cast</code> 在编译时执行类型转换，不进行运行时类型检查。<code>static_cast</code> 可以用于各种明确的类型转换，包括基本数据类型之间的转换、指向基类和派生类之间的转换（只要没有虚继承），以及用户定义的类型转换（通过转换构造函数或转换运算符）。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> i = <span class="number">10</span>;</span><br><span class="line"><span class="type">float</span> f = <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(i); <span class="comment">// 基础数据类型转换</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-2-dynamic-cast"><a href="#3-3-2-dynamic-cast" class="headerlink" title="3.3.2 dynamic_cast"></a>3.3.2 <code>dynamic_cast</code></h3><p><code>dynamic_cast</code> 专门用于处理多态类型。它在运行时检查对象类型，确保转换的安全性。<code>dynamic_cast</code> 主要用于将基类指针或引用安全地转换为派生类指针或引用，它依赖于运行时类型信息（<code>RTTI</code>）。</p>
+<p>如果转换失败，当转换的目标类型是指针时，<code>dynamic_cast</code> 返回 <code>nullptr</code>；当目标类型是引用时，则抛出一个 <code>std::bad_cast</code> 异常。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Base</span> &#123; <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">dummy</span><span class="params">()</span> </span>&#123;&#125; &#125;;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> Base &#123; <span class="comment">/* ... */</span> &#125;;</span><br><span class="line"></span><br><span class="line">Base* base_ptr = <span class="keyword">new</span> Derived;</span><br><span class="line">Derived* derived_ptr = <span class="built_in">dynamic_cast</span>&lt;Derived*&gt;(base_ptr); <span class="comment">// 安全地转换为派生类指针</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-3-const-cast"><a href="#3-3-3-const-cast" class="headerlink" title="3.3.3 const_cast"></a>3.3.3 <code>const_cast</code></h3><p><code>const_cast</code> 用于改变对象的 <code>const</code> 或 <code>volatile</code> 属性。它是唯一能够去除对象的 <code>const</code> 属性的 C++ 类型转换运算符。但是，它不应该用来去除对象本身就是常量的 <code>const</code> 属性，那样会导致未定义行为。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> <span class="type">int</span> i = <span class="number">10</span>;</span><br><span class="line"><span class="type">int</span>* modifiable = <span class="built_in">const_cast</span>&lt;<span class="type">int</span>*&gt;(&amp;i); <span class="comment">// 去除 const 属性</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-4-reinterpret-cast"><a href="#3-3-4-reinterpret-cast" class="headerlink" title="3.3.4 reinterpret_cast"></a>3.3.4 <code>reinterpret_cast</code></h3><p><code>reinterpret_cast</code> 提供了低级别的重新解释类型的能力，它可以将任何指针转换为任何其他类型的指针。也可以用于指针与足够大的整数类型之间的转换。<code>reinterpret_cast</code> 不检查语义安全性，其实也就类似C语言的强制转换</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">long</span> p = <span class="number">0x12345678</span>;</span><br><span class="line"><span class="type">void</span>* vp = <span class="built_in">reinterpret_cast</span>&lt;<span class="type">void</span>*&gt;(p); <span class="comment">// 将整数转换为 void 指针</span></span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Trie%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">1 Trie数据结构介绍</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 代码实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 数据结构解析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Insert%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.2.</span> <span class="toc-text">2.3 Insert函数实现思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Remove%E5%87%BD%E6%95%B0%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.3.</span> <span class="toc-text">2.2 Remove函数实现思路</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86-%E7%94%A8%E5%88%B0%E7%9A%84C-%E6%96%B0%E7%89%B9%E6%80%A7"><span class="toc-number">3.</span> <span class="toc-text">3 补充知识: 用到的C++新特性</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8F%B3%E5%80%BC"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 右值</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%8F%B3%E5%80%BC%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 右值的定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E8%B5%8B%E5%80%BC%E5%90%8E%E7%9A%84%E5%8F%B3%E5%80%BC"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 赋值后的右值</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-3-%E5%8F%B3%E5%80%BC%E7%9A%84%E4%BD%BF%E7%94%A8%E2%80%94%E2%80%94%E5%AE%8C%E7%BE%8E%E8%BD%AC%E5%8F%91"><span class="toc-number">3.2.</span> <span class="toc-text">3.1.3 右值的使用——完美转发</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%99%BA%E8%83%BD%E6%8C%87%E9%92%88"><span class="toc-number">3.3.</span> <span class="toc-text">3.2 智能指针</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-1-unique-ptr"><span class="toc-number">3.4.</span> <span class="toc-text">3.2.1 unique_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-2-shared-ptr"><span class="toc-number">3.5.</span> <span class="toc-text">3.2.2 shared_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-3-weak-ptr"><span class="toc-number">3.6.</span> <span class="toc-text">3.2.3 weak_ptr</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="toc-number">3.7.</span> <span class="toc-text">3.3 类型转换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-static-cast"><span class="toc-number">3.7.1.</span> <span class="toc-text">3.3.1 static_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-dynamic-cast"><span class="toc-number">3.7.2.</span> <span class="toc-text">3.3.2 dynamic_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-const-cast"><span class="toc-number">3.7.3.</span> <span class="toc-text">3.3.3 const_cast</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-reinterpret-cast"><span class="toc-number">3.7.4.</span> <span class="toc-text">3.3.4 reinterpret_cast</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/06/CMU15445/proj0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/06/CMU15445/proj0/&text=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/06/CMU15445/proj0/&is_video=false&description=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CMU15445 2022 project0: C++ Primer: 字典树&body=Check out this article: http://example.com/2024/02/06/CMU15445/proj0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/06/CMU15445/proj0/&title=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/06/CMU15445/proj0/&name=CMU15445 2022 project0: C++ Primer: 字典树&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/06/CMU15445/proj0/&t=CMU15445 2022 project0: C++ Primer: 字典树"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

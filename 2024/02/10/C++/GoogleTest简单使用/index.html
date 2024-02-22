@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 Google Test简介Google Test（gtest）是一个由Google提供的C++测试框架, 提供了丰富的断言类型和辅助函数，使得编写C++测试用例变得简单而又直观。Google Test旨在与CMake和其他构建系统无缝集成，而且与各种平台和测试工具兼容。下面是一些Google Test的核心特性： 2 Google Test基础语法2.1 断言Google Test提供了一系列">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Google Test 简单使用">
+<meta property="og:url" content="http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="1 Google Test简介Google Test（gtest）是一个由Google提供的C++测试框架, 提供了丰富的断言类型和辅助函数，使得编写C++测试用例变得简单而又直观。Google Test旨在与CMake和其他构建系统无缝集成，而且与各种平台和测试工具兼容。下面是一些Google Test的核心特性： 2 Google Test基础语法2.1 断言Google Test提供了一系列">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-10T02:38:15.000Z">
+<meta property="article:modified_time" content="2024-02-22T02:09:40.005Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="单元测试">
+<meta property="article:tag" content="gtest">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>Google Test 简单使用</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/12/%E6%95%B0%E6%8D%AE%E5%BA%93/postgres%E5%AD%A6%E4%B9%A0/0-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/06/CMU15445/proj0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&text=Google Test 简单使用"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&is_video=false&description=Google Test 简单使用"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Google Test 简单使用&body=Check out this article: http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&name=Google Test 简单使用&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&t=Google Test 简单使用"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Google-Test%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Google Test简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Google-Test%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">2 Google Test基础语法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%96%AD%E8%A8%80"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 断言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B%E5%92%8C%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 测试用例和测试套件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 测试用例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 测试套件</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%A1%88%E4%BE%8B-CMake%E4%B8%8B%E4%BD%BF%E7%94%A8gtest"><span class="toc-number">3.</span> <span class="toc-text">3 案例: CMake下使用gtest</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 简单测试用例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%AE%98%E6%96%B9%E6%8C%87%E5%AF%BC%E7%9A%84CMake%E7%BC%96%E5%86%99"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 官方指导的CMake编写</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E8%87%AA%E5%8A%A8%E9%80%9A%E8%BF%87CMake%E6%B3%A8%E5%86%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 自动通过CMake注册单元测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 测试套件</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Google Test 简单使用
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-10T02:38:15.000Z" class="dt-published" itemprop="datePublished">2024-02-10</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/gtest/" rel="tag">gtest</a>, <a class="p-category" href="/tags/%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95/" rel="tag">单元测试</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-Google-Test简介"><a href="#1-Google-Test简介" class="headerlink" title="1 Google Test简介"></a>1 Google Test简介</h1><p><code>Google Test</code>（<code>gtest</code>）是一个由<code>Google</code>提供的<code>C++</code>测试框架, 提供了丰富的断言类型和辅助函数，使得编写C++测试用例变得简单而又直观。<code>Google Test</code>旨在与<code>CMake</code>和其他构建系统无缝集成，而且与各种平台和测试工具兼容。下面是一些<code>Google Test</code>的核心特性：</p>
+<h1 id="2-Google-Test基础语法"><a href="#2-Google-Test基础语法" class="headerlink" title="2 Google Test基础语法"></a>2 Google Test基础语法</h1><h2 id="2-1-断言"><a href="#2-1-断言" class="headerlink" title="2.1 断言"></a>2.1 断言</h2><p><code>Google Test</code>提供了一系列的断言宏来检查条件是否满足。如果断言失败，测试用例被认为失败。断言分为两大类：<code>ASSERT_*</code> 和 <code>EXPECT_*</code>。</p>
+<ul>
+<li><code>ASSERT_*</code> 版本在断言失败时会产生一个致命错误，并终止当前函数的执行。包括<code>ASSERT_TRUE</code>,<code>ASSERT_FALSE</code>, <code>ASSERT_EQ</code>等</li>
+<li><code>EXPECT_*</code> 版本在断言失败时会产生一个非致命错误，当前函数会继续执行，这允许测试多个条件。包括<code>EXPECT_TRUE</code>,<code>EXPECT_FALSE</code>, <code>EXPECT_EQ</code>等</li>
+</ul>
+<h2 id="2-2-测试用例和测试套件"><a href="#2-2-测试用例和测试套件" class="headerlink" title="2.2 测试用例和测试套件"></a>2.2 测试用例和测试套件</h2><h3 id="2-2-1-测试用例"><a href="#2-2-1-测试用例" class="headerlink" title="2.2.1 测试用例"></a>2.2.1 测试用例</h3><p><strong>测试用例（Test Case）</strong>：是指一组相关测试的集合。在<code>Google Test</code>中，使用 <code>TEST()</code> 宏来定义一个不需要额外的设置或清理过程的简单测试用例。使用 <code>TEST</code> 时，只需提供测试案例名称和测试名称，然后编写测试代码块。案例如下:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">TEST</span>(RbTreeTest, InsertTEST) &#123;</span><br><span class="line">  <span class="comment">// 测试代码在这里</span></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(<span class="number">1</span>, <span class="number">1</span>); <span class="comment">// 一个示例断言</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>TEST</code>宏后的2个参数唯一标记了一个测试用例, 第一个参数可以重复, 但2个参数不能同时重复。<br>使用 <code>TEST</code>，每个测试是独立的，测试之间不共享任何状态。这个宏适合于无状态的测试，或者不需要为多个测试维护一个共同的环境时。</p>
+<h3 id="2-2-2-测试套件"><a href="#2-2-2-测试套件" class="headerlink" title="2.2.2 测试套件"></a>2.2.2 测试套件</h3><p><strong>测试套件（Test Suite）</strong>：在更早的<code>Google Test</code>版本中，测试套件是指具有相同前缀的一组测试用例的集合。在新版本中，使用 <code>TEST_F()</code> 宏来定义测试套件，并且需要定义一个测试固件（<code>Fixture</code>）类。</p>
+<p><code>TEST_F</code> 宏在有一个测试固件时使用，测试固件是一种用来重用相同的设置和清理代码为多个测试服务的方法。测试固件通过一个从 <code>::testing::Test</code> 派生的类来定义。然后，可以重写 <code>SetUp</code> 和 <code>TearDown</code> 方法来初始化和清理测试环境。</p>
+<p>下面是一个使用 <code>TEST_F</code> 的例子：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义测试固件</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyTestFixture</span> : <span class="keyword">public</span> ::testing::Test &#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">SetUp</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 设置测试环境的代码</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">TearDown</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 清理测试环境的代码</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 TEST_F 编写使用测试固件的测试</span></span><br><span class="line"><span class="built_in">TEST_F</span>(MyTestFixture, 测试名称) &#123;</span><br><span class="line">  <span class="comment">// 可以使用设置好的环境的测试代码</span></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(<span class="number">1</span>, <span class="number">1</span>); <span class="comment">// 一个示例断言</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用 <code>TEST_F</code>，同一个固件内的每个测试按照它们定义的顺序运行，但<code>Google Test</code>确保每个测试是隔离的；也就是说，在每个测试之前，环境都会重置为通过 <code>SetUp</code> 建立的初始状态。这样，一个测试所做的改变不会影响到另一个测试。</p>
+<h1 id="3-案例-CMake下使用gtest"><a href="#3-案例-CMake下使用gtest" class="headerlink" title="3 案例: CMake下使用gtest"></a>3 案例: <code>CMake</code>下使用<code>gtest</code></h1><p>这个案例中, 我用自己之前学习过程中用<code>C++</code>手写常见数据结构的项目来介绍<code>CMake</code>中<code>gtest</code>的使用, 仓库在: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/cppDataStructure">https://github.com/ToniXWD/cppDataStructure</a></p>
+<h2 id="3-1-简单测试用例"><a href="#3-1-简单测试用例" class="headerlink" title="3.1 简单测试用例"></a>3.1 简单测试用例</h2><h3 id="3-1-1-官方指导的CMake编写"><a href="#3-1-1-官方指导的CMake编写" class="headerlink" title="3.1.1 官方指导的CMake编写"></a>3.1.1 官方指导的<code>CMake</code>编写</h3><p>在<code>CMake</code>中使用<code>gtest</code>不需要自行下载源码, 只需在<code>CMakeLists.txt</code>中如下编写:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cmake_minimum_required</span>(VERSION <span class="number">3.14</span>)</span><br><span class="line"><span class="keyword">project</span>(my_project)</span><br><span class="line"></span><br><span class="line"><span class="comment"># GoogleTest requires at least C++14</span></span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_STANDARD <span class="number">14</span>)</span><br><span class="line"><span class="keyword">set</span>(CMAKE_CXX_STANDARD_REQUIRED <span class="keyword">ON</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">include</span>(FetchContent)</span><br><span class="line">FetchContent_Declare(</span><br><span class="line">  googletest</span><br><span class="line">  URL https://github.com/google/googletest/archive/<span class="number">03597</span>a01ee50ed33e9dfd640b249b4be3799d395.zip</span><br><span class="line">)</span><br><span class="line"><span class="comment"># For Windows: Prevent overriding the parent project&#x27;s compiler/linker settings</span></span><br><span class="line"><span class="keyword">set</span>(gtest_force_shared_crt <span class="keyword">ON</span> CACHE BOOL <span class="string">&quot;&quot;</span> FORCE)</span><br><span class="line">FetchContent_MakeAvailable(googletest)</span><br></pre></td></tr></table></figure>
+<p>然后就可以如下编写一个单元测试:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ./tests/rbTree_test.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/rbTree.hpp&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;algorithm&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdlib&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gtest/gtest.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;random&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Demonstrate some basic assertions.</span></span><br><span class="line"><span class="built_in">TEST</span>(RbTreeTest, InsertTEST) &#123;</span><br><span class="line">  <span class="comment">// 创建 RedBlackTree 对象</span></span><br><span class="line">  RedBlackTree&lt;<span class="type">int</span>&gt; mySet;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">empty</span>());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 插入元素</span></span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">42</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">21</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">63</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">10</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">4</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">30</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">36</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">92</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">75</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">87</span>);</span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">58</span>);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">len</span>() == mySet.<span class="built_in">getSizeByTranverse</span>());</span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">isBlackLenLegal</span>());</span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">isNoDoubleRed</span>());</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(mySet.<span class="built_in">len</span>(), <span class="number">11</span>);</span><br><span class="line"></span><br><span class="line">  mySet.<span class="built_in">insert</span>(<span class="number">58</span>);</span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">len</span>() == mySet.<span class="built_in">getSizeByTranverse</span>());</span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">isBlackLenLegal</span>());</span><br><span class="line">  <span class="built_in">EXPECT_TRUE</span>(mySet.<span class="built_in">isNoDoubleRed</span>());</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(mySet.<span class="built_in">len</span>(), <span class="number">11</span>);</span><br><span class="line">&#125;</span><br><span class="line">...<span class="comment">//省略更多的测例</span></span><br></pre></td></tr></table></figure>
+
+<p>编写完测试的<code>cpp</code>文件后, 还需要在<code>CMake</code>中进行下面的设置:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enable_testing</span>()</span><br><span class="line"></span><br><span class="line"><span class="comment"># rbTree_test</span></span><br><span class="line"><span class="keyword">add_executable</span>(</span><br><span class="line">  rbTree_test</span><br><span class="line">  tests/rbTree_test.cpp</span><br><span class="line">)</span><br><span class="line"><span class="keyword">target_link_libraries</span>(</span><br><span class="line">  rbTree_test</span><br><span class="line">  GTest::gtest_main</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">include</span>(GoogleTest)</span><br><span class="line">gtest_discover_tests(rbTree_test)</span><br></pre></td></tr></table></figure>
+<p>这段<code>CMake</code>是为了设置并运行名为<code>rbTree_test</code>的测试用例:</p>
+<ol>
+<li><p><code>enable_testing()</code>用于启用当前目录和以下目录中的测试功能, 使用这个命令后就可以用<code>make test</code>来运行测试。</p>
+</li>
+<li><p><code>add_executable(rbTree_test tests/rbTree_test.cpp)</code><br>编译测试文件为可执行文件, 没啥好说的</p>
+</li>
+<li><p><code>target_link_libraries(rbTree_test GTest::gtest_main)</code><br>将测试可执行文件链接到<code>gtest</code>的<code>gtest_main</code>库</p>
+</li>
+<li><p><code>gtest_discover_tests(rbTree_test)</code><br> 告诉<code>CMake</code>去自动发现在<code>rbTree_test</code>可执行文件中定义的所有测试用例，并创建<code>CTest</code>测试案</p>
+</li>
+</ol>
+<p>然后再命令行中执行:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">mkdir</span> build/</span><br><span class="line">$ <span class="built_in">cd</span> build/ &amp;&amp; cmake ..</span><br><span class="line">$ make</span><br><span class="line">$ make <span class="built_in">test</span></span><br><span class="line">Running tests...</span><br><span class="line">Test project /home/xwd/cppDataStructure/build</span><br><span class="line">    Start 1: DequeTest.Basic1</span><br><span class="line">1/9 Test <span class="comment">#1: DequeTest.Basic1 ..................................   Passed    0.00 sec</span></span><br><span class="line">    Start 2: ListTest.Basic1</span><br><span class="line">2/9 Test <span class="comment">#2: ListTest.Basic1 ...................................   Passed    0.00 sec</span></span><br><span class="line">    Start 3: RbTreeTest.InsertTEST</span><br><span class="line">3/9 Test <span class="comment">#3: RbTreeTest.InsertTEST .............................   Passed    0.00 sec</span></span><br><span class="line">    Start 4: RbTreeTest.RemoveTest1</span><br><span class="line">4/9 Test <span class="comment">#4: RbTreeTest.RemoveTest1 ............................   Passed    0.00 sec</span></span><br><span class="line">    Start 5: RbTreeTest.RemoveTest2</span><br><span class="line">5/9 Test <span class="comment">#5: RbTreeTest.RemoveTest2 ............................   Passed    0.00 sec</span></span><br><span class="line">    Start 6: RbTreeTest.RemoveRoot</span><br><span class="line">6/9 Test <span class="comment">#6: RbTreeTest.RemoveRoot .............................   Passed    0.00 sec</span></span><br><span class="line">    Start 7: RbTreeTest.DoubleBlackTest</span><br><span class="line">7/9 Test <span class="comment">#7: RbTreeTest.DoubleBlackTest ........................   Passed    0.00 sec</span></span><br><span class="line">    Start 8: RbTreeTest.RemoveWithSiblingHasTwoBlackChildren</span><br><span class="line">8/9 Test <span class="comment">#8: RbTreeTest.RemoveWithSiblingHasTwoBlackChildren ...   Passed    0.00 sec</span></span><br><span class="line">    Start 9: RbTreeTest.RandomOperation</span><br><span class="line">9/9 Test <span class="comment">#9: RbTreeTest.RandomOperation ........................   Passed    0.01 sec</span></span><br><span class="line"></span><br><span class="line">100% tests passed, 0 tests failed out of 9</span><br><span class="line"></span><br><span class="line">Total Test time (real) =   0.03 sec</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-1-2-自动通过CMake注册单元测试"><a href="#3-1-2-自动通过CMake注册单元测试" class="headerlink" title="3.1.2 自动通过CMake注册单元测试"></a>3.1.2 自动通过<code>CMake</code>注册单元测试</h3><p>之前的内容可以看出, 每个单元测试都要单独地在<code>CMakeLists.txt</code>中指定链接库等, 很繁琐, 实际上我们可以借助<code>CMake</code>的语法自动注册单元测试:<br>首先假设所有的单元测试都在<code>test</code>文件夹下, 且形如<code>*_test.cpp</code>, 因此可以在<code>test</code>文件夹下编写<code>CMake</code>模块:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cmake_minimum_required</span>(VERSION <span class="number">3.10</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">include</span>(FetchContent)</span><br><span class="line">FetchContent_Declare(</span><br><span class="line">  googletest</span><br><span class="line">  URL https://github.com/google/googletest/archive/<span class="number">03597</span>a01ee50ed33e9dfd640b249b4be3799d395.zip</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># For Windows: Prevent overriding the parent project&#x27;s compiler/linker settings</span></span><br><span class="line"><span class="keyword">set</span>(gtest_force_shared_crt <span class="keyword">ON</span> CACHE BOOL <span class="string">&quot;&quot;</span> FORCE)</span><br><span class="line">FetchContent_MakeAvailable(googletest)</span><br><span class="line"></span><br><span class="line"><span class="keyword">include</span>(GoogleTest)</span><br><span class="line"></span><br><span class="line"><span class="keyword">enable_testing</span>()</span><br><span class="line"></span><br><span class="line"><span class="keyword">file</span>(GLOB_RECURSE TEST_CPPS <span class="string">&quot;$&#123;PROJECT_SOURCE_DIR&#125;/tests/*test.cpp&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">foreach</span> (test_source <span class="variable">$&#123;TEST_CPPS&#125;</span>)</span><br><span class="line">    <span class="comment"># Create a human readable name.</span></span><br><span class="line">    <span class="keyword">get_filename_component</span>(test_filename <span class="variable">$&#123;test_source&#125;</span> NAME)</span><br><span class="line">    <span class="keyword">string</span>(REPLACE <span class="string">&quot;.cpp&quot;</span> <span class="string">&quot;&quot;</span> mySTL_test_name <span class="variable">$&#123;test_filename&#125;</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Add the test target separately and as part of &quot;make check-tests&quot;.</span></span><br><span class="line">    <span class="keyword">add_executable</span>(<span class="variable">$&#123;mySTL_test_name&#125;</span>  <span class="variable">$&#123;test_source&#125;</span>)</span><br><span class="line">    <span class="keyword">target_link_libraries</span>(<span class="variable">$&#123;mySTL_test_name&#125;</span> GTest::gtest_main)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    gtest_discover_tests(<span class="variable">$&#123;mySTL_test_name&#125;</span></span><br><span class="line">            EXTRA_ARGS</span><br><span class="line">            --gtest_color=auto</span><br><span class="line">            --gtest_output=xml:<span class="variable">$&#123;CMAKE_BINARY_DIR&#125;</span>/<span class="keyword">test</span>/<span class="variable">$&#123;mySTL_test_name&#125;</span>.xml</span><br><span class="line">            --gtest_catch_exceptions=<span class="number">0</span></span><br><span class="line">            DISCOVERY_TIMEOUT <span class="number">120</span></span><br><span class="line">            PROPERTIES</span><br><span class="line">            TIMEOUT <span class="number">120</span></span><br><span class="line">            )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Set test target properties and dependencies.</span></span><br><span class="line">    <span class="keyword">set_target_properties</span>(<span class="variable">$&#123;mySTL_test_name&#125;</span></span><br><span class="line">            PROPERTIES</span><br><span class="line">            RUNTIME_OUTPUT_DIRECTORY <span class="string">&quot;$&#123;CMAKE_BINARY_DIR&#125;/test&quot;</span></span><br><span class="line">            <span class="keyword">COMMAND</span> <span class="variable">$&#123;mySTL_test_name&#125;</span></span><br><span class="line">            )</span><br><span class="line"><span class="keyword">endforeach</span> ()</span><br></pre></td></tr></table></figure>
+
+<p>在线获取<code>gtest</code>的部分和之前一样, 这里介绍其是如何自动发现单元测试文件的:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">file</span>(GLOB_RECURSE TEST_CPPS <span class="string">&quot;$&#123;PROJECT_SOURCE_DIR&#125;/tests/*test.cpp&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><code>file(GLOB_RECURSE ...)</code>用于递归地搜索所有匹配的文件，并将它们的列表存储在变量<code>TEST_CPPS</code>中。在这种情况下，它搜索项目源目录下<code>tests</code>文件夹中所有以<code>test.cpp</code>结尾的文件。</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">foreach</span> (test_source <span class="variable">$&#123;TEST_CPPS&#125;</span>)</span><br><span class="line">    ...</span><br><span class="line"><span class="keyword">endforeach</span> ()</span><br></pre></td></tr></table></figure>
+<p>这个循环遍历所有找到的测试文件。对于每个文件，它执行以下操作：</p>
+<ul>
+<li>获取文件名，去除<code>.cpp</code>后缀，创建一个易读的测试名称（<code>mySTL_test_name</code>）。</li>
+<li>使用<code>add_executable</code>为每个测试文件创建一个可执行文件。</li>
+<li>使用<code>target_link_libraries</code>将Google Test主库链接到每个测试可执行文件。</li>
+<li>调用<code>gtest_discover_tests</code>来发现和注册测试，设置额外的参数和属性，包括输出格式（XML），是否捕获异常，测试发现超时和测试超时。</li>
+<li>设置每个测试目标的属性，确保测试的可执行文件被放置在预期的目录，并指定运行测试的命令。</li>
+</ul>
+<p>然后只需要在根路径下的<code>CMakeLists</code>中包含这个模块即可:</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">add_subdirectory</span>(tests)</span><br></pre></td></tr></table></figure>
+
+<p>之后自己新建的单元测试就可以被自动发现了</p>
+<h2 id="3-2-测试套件"><a href="#3-2-测试套件" class="headerlink" title="3.2 测试套件"></a>3.2 测试套件</h2><p>如果有这样一种情况, 多个测试用例中, 代码初始化部分逻辑是相同的, 可以将其设置为测试套件, 下面是一个测试堆(<code>Heap</code>)数据结构的单元测试:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/heap.hpp&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;gtest/gtest.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义测试固件</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">InitHeap</span> : <span class="keyword">public</span> ::testing::Test &#123;</span><br><span class="line"><span class="keyword">protected</span>:</span><br><span class="line">  Heap&lt;<span class="type">int</span>&gt; minHeap;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">SetUp</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 设置测试环境的代码</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">TearDown</span><span class="params">()</span> <span class="keyword">override</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 清理测试环境的代码</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case for inserting elements into the heap</span></span><br><span class="line"><span class="built_in">TEST_F</span>(InitHeap, InsertAndSize) &#123;</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">5</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">2</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">8</span>);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">size</span>(), <span class="number">3</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case for removing the root element</span></span><br><span class="line"><span class="built_in">TEST_F</span>(InitHeap, RemoveRoot) &#123;</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">5</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">2</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">8</span>);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">2</span>); <span class="comment">// Assuming a min heap</span></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">size</span>(), <span class="number">2</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case to check heap property is maintained after insertions</span></span><br><span class="line"><span class="built_in">TEST_F</span>(InitHeap, HeapPropertyAfterInsertion) &#123;</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">5</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">2</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">8</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">1</span>);</span><br><span class="line">  minHeap.<span class="built_in">insert</span>(<span class="number">3</span>);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">1</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">2</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">3</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">5</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), <span class="number">8</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case for handling removal from an empty heap</span></span><br><span class="line"><span class="built_in">TEST_F</span>(InitHeap, RemoveFromEmptyHeap) &#123;</span><br><span class="line">  <span class="built_in">EXPECT_THROW</span>(minHeap.<span class="built_in">removeRoot</span>(), std::out_of_range);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case for dynamic resizing of the heap</span></span><br><span class="line"><span class="built_in">TEST_F</span>(InitHeap, ResizeHeap) &#123;</span><br><span class="line">  <span class="type">size_t</span> initialCapacity = <span class="number">32</span>; <span class="comment">// Assuming initial capacity is 32</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; initialCapacity + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">    minHeap.<span class="built_in">insert</span>(i);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_GT</span>(minHeap.<span class="built_in">size</span>(), initialCapacity);</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt;= <span class="built_in">static_cast</span>&lt;<span class="type">int</span>&gt;(initialCapacity); ++i) &#123;</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(minHeap.<span class="built_in">removeRoot</span>(), i); <span class="comment">// Assuming a min heap</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Test case for max heap property</span></span><br><span class="line"><span class="built_in">TEST</span>(HeapTest, MaxHeapProperty) &#123;</span><br><span class="line">  Heap&lt;<span class="type">int</span>, std::greater&lt;<span class="type">int</span>&gt;&gt; maxHeap;</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">5</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">2</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">8</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">1</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">3</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">26</span>);</span><br><span class="line">  maxHeap.<span class="built_in">insert</span>(<span class="number">-5</span>);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">26</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">8</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">5</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">3</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">2</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">1</span>);</span><br><span class="line">  <span class="built_in">EXPECT_EQ</span>(maxHeap.<span class="built_in">removeRoot</span>(), <span class="number">-5</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>除了最后一个测试用例外, 每个测试都是初始化一个泛型为<code>int</code>的小根堆, 因此可以定义一个继承自<code>testing::Test</code>的类<code>InitHeap</code>, 并添加一个成员变量<code>minHeap</code>, 此后在使用<code>TEST_F</code>宏的测试案中将第一个参数设置为<code>InitHeap</code>, 然后就可以不用初始化小根堆了。如果有别的需求， 还可以重写<code>TearDown</code>和<code>SetUp</code>成员方法</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Google-Test%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Google Test简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Google-Test%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">2 Google Test基础语法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%96%AD%E8%A8%80"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 断言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B%E5%92%8C%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 测试用例和测试套件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 测试用例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 测试套件</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%A1%88%E4%BE%8B-CMake%E4%B8%8B%E4%BD%BF%E7%94%A8gtest"><span class="toc-number">3.</span> <span class="toc-text">3 案例: CMake下使用gtest</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%AE%80%E5%8D%95%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 简单测试用例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E5%AE%98%E6%96%B9%E6%8C%87%E5%AF%BC%E7%9A%84CMake%E7%BC%96%E5%86%99"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 官方指导的CMake编写</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E8%87%AA%E5%8A%A8%E9%80%9A%E8%BF%87CMake%E6%B3%A8%E5%86%8C%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 自动通过CMake注册单元测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%B5%8B%E8%AF%95%E5%A5%97%E4%BB%B6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 测试套件</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&text=Google Test 简单使用"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&is_video=false&description=Google Test 简单使用"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Google Test 简单使用&body=Check out this article: http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&title=Google Test 简单使用"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&name=Google Test 简单使用&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/10/C++/GoogleTest%E7%AE%80%E5%8D%95%E4%BD%BF%E7%94%A8/&t=Google Test 简单使用"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

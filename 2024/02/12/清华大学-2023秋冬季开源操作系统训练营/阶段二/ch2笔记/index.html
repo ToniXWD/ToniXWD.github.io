@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文不会将原本rCore文档的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中 之前的章节仅仅是一个裸机运行的应用程序, 这一章节通过特权级的引入实现了S态下的OS和U态下的app, app通过系统调用访问OS, OS通过SBI提供的服务完成系统调用, 不过这一章节没有实现进程或线程切换, 而是将程序一个接一个地运行直到结束。 完整版官方文档： htt">
+<meta property="og:type" content="article">
+<meta property="og:title" content="清华大学开源操作系统训练营: rCore chapter2笔记">
+<meta property="og:url" content="http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文不会将原本rCore文档的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中 之前的章节仅仅是一个裸机运行的应用程序, 这一章节通过特权级的引入实现了S态下的OS和U态下的app, app通过系统调用访问OS, OS通过SBI提供的服务完成系统调用, 不过这一章节没有实现进程或线程切换, 而是将程序一个接一个地运行直到结束。 完整版官方文档： htt">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/LearningOS/ch2-PrivilegeStack.png">
+<meta property="og:image" content="http://example.com/images/LearningOS/ch2-EnvironmentCallFlow.png">
+<meta property="og:image" content="http://example.com/images/LearningOS/ch2-batchOS.png">
+<meta property="article:published_time" content="2024-02-12T09:28:26.000Z">
+<meta property="article:modified_time" content="2024-02-21T16:16:04.678Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="riscv">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/LearningOS/ch2-PrivilegeStack.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>清华大学开源操作系统训练营: rCore chapter2笔记</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/15/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch3%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/12/CMU15445/proj1/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&text=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter2笔记&body=Check out this article: http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&name=清华大学开源操作系统训练营: rCore chapter2笔记&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&t=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">1 整体流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%89%B9%E6%9D%83%E7%BA%A7"><span class="toc-number">2.</span> <span class="toc-text">2 特权级</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%89%B9%E6%9D%83%E7%BA%A7%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 特权级的概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E7%9A%84%E5%88%87%E6%8D%A2"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 特权级的切换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2%E6%8C%87%E4%BB%A4%E5%92%8C%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 特权级切换指令和寄存器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E5%8F%91%E7%94%9F%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 什么时候会发生特权级切换?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2%E6%8C%87%E4%BB%A4%E5%92%8C%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 特权级切换指令和寄存器</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">3.</span> <span class="toc-text">3 特权级切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 系统调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 特权级切换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81"><span class="toc-number">4.</span> <span class="toc-text">4 用户代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E6%A6%82%E8%A7%88"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 用户代码概览</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%94%A8%E6%88%B7%E5%BA%93user-lib"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 用户库user_lib</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%86%85%E6%A0%B8%E4%BB%A3%E7%A0%81"><span class="toc-number">5.</span> <span class="toc-text">5 内核代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%86%85%E6%A0%B8%E4%BB%A3%E7%A0%81%E5%92%8C%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E7%9A%84%E9%93%BE%E6%8E%A5"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 内核代码和用户代码的链接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%86%85%E6%A0%B8%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 内核的调度</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-1-%E8%B0%83%E5%BA%A6%E5%99%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">5.2.1.</span> <span class="toc-text">5.2.1 调度器的数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-2-%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F"><span class="toc-number">5.2.2.</span> <span class="toc-text">5.2.2 加载程序</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Trap%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Trap上下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-1-%E7%94%A8%E6%88%B7%E6%A0%88%E5%92%8C%E5%86%85%E6%A0%B8%E6%A0%88"><span class="toc-number">5.3.1.</span> <span class="toc-text">5.3.1 用户栈和内核栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-2-%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BF%A1%E6%81%AF"><span class="toc-number">5.3.2.</span> <span class="toc-text">5.3.2 上下文信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-3-app%E8%B0%83%E5%BA%A6"><span class="toc-number">5.3.3.</span> <span class="toc-text">5.3.3 app调度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-4-Trap%E6%81%A2%E5%A4%8D%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="toc-number">5.3.4.</span> <span class="toc-text">5.3.4 Trap恢复上下文</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-Trap-Handler"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 Trap Handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">5.5.</span> <span class="toc-text">5.5 流程图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.</span> <span class="toc-text">6 补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-Rust%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 Rust补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-1-RefCell"><span class="toc-number">6.1.1.</span> <span class="toc-text">6.1.1 RefCell</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-2-bitflags"><span class="toc-number">6.1.2.</span> <span class="toc-text">6.1.2 bitflags</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-3-lazy-static"><span class="toc-number">6.1.3.</span> <span class="toc-text">6.1.3 lazy_static</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-4-drain"><span class="toc-number">6.1.4.</span> <span class="toc-text">6.1.4 drain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-5-%E9%A1%B9%E7%9B%AE%E4%BB%A3%E7%A0%81%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%BF%87%E7%9A%84%E5%AE%8F"><span class="toc-number">6.1.5.</span> <span class="toc-text">6.1.5 项目代码中使用过的宏</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-6-build-rs%E6%9E%84%E5%BB%BA%E8%84%9A%E6%9C%AC"><span class="toc-number">6.1.6.</span> <span class="toc-text">6.1.6 build.rs构建脚本</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-riscv%E6%B1%87%E7%BC%96%E4%BB%A3%E7%A0%81%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 riscv汇编代码补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-1-%E5%8F%98%E9%87%8F%E5%A3%B0%E6%98%8E%E4%B8%8E%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%96%87%E4%BB%B6%E5%B5%8C%E5%85%A5"><span class="toc-number">6.2.1.</span> <span class="toc-text">6.2.1 变量声明与二进制文件嵌入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-2-%E5%AE%8F%E5%AE%9A%E4%B9%89"><span class="toc-number">6.3.</span> <span class="toc-text">6.2.2 宏定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-stvec%E7%9A%84%E6%A8%A1%E5%BC%8F"><span class="toc-number">6.4.</span> <span class="toc-text">6.3 stvec的模式</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        清华大学开源操作系统训练营: rCore chapter2笔记
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-12T09:28:26.000Z" class="dt-published" itemprop="datePublished">2024-02-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/">训练营笔记</a> › <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/OS/" rel="tag">OS</a>, <a class="p-category" href="/tags/Rust/" rel="tag">Rust</a>, <a class="p-category" href="/tags/riscv/" rel="tag">riscv</a>, <a class="p-category" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文不会将原本<code>rCore文档</code>的内容重复太多, 主要是补充学习过程中遇到的知识点, 因此还需结合原文使用, 原文在后面的链接中</p>
+<p>之前的章节仅仅是一个裸机运行的应用程序, 这一章节通过特权级的引入实现了S态下的<code>OS</code>和U态下的<code>app</code>, <code>app</code>通过系统调用访问<code>OS</code>, <code>OS</code>通过<code>SBI</code>提供的服务完成系统调用, 不过这一章节没有实现进程或线程切换, 而是将程序一个接一个地运行直到结束。</p>
+<p>完整版官方文档： <a target="_blank" rel="noopener" href="https://rcore-os.cn/rCore-Tutorial-Book-v3/chapter2/index.html">https://rcore-os.cn/rCore-Tutorial-Book-v3/chapter2/index.html</a></p>
+<p>精简版文档： <a target="_blank" rel="noopener" href="https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter2/index.html">https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter2/index.html</a></p>
+<h1 id="1-整体流程"><a href="#1-整体流程" class="headerlink" title="1 整体流程"></a>1 整体流程</h1><p>本章的目的是实现批处理系统，文档中称为<code>邓氏鱼OS</code>, 其内容包括:</p>
+<ol>
+<li>编写<code>Rust应用程序</code>, 并使用链接脚本调整内存布局</li>
+<li>为<code>OS</code>实现系统调用</li>
+<li>将应用程序从<code>efl</code>转化为<code>binary</code>, 和<code>OS</code>的代码链接到一起</li>
+<li>实现批处理的任务调度</li>
+<li>引入用户栈和内核栈</li>
+</ol>
+<h1 id="2-特权级"><a href="#2-特权级" class="headerlink" title="2 特权级"></a>2 特权级</h1><h2 id="2-1-特权级的概念"><a href="#2-1-特权级的概念" class="headerlink" title="2.1 特权级的概念"></a>2.1 特权级的概念</h2><p>下面这摘自官方文档张图展示了<code>riscv</code>中不同的特权级:</p>
+<p><img src="/../../../images/LearningOS/ch2-PrivilegeStack.png" alt="PrivilegeStack"></p>
+<p>RISC-V 定义了以下四个特权级别：</p>
+<ol>
+<li><p><strong>用户级别（User-Level or U-Mode）</strong>:<br>就是图中的<code>App</code>所在的级别, 用户级别是最低的特权级别，普通的应用程序在这个级别上运行。在这个级别上，程序不能直接访问硬件资源，如控制I&#x2F;O和管理内存等。用户级别的代码需要通过<strong>系统调用</strong>（<code>syscalls</code>）与更高特权级别的软件交互来请求服务。而<code>syscalls</code>就是应用程序二进制接口, 图中的<code>ABI</code>。程序在用户级别也称为用户态</p>
+</li>
+<li><p><strong>监督者级别（Supervisor-Level or S-Mode）</strong>:<br>监督者级别是操作系统内核通常运行的特权级别。它允许直接控制和管理硬件资源，包括内存管理单元（MMU）、中断处理等。大多数操作系统的内核，如<code>Linux</code>，会在<code>S-Mode</code>下运行。程序在用户级别也称为内核态。操作系统在态下其实也需要想&#x3D;向更低一级的机器模式提出函数请求，这就是<strong>SBI</strong>所做的事情</p>
+</li>
+<li><p><strong>机器级别（Machine-Level or M-Mode）</strong>:<br>机器级别是最高的特权级别，提供对RISC-V硬件的完全控制。它用于引导系统、处理最底层的中断和异常，以及配置系统的安全和保护设置。固件和监控程序，如我们使用的<code>RustSBI</code>（通常在M-Mode下运行。</p>
+</li>
+<li><p><strong>超级用户级别（Hypervisor-Level or H-Mode）</strong>:<br>超级用户级别是为虚拟化环境设计的特权级别，在<code>RISC-V</code>体系结构中是一个可选的特权级别。它允许运行一个超级监控器（<code>hypervisor</code>），在单个物理硬件平台上虚拟化和管理多个独立的操作系统实例。<code>rCore</code>中不涉及这个级别</p>
+</li>
+</ol>
+<h2 id="2-2-特权级的切换"><a href="#2-2-特权级的切换" class="headerlink" title="2.2 特权级的切换"></a>2.2 特权级的切换</h2><p>官网中的这张图清晰地说明了应用程序如何进行特权级切换:</p>
+<p><img src="/../../../images/LearningOS/ch2-EnvironmentCallFlow.png" alt="EnvironmentCallFlow"></p>
+<p>这张图其实还揭示了另一个细节: 不同特权级的内存空间通常是不一样的, 这就和我们常说的用户栈和内核栈联系起来了</p>
+<h2 id="2-3-特权级切换指令和寄存器"><a href="#2-3-特权级切换指令和寄存器" class="headerlink" title="2.3 特权级切换指令和寄存器"></a>2.3 特权级切换指令和寄存器</h2><h3 id="2-3-1-什么时候会发生特权级切换"><a href="#2-3-1-什么时候会发生特权级切换" class="headerlink" title="2.3.1 什么时候会发生特权级切换?"></a>2.3.1 什么时候会发生特权级切换?</h3><p>在RISC-V中，特权级切换通常在以下场景中发生：</p>
+<ol>
+<li><p><strong>系统调用（System Calls）</strong>：当用户程序需要操作系统提供的服务时，如文件操作、内存分配等，它会执行一个<code>ecall</code>指令来触发一个异常，导致处理器从用户模式（U-Mode）切换到监督者模式（S-Mode）或机器模式（<code>M-Mode</code>），这样操作系统可以安全地提供这些服务。</p>
+</li>
+<li><p><strong>中断（Interrupts）</strong>：当外部设备需要处理器的注意时，它会发送一个中断信号。处理器响应中断信号也会导致特权级切换，通常是从较低的特权级别切换到机器模式（<code>M-Mode</code>），以便中断服务程序可以运行并处理中断。</p>
+</li>
+<li><p><strong>异常（Exceptions）</strong>：当程序执行非法操作（如除以零、访问无权限的内存区域）时，或者出现硬件错误，就会发生异常。这将导致从当前特权级别切换到更高的特权级别，以便异常处理程序可以被执行来处理这些问题。</p>
+</li>
+<li><p><strong>特权级返回（Return from Trap）</strong>：当中断或异常处理完成后，通过执行<code>mret</code>、<code>sret</code>或<code>uret</code>指令返回到发生中断或异常之前的特权级别。如果异常无法被正常处理, 则可能退出不会返回用户态, 而是在更高的特权级中尽显处理(<em>关机蓝屏等就是这些更改特权级处理异常的方式</em>)</p>
+</li>
+</ol>
+<p>通过上述情形可以我们可以看出, 异常控制流(区别与一般的函数控制)和特权级切换有下面的好处:</p>
+<ol>
+<li>保护系统和硬件不收错误的程序的损坏</li>
+<li>提供一层抽象, 便于开发</li>
+</ol>
+<h3 id="2-3-2-特权级切换指令和寄存器"><a href="#2-3-2-特权级切换指令和寄存器" class="headerlink" title="2.3.2 特权级切换指令和寄存器"></a>2.3.2 特权级切换指令和寄存器</h3><ol>
+<li><p>特权级切换指令</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>ecall</code></strong></td>
+<td><strong>从用户态或监督者态触发一个环境调用异常，请求操作系统服务</strong></td>
+</tr>
+<tr>
+<td><code>ebreak</code></td>
+<td>触发一个断点异常，用于调试</td>
+</tr>
+<tr>
+<td><code>mret</code></td>
+<td>从机器模式退出中断或异常处理程序并返回到之前的特权级别</td>
+</tr>
+<tr>
+<td><strong><code>sret</code></strong></td>
+<td><strong>从监督者模式退出中断或异常处理程序并返回到之前的特权级别</strong></td>
+</tr>
+<tr>
+<td><code>uret</code></td>
+<td>从用户模式退出中断或异常处理程序并返回到之前的特权级别</td>
+</tr>
+</tbody></table>
+</li>
+<li><p>特权级切换相关寄存器</p>
+<table>
+<thead>
+<tr>
+<th>寄存器</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mstatus</code></td>
+<td>保存机器模式的全局状态，包括全局中断使能位和特权级切换的状态</td>
+</tr>
+<tr>
+<td><code>ustatus</code></td>
+<td><code>mstatus</code> 的子集，用于保存用户模式的状态信息</td>
+</tr>
+<tr>
+<td><code>mtvec</code></td>
+<td>保存中断和异常处理例程的基地址（机器模式）</td>
+</tr>
+<tr>
+<td><code>utvec</code></td>
+<td>保存用户模式下中断和异常处理例程的基地址</td>
+</tr>
+<tr>
+<td><code>mepc</code></td>
+<td>保存发生异常时的程序计数器值（机器模式）</td>
+</tr>
+<tr>
+<td><code>uepc</code></td>
+<td>保存用户模式下发生异常时的程序计数器值</td>
+</tr>
+<tr>
+<td><code>mcause</code></td>
+<td>保存最后一次异常或中断的原因（机器模式）</td>
+</tr>
+<tr>
+<td><code>ucause</code></td>
+<td>保存用户模式下最后一次异常或中断的原因</td>
+</tr>
+<tr>
+<td><strong><code>sstatus</code></strong></td>
+<td><strong><code>mstatus</code> 的子集，用于保存监督者模式的状态信息</strong></td>
+</tr>
+<tr>
+<td><strong><code>scause</code></strong></td>
+<td><strong>保存监督者模式下最后一次异常或中断的原因</strong></td>
+</tr>
+<tr>
+<td><strong><code>sepc</code></strong></td>
+<td><strong>保存监督者模式下发生异常时的程序计数器值</strong></td>
+</tr>
+<tr>
+<td><strong><code>stval</code></strong></td>
+<td><strong>给出 <code>Trap</code> 附加信息</strong></td>
+</tr>
+<tr>
+<td><strong><code>stvec</code></strong></td>
+<td><strong>保存监督者模式下中断和异常处理例程的基地址</strong></td>
+</tr>
+</tbody></table>
+</li>
+</ol>
+<h1 id="3-特权级切换"><a href="#3-特权级切换" class="headerlink" title="3 特权级切换"></a>3 特权级切换</h1><h2 id="3-1-系统调用"><a href="#3-1-系统调用" class="headerlink" title="3.1 系统调用"></a>3.1 系统调用</h2><p><code>riscv</code>中的系统调用很简单, 相关的代码我们之前也已经见到过:</p>
+<ol>
+<li>把系统调用的参数按照顺序放在<code>a0~a6</code>寄存器后</li>
+<li>把系统调用号放在<code>a7</code>寄存器</li>
+<li>调用<code>ecall</code>触发系统调用</li>
+<li>在<code>a0</code>处获得系统调用的返回值</li>
+</ol>
+<p>系统调用可以使用<code>Rust</code>内联汇编实现:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> core::arch::asm;</span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">syscall</span>(id: <span class="type">usize</span>, args: [<span class="type">usize</span>; <span class="number">3</span>]) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">ret</span>: <span class="type">isize</span>;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        asm!(</span><br><span class="line">            <span class="string">&quot;ecall&quot;</span>,</span><br><span class="line">            <span class="title function_ invoke__">inlateout</span>(<span class="string">&quot;x10&quot;</span>) args[<span class="number">0</span>] =&gt; ret,</span><br><span class="line">            <span class="title function_ invoke__">in</span>(<span class="string">&quot;x11&quot;</span>) args[<span class="number">1</span>],</span><br><span class="line">            <span class="title function_ invoke__">in</span>(<span class="string">&quot;x12&quot;</span>) args[<span class="number">2</span>],</span><br><span class="line">            <span class="title function_ invoke__">in</span>(<span class="string">&quot;x17&quot;</span>) id</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">    ret</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果上述汇编代码看不懂, 可以看我的上一篇<code>rCode</code>的笔记中关于内联汇编的介绍</p>
+<h2 id="3-2-特权级切换"><a href="#3-2-特权级切换" class="headerlink" title="3.2 特权级切换"></a>3.2 特权级切换</h2><p>系统调用会发生特权级切换, 特权级切换由于执行环境发生了变化, 要求我们在恢复原来的特权级时(例如从内核态返回用户态), 恢复执行环境的上下文。</p>
+<p>发生特权级切换(执行<code>ecall</code>), 此处以陷入<code>S</code>态为例, 时硬件会帮我们做如下工作:</p>
+<ol>
+<li><code>sstatus</code> 的 <code>SPP</code> 字段会被修改为 <code>CPU</code> 当前的特权级</li>
+<li><code>sepc</code> 会被修改为 <code>Trap</code> 处理完成后默认会执行的下一条指令的地址。</li>
+<li><code>scause</code>&#x2F;<code>stval</code> 分别会被修改成这次 <code>Trap</code> 的原因以及相关的附加信息。</li>
+<li><code>CPU</code> 会跳转到 <code>stvec</code> 所设置的 <code>Trap</code> 处理入口地址，并将当前特权级设置为 <code>S</code> ，然后从<code>Trap</code> 处理入口地址处开始执行。</li>
+</ol>
+<p>上述是硬件自动完成的, 如果有其他的寄存器由于陷入内核态后会被使用, 需要提前被保存, 通常会手动保存在栈里, 这些工作可能是<code>stvec</code>一开始就执行的工作</p>
+<p>当使用<code>sret</code>返回用户态时, 系统会帮我们做下面的工作:</p>
+<ol>
+<li><code>CPU</code> 会将当前的特权级按照 <code>sstatus</code> 的 <code>SPP</code> 字段设置为 <code>U</code> 或者 <code>S</code> ；</li>
+<li><code>CPU</code> 会跳转到 <code>sepc</code> 寄存器指向的那条指令，然后继续执行。</li>
+</ol>
+<p>这里特别说明一下<code>sstatus</code> 的 <code>SPP</code>字段如何设置:</p>
+<ol>
+<li><p>调用 <code>ecall</code> 时：</p>
+<ul>
+<li>当从用户模式（U模式）执行 <code>ecall</code> 并陷入到监督者模式（S模式）时，<code>sstatus</code> 寄存器的 <code>SPP</code> 字段会被设置为 0，表示异常发生前处于用户模式。</li>
+<li>如果是从其他特权级别执行 <code>ecall</code>（例如，在 RISC-V 中还有机器模式 M），<code>SPP</code> 字段会被设置为对应于那个特权级别的值。</li>
+</ul>
+</li>
+<li><p>调用 <code>sret</code> 时：</p>
+<ul>
+<li><code>sret</code> 指令用于从监督者模式（S模式）返回到之前的特权级别。在执行 <code>sret</code> 指令时，<code>SPP</code> 字段的值会被用来决定返回到哪个特权级别（U模式或S模式），并且执行 <code>sret</code> 之后，<code>SPP</code> 字段会被清零。</li>
+<li>如果 <code>SPP</code> 是 0，则在执行 <code>sret</code> 后 CPU 返回到用户模式（U模式）。</li>
+<li>如果 <code>SPP</code> 是 1，则在执行 <code>sret</code> 后 CPU 返回到监督者模式（S模式）。</li>
+</ul>
+</li>
+</ol>
+<h1 id="4-用户代码"><a href="#4-用户代码" class="headerlink" title="4 用户代码"></a>4 用户代码</h1><h2 id="4-1-用户代码概览"><a href="#4-1-用户代码概览" class="headerlink" title="4.1 用户代码概览"></a>4.1 用户代码概览</h2><p>用户代码很简单, 项目源码中有4个用户程序:</p>
+<ol>
+<li><p><code>ch2b_bad_address.rs</code></p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#![no_std]</span></span><br><span class="line"><span class="meta">#![no_main]</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">crate</span> user_lib;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 由于 rustsbi 的问题，该程序无法正确退出</span></span><br><span class="line"><span class="comment">/// &gt; rustsbi 0.2.0-alpha.1 已经修复，可以正常退出</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">main</span>() <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        <span class="meta">#[allow(clippy::zero_ptr)]</span></span><br><span class="line">        (<span class="number">0x0</span> <span class="keyword">as</span> *<span class="keyword">mut</span> <span class="type">u8</span>).<span class="title function_ invoke__">write_volatile</span>(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;FAIL: T.T\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 该程序向0地址处写入, 预期会触发<code>page fault</code>并退出</p>
+</li>
+<li><p><code>ch2b_bad_instructions.rs</code></p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#![no_std]</span></span><br><span class="line"><span class="meta">#![no_main]</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">crate</span> user_lib;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 由于 rustsbi 的问题，该程序无法正确退出</span></span><br><span class="line"><span class="comment">/// &gt; rustsbi 0.2.0-alpha.1 已经修复，可以正常退出</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">main</span>() <span class="punctuation">-&gt;</span> ! &#123;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        core::arch::asm!(<span class="string">&quot;sret&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;FAIL: T.T\n&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 该程序在<code>U模式</code>下使用<code>sret</code>, 应当是非法指令</p>
+</li>
+<li><p><code>ch2b_bad_register.rs</code></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#![no_std]</span></span><br><span class="line"><span class="meta">#![no_main]</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">crate</span> user_lib;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 由于 rustsbi 的问题，该程序无法正确退出</span></span><br><span class="line"><span class="comment">/// &gt; rustsbi 0.2.0-alpha.1 已经修复，可以正常退出</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">main</span>() <span class="punctuation">-&gt;</span> ! &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">sstatus</span>: <span class="type">usize</span>;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        core::arch::asm!(<span class="string">&quot;csrr &#123;&#125;, sstatus&quot;</span>, <span class="title function_ invoke__">out</span>(reg) sstatus);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;(-_-) I get sstatus:&#123;:x&#125;\nFAIL: T.T\n&quot;</span>, sstatus);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 该程序在<code>U模式</code>下访问<code>csr</code>寄存器<code>sstatus</code>, 应当也是非法指令</p>
+</li>
+<li><p><code>ch2b_hello_world.rs</code></p>
+ <figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#![no_std]</span></span><br><span class="line"><span class="meta">#![no_main]</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[macro_use]</span></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">crate</span> user_lib;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 正确输出：</span></span><br><span class="line"><span class="comment">/// Hello world from user mode program!</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() <span class="punctuation">-&gt;</span> <span class="type">i32</span> &#123;</span><br><span class="line"><span class="built_in">println!</span>(<span class="string">&quot;Hello, world from user mode program!&quot;</span>);</span><br><span class="line"><span class="number">0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p> 该程序是唯一正常输出的程序</p>
+</li>
+</ol>
+<h2 id="4-2-用户库user-lib"><a href="#4-2-用户库user-lib" class="headerlink" title="4.2 用户库user_lib"></a>4.2 用户库<code>user_lib</code></h2><p>上述的代码都使用了<code>user_lib</code>库, 也就是<code>user/src</code>下的<code>rust</code>项目, 其作用就是封装了了多个系统调用函数, 每个系统调用都使用对应的系统调用号、参数或地址调用<a href="#3-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><strong>3 系统调用</strong></a>中的<code>syscall</code>函数, 例如:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">...</span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">sys_exit</span>(exit_code: <span class="type">i32</span>) <span class="punctuation">-&gt;</span> ! &#123;</span><br><span class="line">    <span class="title function_ invoke__">syscall</span>(SYSCALL_EXIT, [exit_code <span class="keyword">as</span> <span class="type">usize</span>, <span class="number">0</span>, <span class="number">0</span>]);</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;sys_exit never returns!&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">sys_sleep</span>(sleep_ms: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">syscall</span>(SYSCALL_SLEEP, [sleep_ms, <span class="number">0</span>, <span class="number">0</span>])</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">sys_yield</span>() <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">syscall</span>(SYSCALL_YIELD, [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>])</span><br><span class="line">&#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-内核代码"><a href="#5-内核代码" class="headerlink" title="5 内核代码"></a>5 内核代码</h1><h2 id="5-1-内核代码和用户代码的链接"><a href="#5-1-内核代码和用户代码的链接" class="headerlink" title="5.1 内核代码和用户代码的链接"></a>5.1 内核代码和用户代码的链接</h2><p>这章的内核系统是和用户代码链接到一起的, 也就是说不存在从文件系统加载<code>elf</code>文件这样的步骤, 毕竟在学习<code>OS</code>的起步阶段, 文件系统离我们还挺遥远的, 具体而言, <code>os/src/main.rs</code>中的这句代码实现了用户代码的链接:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">global_asm!(<span class="built_in">include_str!</span>(<span class="string">&quot;link_app.S&quot;</span>));</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<blockquote>
+<p><code>link_app.S</code>是构建脚本<code>build.rs</code>生成的, 其将用户仓库的编译文件夹<code>bin</code>目录下的二进制文件整整合到一起, 名创建各个<code>app</code>的符号</p>
+</blockquote>
+</blockquote>
+<h2 id="5-2-内核的调度"><a href="#5-2-内核的调度" class="headerlink" title="5.2 内核的调度"></a>5.2 内核的调度</h2><h3 id="5-2-1-调度器的数据结构"><a href="#5-2-1-调度器的数据结构" class="headerlink" title="5.2.1 调度器的数据结构"></a>5.2.1 调度器的数据结构</h3><p>内核调度是按照顺序一个接一个地调用用户应用, 其主要数据结构为:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">AppManager</span> &#123;</span><br><span class="line">    num_app: <span class="type">usize</span>,</span><br><span class="line">    current_app: <span class="type">usize</span>,</span><br><span class="line">    app_start: [<span class="type">usize</span>; MAX_APP_NUM + <span class="number">1</span>],</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>文档中还介绍了<code>Rust</code>相关的语法知识, 后面的章节会整理出来</p>
+<h3 id="5-2-2-加载程序"><a href="#5-2-2-加载程序" class="headerlink" title="5.2.2 加载程序"></a>5.2.2 加载程序</h3><p>最重要的调度函数是<code>load_app</code>, 其功能就是加载程序, 实际上并不是从文件系统加载, 而是从内核的某一个区段进行复制:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">unsafe</span> <span class="keyword">fn</span> <span class="title function_">load_app</span>(&amp;<span class="keyword">self</span>, app_id: <span class="type">usize</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> app_id &gt;= <span class="keyword">self</span>.num_app &#123;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;All applications completed!&quot;</span>);</span><br><span class="line">        <span class="keyword">use</span> crate::board::QEMUExit;</span><br><span class="line">        crate::board::QEMU_EXIT_HANDLE.<span class="title function_ invoke__">exit_success</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;[kernel] Loading app_&#123;&#125;&quot;</span>, app_id);</span><br><span class="line">    <span class="comment">// clear app area</span></span><br><span class="line">    core::slice::<span class="title function_ invoke__">from_raw_parts_mut</span>(APP_BASE_ADDRESS <span class="keyword">as</span> *<span class="keyword">mut</span> <span class="type">u8</span>, APP_SIZE_LIMIT).<span class="title function_ invoke__">fill</span>(<span class="number">0</span>);</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">app_src</span> = core::slice::<span class="title function_ invoke__">from_raw_parts</span>(</span><br><span class="line">        <span class="keyword">self</span>.app_start[app_id] <span class="keyword">as</span> *<span class="keyword">const</span> <span class="type">u8</span>,</span><br><span class="line">        <span class="keyword">self</span>.app_start[app_id + <span class="number">1</span>] - <span class="keyword">self</span>.app_start[app_id],</span><br><span class="line">    );</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">app_dst</span> = core::slice::<span class="title function_ invoke__">from_raw_parts_mut</span>(APP_BASE_ADDRESS <span class="keyword">as</span> *<span class="keyword">mut</span> <span class="type">u8</span>, app_src.<span class="title function_ invoke__">len</span>());</span><br><span class="line">    app_dst.<span class="title function_ invoke__">copy_from_slice</span>(app_src);</span><br><span class="line">    <span class="comment">// Memory fence about fetching the instruction memory</span></span><br><span class="line">    <span class="comment">// It is guaranteed that a subsequent instruction fetch must</span></span><br><span class="line">    <span class="comment">// observes all previous writes to the instruction memory.</span></span><br><span class="line">    <span class="comment">// Therefore, fence.i must be executed after we have loaded</span></span><br><span class="line">    <span class="comment">// the code of the next app into the instruction memory.</span></span><br><span class="line">    <span class="comment">// See also: riscv non-priv spec chapter 3, &#x27;Zifencei&#x27; extension.</span></span><br><span class="line">    asm!(<span class="string">&quot;fence.i&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以从代码看出, 所有的<code>app</code>都是在<code>APP_BASE_ADDRESS</code>地址处运行的, <strong>每个<code>app</code>运行前都需要将其从其二进制代码的地址处复制到<code>APP_BASE_ADDRESS</code>地址处</strong>, 这也是<code>load_app</code>的核心工作</p>
+<h2 id="5-3-Trap上下文切换"><a href="#5-3-Trap上下文切换" class="headerlink" title="5.3 Trap上下文切换"></a>5.3 <code>Trap</code>上下文切换</h2><h3 id="5-3-1-用户栈和内核栈"><a href="#5-3-1-用户栈和内核栈" class="headerlink" title="5.3.1 用户栈和内核栈"></a>5.3.1 用户栈和内核栈</h3><p>正如之前的<a href="#32-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2">3 特权级切换</a>中说明, 特权级切换时需要用栈来保存上下文信息, 因此需要定义内核栈和用户栈:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/batch.rs</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> USER_STACK_SIZE: <span class="type">usize</span> = <span class="number">4096</span> * <span class="number">2</span>;</span><br><span class="line"><span class="keyword">const</span> KERNEL_STACK_SIZE: <span class="type">usize</span> = <span class="number">4096</span> * <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[repr(align(4096))]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">KernelStack</span> &#123;</span><br><span class="line">    data: [<span class="type">u8</span>; KERNEL_STACK_SIZE],</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[repr(align(4096))]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">UserStack</span> &#123;</span><br><span class="line">    data: [<span class="type">u8</span>; USER_STACK_SIZE],</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> KERNEL_STACK: KernelStack = KernelStack &#123; data: [<span class="number">0</span>; KERNEL_STACK_SIZE] &#125;;</span><br><span class="line"><span class="keyword">static</span> USER_STACK: UserStack = UserStack &#123; data: [<span class="number">0</span>; USER_STACK_SIZE] &#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-3-2-上下文信息"><a href="#5-3-2-上下文信息" class="headerlink" title="5.3.2 上下文信息"></a>5.3.2 上下文信息</h3><p>本来不打算分析代码, 但这里的代码贯穿了整个<code>OS</code>, 所以特别介绍一下:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> riscv::register::sstatus::&#123;<span class="keyword">self</span>, Sstatus, SPP&#125;;</span><br><span class="line"><span class="comment">/// Trap Context</span></span><br><span class="line"><span class="meta">#[repr(C)]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">TrapContext</span> &#123;</span><br><span class="line">    <span class="comment">/// general regs[0..31]</span></span><br><span class="line">    <span class="keyword">pub</span> x: [<span class="type">usize</span>; <span class="number">32</span>],</span><br><span class="line">    <span class="comment">/// CSR sstatus      </span></span><br><span class="line">    <span class="keyword">pub</span> sstatus: Sstatus,</span><br><span class="line">    <span class="comment">/// CSR sepc</span></span><br><span class="line">    <span class="keyword">pub</span> sepc: <span class="type">usize</span>,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">TrapContext</span> &#123;</span><br><span class="line">    <span class="comment">/// set stack pointer to x_2 reg (sp)</span></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">set_sp</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, sp: <span class="type">usize</span>) &#123;</span><br><span class="line">        <span class="keyword">self</span>.x[<span class="number">2</span>] = sp;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/// init app context</span></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">app_init_context</span>(entry: <span class="type">usize</span>, sp: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">sstatus</span> = sstatus::<span class="title function_ invoke__">read</span>(); <span class="comment">// CSR sstatus</span></span><br><span class="line">        sstatus.<span class="title function_ invoke__">set_spp</span>(SPP::User); <span class="comment">//previous privilege mode: user mode</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">cx</span> = <span class="keyword">Self</span> &#123;</span><br><span class="line">            x: [<span class="number">0</span>; <span class="number">32</span>],</span><br><span class="line">            sstatus,</span><br><span class="line">            sepc: entry, <span class="comment">// entry point of app</span></span><br><span class="line">        &#125;;</span><br><span class="line">        cx.<span class="title function_ invoke__">set_sp</span>(sp); <span class="comment">// app&#x27;s user stack pointer</span></span><br><span class="line">        cx <span class="comment">// return initial Trap Context of app</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段 <code>Rust</code> 代码定义了<code>TrapContext</code> 的结构体，它用于保存程序的上下文，即在发生异常或中断时需要保存的状态信息，以便之后能够恢复执行, 包括通用寄存器、特殊控制状态寄存器（如 <code>sstatus</code> 和 <code>sepc</code>）等。同时实现了每个<code>app</code>的上下文初始化方法</p>
+<h3 id="5-3-3-app调度"><a href="#5-3-3-app调度" class="headerlink" title="5.3.3 app调度"></a>5.3.3 <code>app</code>调度</h3><p>上面的上下文在什么时候回被访问呢? 首先看看调度<code>app</code>的函数:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">run_next_app</span>() <span class="punctuation">-&gt;</span> ! &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">app_manager</span> = APP_MANAGER.<span class="title function_ invoke__">exclusive_access</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">current_app</span> = app_manager.<span class="title function_ invoke__">get_current_app</span>();</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        app_manager.<span class="title function_ invoke__">load_app</span>(current_app);</span><br><span class="line">    &#125;</span><br><span class="line">    app_manager.<span class="title function_ invoke__">move_to_next_app</span>();</span><br><span class="line">    <span class="title function_ invoke__">drop</span>(app_manager);</span><br><span class="line">    <span class="comment">// before this we have to drop local variables related to resources manually</span></span><br><span class="line">    <span class="comment">// and release the resources</span></span><br><span class="line">    <span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> &#123;</span><br><span class="line">        <span class="keyword">fn</span> <span class="title function_">__restore</span>(cx_addr: <span class="type">usize</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">unsafe</span> &#123;</span><br><span class="line">        __restore(KERNEL_STACK.<span class="title function_ invoke__">push_context</span>(TrapContext::<span class="title function_ invoke__">app_init_context</span>(</span><br><span class="line">            APP_BASE_ADDRESS,</span><br><span class="line">            USER_STACK.<span class="title function_ invoke__">get_sp</span>(),</span><br><span class="line">        )) <span class="keyword">as</span> *<span class="keyword">const</span> _ <span class="keyword">as</span> <span class="type">usize</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">panic!</span>(<span class="string">&quot;Unreachable in batch::run_current_app!&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到, <code>load_app</code>已经通过<code>load_app</code>将指定的内容加载到了内存的固定位置, 然后运行这个程序调用的是<code>__restore</code>, 这是什么? 这是<code>trap.S</code>中用汇编代码写的上下文切换时的保存和回复寄存器的函数, 接下来将仔细解读</p>
+<h3 id="5-3-4-Trap恢复上下文"><a href="#5-3-4-Trap恢复上下文" class="headerlink" title="5.3.4 Trap恢复上下文"></a>5.3.4 <code>Trap</code>恢复上下文</h3><p>首先, 还是贴出<code>trap.S</code>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">.altmacro</span><br><span class="line">.macro SAVE_GP n</span><br><span class="line">    sd x\n, \n*8(sp)</span><br><span class="line">.endm</span><br><span class="line">.macro LOAD_GP n</span><br><span class="line">    ld x\n, \n*8(sp)</span><br><span class="line">.endm</span><br><span class="line">    .section .text</span><br><span class="line">    .globl __alltraps</span><br><span class="line">    .globl __restore</span><br><span class="line">    .align 2</span><br><span class="line">__alltraps:</span><br><span class="line">    csrrw sp, sscratch, sp</span><br><span class="line">    <span class="comment"># now sp-&gt;kernel stack, sscratch-&gt;user stack</span></span><br><span class="line">    <span class="comment"># allocate a TrapContext on kernel stack</span></span><br><span class="line">    addi sp, sp, -34*8</span><br><span class="line">    <span class="comment"># save general-purpose registers</span></span><br><span class="line">    sd x1, 1*8(sp)</span><br><span class="line">    <span class="comment"># skip sp(x2), we will save it later</span></span><br><span class="line">    sd x3, 3*8(sp)</span><br><span class="line">    <span class="comment"># skip tp(x4), application does not use it</span></span><br><span class="line">    <span class="comment"># save x5~x31</span></span><br><span class="line">    .<span class="built_in">set</span> n, 5</span><br><span class="line">    .rept 27</span><br><span class="line">        SAVE_GP %n</span><br><span class="line">        .<span class="built_in">set</span> n, n+1</span><br><span class="line">    .endr</span><br><span class="line">    <span class="comment"># we can use t0/t1/t2 freely, because they were saved on kernel stack</span></span><br><span class="line">    csrr t0, sstatus</span><br><span class="line">    csrr t1, sepc</span><br><span class="line">    sd t0, 32*8(sp)</span><br><span class="line">    sd t1, 33*8(sp)</span><br><span class="line">    <span class="comment"># read user stack from sscratch and save it on the kernel stack</span></span><br><span class="line">    csrr t2, sscratch</span><br><span class="line">    sd t2, 2*8(sp)</span><br><span class="line">    <span class="comment"># set input argument of trap_handler(cx: &amp;mut TrapContext)</span></span><br><span class="line">    <span class="built_in">mv</span> a0, sp</span><br><span class="line">    call trap_handler</span><br><span class="line"></span><br><span class="line">__restore:</span><br><span class="line">    <span class="comment"># case1: start running app by __restore</span></span><br><span class="line">    <span class="comment"># case2: back to U after handling trap</span></span><br><span class="line">    <span class="built_in">mv</span> sp, a0</span><br><span class="line">    <span class="comment"># now sp-&gt;kernel stack(after allocated), sscratch-&gt;user stack</span></span><br><span class="line">    <span class="comment"># restore sstatus/sepc</span></span><br><span class="line">    ld t0, 32*8(sp)</span><br><span class="line">    ld t1, 33*8(sp)</span><br><span class="line">    ld t2, 2*8(sp)</span><br><span class="line">    csrw sstatus, t0</span><br><span class="line">    csrw sepc, t1</span><br><span class="line">    csrw sscratch, t2</span><br><span class="line">    <span class="comment"># restore general-purpuse registers except sp/tp</span></span><br><span class="line">    ld x1, 1*8(sp)</span><br><span class="line">    ld x3, 3*8(sp)</span><br><span class="line">    .<span class="built_in">set</span> n, 5</span><br><span class="line">    .rept 27</span><br><span class="line">        LOAD_GP %n</span><br><span class="line">        .<span class="built_in">set</span> n, n+1</span><br><span class="line">    .endr</span><br><span class="line">    <span class="comment"># release TrapContext on kernel stack</span></span><br><span class="line">    addi sp, sp, 34*8</span><br><span class="line">    <span class="comment"># now sp-&gt;kernel stack, sscratch-&gt;user stack</span></span><br><span class="line">    csrrw sp, sscratch, sp</span><br><span class="line">    sret</span><br></pre></td></tr></table></figure>
+<p>该 <code>trap.S</code>用于处理中断和异常。代码中定义了两个全局入口点：<code>__alltraps</code> 用于在中断或异常发生时保存上下文，<code>__restore</code> 用于恢复上下文并返回到用户态或继续执行应用程序。</p>
+<ol>
+<li><p><code>__alltraps</code> 入口点</p>
+<ol>
+<li><code>csrrw sp, sscratch, sp</code>：交换 <code>sscratch</code> 和 <code>sp</code> 的值。<code>sscratch</code> 通常用来暂存用户栈指针，在发生异常时切换到内核栈。</li>
+<li><code>addi sp, sp, -34*8</code>：在内核栈上分配 <code>TrapContext</code> 结构体所需的空间。</li>
+<li>保存通用寄存器到内核栈上。跳过 <code>sp</code>（x2）和 <code>tp</code>（x4），因为 <code>sp</code> 会在后面单独保存，而 <code>tp</code>（线程指针）可能不被应用使用。</li>
+<li>使用 <code>csrr</code> 指令读取 <code>sstatus</code> 和 <code>sepc</code> 寄存器的值，并保存到栈上。</li>
+<li>从 <code>sscratch</code> 寄存器读取用户栈指针，保存到内核栈上。</li>
+<li>将栈指针 <code>sp</code> 的值移到 <code>a0</code> 寄存器，作为 <code>trap_handler</code> 函数的参数（<code>cx: &amp;mut TrapContext</code>）。</li>
+<li>调用 <code>trap_handler</code> 函数处理异常。</li>
+</ol>
+</li>
+<li><p><code>__restore</code> 入口点</p>
+<ol>
+<li><code>mv sp, a0</code>：恢复 <code>sp</code> 寄存器的值，<code>a0</code> 中包含了指向 <code>TrapContext</code> 的指针。</li>
+<li>从内核栈上加载 <code>sstatus</code>、<code>sepc</code> 和用户栈指针到临时寄存器 <code>t0</code>、<code>t1</code> 和 <code>t2</code>。</li>
+<li>使用 <code>csrw</code> 指令恢复 <code>sstatus</code>、<code>sepc</code> 和 <code>sscratch</code> 寄存器的值。</li>
+<li>从内核栈上恢复其他通用寄存器的值（除了 <code>sp</code> 和 <code>tp</code>）。</li>
+<li><code>addi sp, sp, 34*8</code>：释放在内核栈上分配的 <code>TrapContext</code> 空间。</li>
+<li>再次交换 <code>sscratch</code> 和 <code>sp</code> 的值，恢复用户栈指针到 <code>sp</code>。</li>
+<li>执行 <code>sret</code> 指令返回到用户态或应用程序。</li>
+</ol>
+</li>
+</ol>
+<p>另一个值得注意的点是, <code>__restore</code> 在两种情况下被使用，它既是异常处理完毕后恢复应用程序状态的入口点，也是应用程序第一次开始执行时的入口点。在应用程序第一次开始执行时，<code>__restore</code> 这一步并不是在 “恢复” 任何先前的状态，因为此时还没有任何状态可以恢复。相反，它是在初始化应用程序的执行环境, 具体而言需要再栈中压入构造的<code>Trap Context</code>。在这种情况下，栈上加载的内容（如 <code>sstatus</code>、<code>sepc</code> 和 <code>sscratch</code>）是由操作系统预先设定好的，而不是由之前的应用程序执行状态保存的。这些值会设置为允许应用程序在用户模式下执行的正确状态，并确保了程序计数器（<code>sepc</code>）指向应用程序的入口点。</p>
+<h2 id="5-4-Trap-Handler"><a href="#5-4-Trap-Handler" class="headerlink" title="5.4 Trap Handler"></a>5.4 <code>Trap Handler</code></h2><p>还是先贴出代码</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/trap/mod.rs</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#[no_mangle]</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">trap_handler</span>(cx: &amp;<span class="keyword">mut</span> TrapContext) <span class="punctuation">-&gt;</span> &amp;<span class="keyword">mut</span> TrapContext &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">scause</span> = scause::<span class="title function_ invoke__">read</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">stval</span> = stval::<span class="title function_ invoke__">read</span>();</span><br><span class="line">    <span class="keyword">match</span> scause.<span class="title function_ invoke__">cause</span>() &#123;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::UserEnvCall) =&gt; &#123;</span><br><span class="line">            cx.sepc += <span class="number">4</span>;</span><br><span class="line">            cx.x[<span class="number">10</span>] = <span class="title function_ invoke__">syscall</span>(cx.x[<span class="number">17</span>], [cx.x[<span class="number">10</span>], cx.x[<span class="number">11</span>], cx.x[<span class="number">12</span>]]) <span class="keyword">as</span> <span class="type">usize</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::StoreFault) |</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::StorePageFault) =&gt; &#123;</span><br><span class="line">            <span class="built_in">println!</span>(<span class="string">&quot;[kernel] PageFault in application, kernel killed it.&quot;</span>);</span><br><span class="line">            <span class="title function_ invoke__">run_next_app</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        Trap::<span class="title function_ invoke__">Exception</span>(Exception::IllegalInstruction) =&gt; &#123;</span><br><span class="line">            <span class="built_in">println!</span>(<span class="string">&quot;[kernel] IllegalInstruction in application, kernel killed it.&quot;</span>);</span><br><span class="line">            <span class="title function_ invoke__">run_next_app</span>();</span><br><span class="line">        &#125;</span><br><span class="line">        _ =&gt; &#123;</span><br><span class="line">            <span class="built_in">panic!</span>(<span class="string">&quot;Unsupported trap &#123;:?&#125;, stval = &#123;:#x&#125;!&quot;</span>, scause.<span class="title function_ invoke__">cause</span>(), stval);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    cx</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>trap handler</code>根据<code>scause</code>分类处理, 目前实现了:</p>
+<ol>
+<li>系统调用陷入<code>S</code>态时执行系统调用</li>
+<li>非法指令和页错误直接运行下一个程序</li>
+<li>其余情况直接<code>panic</code></li>
+</ol>
+<p>分发的系统调用目前实现还比较简单, 因为此时还没有页表, 我们的地址都是物理地址, 因此不需要地址转换, 所以没啥好说的, 看项目代码就是了</p>
+<h2 id="5-5-流程图"><a href="#5-5-流程图" class="headerlink" title="5.5 流程图"></a>5.5 流程图</h2><p>下面是我整理的一个示意图, 展示了特权级切换的流程:</p>
+<p><img src="/../../../images/LearningOS/ch2-batchOS.png" alt="switch-process"></p>
+<p>红色表示<code>S</code>态的函数, 蓝色表示<code>U</code>态的函数</p>
+<h1 id="6-补充知识"><a href="#6-补充知识" class="headerlink" title="6 补充知识"></a>6 补充知识</h1><h2 id="6-1-Rust补充知识"><a href="#6-1-Rust补充知识" class="headerlink" title="6.1 Rust补充知识"></a>6.1 <code>Rust</code>补充知识</h2><h3 id="6-1-1-RefCell"><a href="#6-1-1-RefCell" class="headerlink" title="6.1.1 RefCell"></a>6.1.1 <code>RefCell</code></h3><p>在项目代码中, 我们封装了<code>RefCell</code>形成了<code>UPSafeCell</code>, 那么<code>RefCell</code>是什么?</p>
+<p>官方的描述是: <code>RefCell&lt;T&gt;</code> 提供了内部可变性。这意味着即使在 <code>RefCell&lt;T&gt;</code> 的引用是不可变的情况下，也可以改变它所包含的值。这违反了 Rust 的借用规则——即通常情况下，不能同时拥有可变和不可变引用，以及不可变引用不能用来改变值。</p>
+<p>简单来说，就是<code>Rust</code>的编译器检查太严格了, 当我们编写底层代码时, 编译时想绕过不可变借用的检查就可以使用<code>RefCell</code>。尤其是这样一个场景： <strong>当需要在一个不可变的引用上修改数据时</strong>。</p>
+<p>不过绕过编译器检查还有运行期检查， <code>RefCell&lt;T&gt;</code> 使用运行时检查来确保借用规则，这是与编译时检查相对的（如通过 <code>&amp;</code> 和 <code>&amp;mut</code> 引用实现的）。从 <code>RefCell&lt;T&gt;</code> 中借用值时，如果违反了借用规则（例如，尝试进行两个可变借用或同时进行一个可变借用和任意数量的不可变借用），它会导致程序在运行时 <code>panic</code>。</p>
+<p>下面是 <code>RefCell&lt;T&gt;</code> 的一个简单例子：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> std::cell::RefCell;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">value</span> = RefCell::<span class="title function_ invoke__">new</span>(<span class="number">42</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 通过value.borrow_mut()来借用可变引用。</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">value_borrow_mut</span> = value.<span class="title function_ invoke__">borrow_mut</span>();</span><br><span class="line">    *value_borrow_mut += <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这时，value已经被可变地借用，所以尝试再次借用会导致panic！</span></span><br><span class="line">    <span class="comment">// 下面的行如果取消注释，将会在运行时产生panic。</span></span><br><span class="line">    <span class="comment">// let value_borrow_mut2 = value.borrow_mut();</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;value: &#123;&#125;&quot;</span>, value_borrow_mut);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 第一个可变引用离开作用域，所以可以再次借用。</span></span><br><span class="line">    <span class="title function_ invoke__">drop</span>(value_borrow_mut);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 现在可以再次借用，因为之前的可变引用已经结束。</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">value_borrow</span> = value.<span class="title function_ invoke__">borrow</span>();</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;value: &#123;&#125;&quot;</span>, value_borrow);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-1-2-bitflags"><a href="#6-1-2-bitflags" class="headerlink" title="6.1.2 bitflags"></a>6.1.2 <code>bitflags</code></h3><p>我们看到项目代码中使用<code>bitflags!</code>宏来创建各种掩码并进行掩码操作，官方地说就是创建一个或多个位标志的集合。这些位标志通常用于表示一组开关或状态，每个开关或状态可以独立开启或关闭，通常用于配置选项或权限设置等场景。&#96;</p>
+<p><code>bitflags</code>是社区包，需要在<code>Cargo.toml</code>文件中添加<code>bitflags crate</code>作为依赖。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">bitflags</span> = <span class="string">&quot;1.0&quot;</span></span><br></pre></td></tr></table></figure>
+<p>下面是一个标志位使用的案例:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 导入`bitflags`宏</span></span><br><span class="line"><span class="keyword">use</span> bitflags::bitflags;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用`bitflags!`宏定义一个名为`Flags`的位标志类型</span></span><br><span class="line"><span class="built_in">bitflags!</span> &#123;</span><br><span class="line">    <span class="keyword">struct</span> <span class="title class_">Flags</span>: <span class="type">u32</span> &#123;</span><br><span class="line">        <span class="keyword">const</span> FLAG_A = <span class="number">0b00000001</span>;</span><br><span class="line">        <span class="keyword">const</span> FLAG_B = <span class="number">0b00000010</span>;</span><br><span class="line">        <span class="keyword">const</span> FLAG_C = <span class="number">0b00000100</span>;</span><br><span class="line">        <span class="keyword">const</span> FLAG_D = <span class="number">0b00001000</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="comment">// 创建一个新的Flags实例，初始没有任何标志设置</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">flags</span> = Flags::<span class="title function_ invoke__">empty</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置FLAG_A和FLAG_C</span></span><br><span class="line">    flags.<span class="title function_ invoke__">insert</span>(Flags::FLAG_A | Flags::FLAG_C);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 检查FLAG_B是否被设置</span></span><br><span class="line">    <span class="keyword">if</span> flags.<span class="title function_ invoke__">contains</span>(Flags::FLAG_B) &#123;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;Flag B is set.&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">println!</span>(<span class="string">&quot;Flag B is not set.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 移除FLAG_A</span></span><br><span class="line">    flags.<span class="title function_ invoke__">remove</span>(Flags::FLAG_A);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 切换FLAG_D的状态</span></span><br><span class="line">    flags.<span class="title function_ invoke__">toggle</span>(Flags::FLAG_D);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 获取所有设置的标志</span></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Current flags: &#123;:?&#125;&quot;</span>, flags);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>Flags</code>是一个包含四个位标志的新类型：<code>FLAG_A</code>、<code>FLAG_B</code>、<code>FLAG_C</code>和<code>FLAG_D</code>。</li>
+<li>每个标志都赋予了不同的位模式，使得它们可以独立设置和清除。</li>
+<li><code>Flags::empty()</code>创建了一个没有任何标志设置的<code>Flags</code>实例。</li>
+<li><code>insert</code>方法用来设置特定的标志。</li>
+<li><code>contains</code>方法用来检查特定的标志是否已经设置。</li>
+<li><code>remove</code>方法用来清除特定的标志。</li>
+<li><code>toggle</code>方法用来切换特定标志的状态。</li>
+</ul>
+<h3 id="6-1-3-lazy-static"><a href="#6-1-3-lazy-static" class="headerlink" title="6.1.3 lazy_static"></a>6.1.3 <code>lazy_static</code></h3><p><code>lazy_static</code>主要用于这样的需求: 想要创建一个全局变量, 但其初始化的值在编写代码时还不知道, 需要稍后初始化。在<code>Rust</code>中, 如果创建全局变量后再初始化会很繁琐, <code>lazy_static</code>简化了以上需求的操作难度</p>
+<p>使用 <code>lazy_static</code> 创建的静态变量是线程安全的，并且保证只初始化一次。初始化发生在变量首次被访问的时候，并且如果初始化过程中发生了 <code>panic</code>，后续尝试访问该变量将会导致 <code>panic</code>。</p>
+<p>下面是一个 <code>lazy_static</code> 的简单例子：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">lazy_static</span> = <span class="string">&quot;*&quot;</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[macro_use]</span></span><br><span class="line"><span class="keyword">extern</span> <span class="keyword">crate</span> lazy_static;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> std::collections::HashMap;</span><br><span class="line"></span><br><span class="line">lazy_static! &#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">ref</span> MY_MAP: HashMap&lt;<span class="type">u32</span>, &amp;<span class="symbol">&#x27;static</span> <span class="type">str</span>&gt; = &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">m</span> = HashMap::<span class="title function_ invoke__">new</span>();</span><br><span class="line">        m.<span class="title function_ invoke__">insert</span>(<span class="number">0</span>, <span class="string">&quot;foo&quot;</span>);</span><br><span class="line">        m.<span class="title function_ invoke__">insert</span>(<span class="number">1</span>, <span class="string">&quot;bar&quot;</span>);</span><br><span class="line">        m</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;The entry for `0` is \&quot;&#123;&#125;\&quot;.&quot;</span>, MY_MAP.<span class="title function_ invoke__">get</span>(&amp;<span class="number">0</span>).<span class="title function_ invoke__">unwrap</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，<code>MY_MAP</code> 是一个 <code>HashMap</code>，它在首次被 <code>main</code> 函数中的 <code>println!</code> 宏访问时被创建和初始化。由于 <code>lazy_static</code> 保证了线程安全和只初始化一次，<code>MY_MAP</code> 可以在程序的任何地方安全地使用，就像其他静态变量一样。</p>
+<h3 id="6-1-4-drain"><a href="#6-1-4-drain" class="headerlink" title="6.1.4 drain"></a>6.1.4 <code>drain</code></h3><p><code>drain</code>是<code>String</code>类型的方法，用来移除并遍历字符串的一部分内容。<code>drain</code> 方法会在原地修改 <code>String</code>，并返回一个迭代器，该迭代器提供被移除部分的字符。</p>
+<p>使用 <code>drain</code> 方法时，需要指定一个范围来表明想要从字符串中移除哪些字符。范围是采用字节索引而非字符索引，这意味着必须确保范围的边界落在有效的<code>UTF-8字</code>符边界上，否则程序会在运行时<code>panic</code></p>
+<p>以下是一个使用 <code>drain</code> 方法的例子：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">s</span> = <span class="type">String</span>::<span class="title function_ invoke__">from</span>(<span class="string">&quot;Hello, world!&quot;</span>);</span><br><span class="line">    <span class="comment">// 移除字符串中的 &quot;world&quot; 部分</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">drained</span>: <span class="type">String</span> = s.<span class="title function_ invoke__">drain</span>(<span class="number">7</span>..<span class="number">12</span>).<span class="title function_ invoke__">collect</span>(); <span class="comment">// world</span></span><br><span class="line">    <span class="comment">// 输出被移除的部分</span></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Drained part: &#123;&#125;&quot;</span>, drained);</span><br><span class="line">    <span class="comment">// 输出修改后的字符串</span></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Remaining string: &#123;&#125;&quot;</span>, s); <span class="comment">// &quot;Hello, !</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-1-5-项目代码中使用过的宏"><a href="#6-1-5-项目代码中使用过的宏" class="headerlink" title="6.1.5 项目代码中使用过的宏"></a>6.1.5 项目代码中使用过的宏</h3><p>下面是我整理的项目代码中使用的<code>rust</code>宏的含义, 这些宏大概了解其作用就可以, 在需要用时知道查什么关键字即可:<br>以下是对所提供的 Rust 属性和宏的解释，整理成 Markdown 表格的形式：</p>
+<table>
+<thead>
+<tr>
+<th>宏&#x2F;属性</th>
+<th>解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>#[repr(align(4096))]</code></td>
+<td>设置结构体或枚举的内存对齐方式为 4096 字节。</td>
+</tr>
+<tr>
+<td><code>#![feature(panic_info_message)]</code></td>
+<td>允许使用实验性的 <code>panic_info_message</code> 功能，此功能允许访问 panic 信息中的消息内容。</td>
+</tr>
+<tr>
+<td><code>#[macro_use]</code></td>
+<td>允许在当前作用域中使用外部 <code>crate</code> 中定义的宏。</td>
+</tr>
+<tr>
+<td><code>use core::arch::global_asm;</code></td>
+<td>引入 <code>global_asm!</code> 宏，允许在 <code>Rust</code> 代码中嵌入全局汇编指令。</td>
+</tr>
+<tr>
+<td><code>#[path = &quot;boards/qemu.rs&quot;]</code> <code>mod board</code>;</td>
+<td>指定模块文件的路径，这里是将模块文件定位到 <code>boards/qemu.rs</code>。</td>
+</tr>
+<tr>
+<td><code>#[no_mangle]</code></td>
+<td>禁用名称修饰，确保编译器生成的函数名称与在 <code>Rust</code> 中声明的名称相同。</td>
+</tr>
+<tr>
+<td><code>#[inline(always)]</code></td>
+<td>告诉编译器总是内联一个函数，无论编译器优化策略如何。</td>
+</tr>
+<tr>
+<td><code>#[linkage = &quot;weak&quot;]</code></td>
+<td>指定符号的链接强度为弱链接，允许在多个对象文件中定义相同的全局符号而不会导致链接错误，链接器将选择其中一个定义。</td>
+</tr>
+<tr>
+<td><code>#[link_section = &quot;.text.entry&quot;]</code></td>
+<td>指定函数或静态变量应该放置在特定的链接段中，在这个例子中是一个名为 <code>.text.entry</code> 的段。</td>
+</tr>
+<tr>
+<td><code>#[repr(C)]</code></td>
+<td>设置结构体或枚举的内存布局为 C 语言风格，这在与 C 代码交互时非常有用，因为它能保证字段在内存中的布局与 C 结构体相同。</td>
+</tr>
+<tr>
+<td><code>#![feature(linkage)]</code></td>
+<td>允许使用实验性的 <code>linkage</code> 属性，这个属性用于控制符号的链接方式。</td>
+</tr>
+<tr>
+<td><code>#![feature(alloc_error_handler)]</code></td>
+<td>允许自定义全局内存分配错误处理器。</td>
+</tr>
+<tr>
+<td><code>#![no_std]</code></td>
+<td>表明当前的程序或库不会链接到 <code>Rust</code> 的标准库 <code>std</code>，通常用于裸机或嵌入式编程中，其中资源受限，只能依赖核心库 <code>core</code>。</td>
+</tr>
+<tr>
+<td><code>#![no_main]</code></td>
+<td>禁用 <code>Rust</code> 默认的入口点，这通常用在裸机或操作系统开发中，因为在这些情况下开发者需要自定义入口点。</td>
+</tr>
+</tbody></table>
+<h3 id="6-1-6-build-rs构建脚本"><a href="#6-1-6-build-rs构建脚本" class="headerlink" title="6.1.6 build.rs构建脚本"></a>6.1.6 <code>build.rs</code>构建脚本</h3><p><code>Rust</code> 中，<code>build.rs</code> 是一个特殊的脚本，被称为”构建脚本”（build script）。它在项目构建过程的开始阶段被 <code>Cargo</code>执行。构建脚本通常用于编译时计算或生成代码、构建或链接非 <code>Rust</code> 代码（例如 C 库），或自动生成 <code>Rust</code> 代码之前的某些配置。</p>
+<ol>
+<li>构建脚本是可选的，只有当项目需要在编译前执行特定的任务时才会使用到。这个脚本必须是一个有效的 <code>Rust</code> 程序，<code>Cargo</code> 会将其编译并执行。</li>
+<li>当运行 <code>cargo build</code> 或相关的 <code>Cargo</code> 构建命令时，<code>Cargo</code> 会在编译项目的其余部分之前运行 <code>build.rs</code> 脚本。如果构建脚本执行成功，它可能会通过创建一个 <code>OUT_DIR</code> 环境变量来生成文件，Rust 代码可以在编译时通过 <code>include!</code> 或其他宏来访问这些文件。</li>
+<li>如果 <code>build.rs</code> 脚本生成了编译器指令，它们将作为标准输出打印，并被 Cargo 捕获。这些指令可以包括链接库、设置环境变量、传递编译器标志等。</li>
+</ol>
+<p>在本项目中, <code>build.rs</code>用于生成<code>link_app.S</code>汇编文件, 将<code>user</code>项目编译的二进制文件引入进来：</p>
+<h2 id="6-2-riscv汇编代码补充知识"><a href="#6-2-riscv汇编代码补充知识" class="headerlink" title="6.2 riscv汇编代码补充知识"></a>6.2 riscv汇编代码补充知识</h2><h3 id="6-2-1-变量声明与二进制文件嵌入"><a href="#6-2-1-变量声明与二进制文件嵌入" class="headerlink" title="6.2.1 变量声明与二进制文件嵌入"></a>6.2.1 变量声明与二进制文件嵌入</h3><p>这次新增的<code>riscv</code>汇编代码主要是<code>link_app.S</code>这个文件:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><span class="line">    .align 3</span><br><span class="line">    .section .data</span><br><span class="line">    .global _num_app</span><br><span class="line">_num_app:</span><br><span class="line">    .quad 7</span><br><span class="line">    .quad app_0_start</span><br><span class="line">    .quad app_1_start</span><br><span class="line">    .quad app_2_start</span><br><span class="line">    .quad app_3_start</span><br><span class="line">    .quad app_4_start</span><br><span class="line">    .quad app_5_start</span><br><span class="line">    .quad app_6_start</span><br><span class="line">    .quad app_6_end</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_0_start</span><br><span class="line">    .global app_0_end</span><br><span class="line">app_0_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_bad_address.bin&quot;</span></span><br><span class="line">app_0_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_1_start</span><br><span class="line">    .global app_1_end</span><br><span class="line">app_1_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_bad_instructions.bin&quot;</span></span><br><span class="line">app_1_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_2_start</span><br><span class="line">    .global app_2_end</span><br><span class="line">app_2_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_bad_register.bin&quot;</span></span><br><span class="line">app_2_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_3_start</span><br><span class="line">    .global app_3_end</span><br><span class="line">app_3_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_hello_world.bin&quot;</span></span><br><span class="line">app_3_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_4_start</span><br><span class="line">    .global app_4_end</span><br><span class="line">app_4_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_power_3.bin&quot;</span></span><br><span class="line">app_4_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_5_start</span><br><span class="line">    .global app_5_end</span><br><span class="line">app_5_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_power_5.bin&quot;</span></span><br><span class="line">app_5_end:</span><br><span class="line"></span><br><span class="line">    .section .data</span><br><span class="line">    .global app_6_start</span><br><span class="line">    .global app_6_end</span><br><span class="line">app_6_start:</span><br><span class="line">    .incbin <span class="string">&quot;../user/build/bin/ch2b_power_7.bin&quot;</span></span><br><span class="line">app_6_end:</span><br></pre></td></tr></table></figure>
+
+<p>上述汇编代码定义类每一个<code>app</code>的起始位置的符号, 设计的新的语法如下:</p>
+<ol>
+<li><code>.quad</code><br>用于定义一个或多个8字节大小的数据元素。每个<code>.quad</code> 表示一个64位（即8字节）的值。这个指令常被用于分配内存空间，并初始化数据段中的常量值。这段代码中,<code>_num_app</code>位置后的<code>quad</code>记录了这7个<code>app</code>的开始位置</li>
+<li><code>.incbin</code><br>直接在当前位置包含（嵌入）一个二进制文件的内容。还可以指定文件中的位置和长度, 例如: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.incbin <span class="string">&quot;data.bin&quot;</span>, 100, 50</span><br></pre></td></tr></table></figure>
+ 这句的含义是: 包含 <code>data.bin</code> 文件从第 100 个字节开始的接下来的 50 个字节</li>
+</ol>
+<h2 id="6-2-2-宏定义"><a href="#6-2-2-宏定义" class="headerlink" title="6.2.2 宏定义"></a>6.2.2 宏定义</h2><p>我们在<code>trap.S</code>中看到了下面的宏定义代码</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">.altmacro</span><br><span class="line">.macro SAVE_GP n</span><br><span class="line">    sd x\n, \n*8(sp)</span><br><span class="line">.endm</span><br><span class="line">.macro LOAD_GP n</span><br><span class="line">    ld x\n, \n*8(sp)</span><br><span class="line">.endm</span><br></pre></td></tr></table></figure>
+<p><code>.altmacro</code> 指令用于开启或关闭“替代宏语法模式”（alternate macro syntax mode）当<code>altmacro</code> 指令出现在文件中时，它会切换当前的宏处理模式。如果在 <code>.altmacro</code> 出现之前是标准宏模式，那么之后就会切换到替代宏模式；反之亦然。</p>
+<p>在替代宏模式下，可以使用 <code>\()</code> 来对参数进行求值，允许宏内部对参数进行算术运算。此外，还可以使用更复杂的字符串处理功能，比如连接字符串或使用条件表达式。</p>
+<p>在这里，<code>.altmacro</code> 可能是用来确保宏定义中的 <code>\n</code> 参数可以正常地被替换和计算。在 <code>.altmacro</code> 模式下，宏 <code>SAVE_GP</code> 和 <code>LOAD_GP</code> 中的 <code>\n</code> 会在宏展开时被实际传递的参数值所替换，并计算出正确的偏移量。</p>
+<p>例如，如果使用 <code>SAVE_GP 2</code>，替代宏模式会确保宏展开为 <code>sd x2, 16(sp)</code>，这会将 <code>x2</code> 寄存器的内容保存到栈指针（<code>sp</code>）地址加上 16 字节处的内存位置（因为 <code>2 * 8 = 16</code>）。同理，<code>LOAD_GP</code> 宏则用于从相同的内存位置将数据加载回 <code>x2</code> 寄存器。</p>
+<h2 id="6-3-stvec的模式"><a href="#6-3-stvec的模式" class="headerlink" title="6.3 stvec的模式"></a>6.3 <code>stvec</code>的模式</h2><p><code>stvec</code> 存储处理器在发生异常或中断时跳转到的异常处理基地址（<code>trap handler</code>的入口地址）。<code>stvec</code> 寄存器有两种模式：</p>
+<ol>
+<li><code>Direct Mode</code> (直接模式)<br>在直接模式下，当异常发生时，处理器会跳转到 <code>stvec</code> 寄存器中设置的地址开始执行异常处理程序。所有的异常和中断都会导致处理器跳转到这个单一的入口点，然后由异常处理程序根据异常原因码来处理不同的情况。</li>
+<li><code>Vectored Mode</code> (向量模式)<br>在向量模式下，<code>stvec</code> 寄存器中的地址是中断向量表的基地址。当异常发生时，处理器会根据异常类型的不同来计算跳转地址。每种异常类型有一个固定的偏移量，处理器会将这个偏移量加到基地址上，计算得到对应的异常处理程序的地址，并跳转到该地址执行。</li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B"><span class="toc-number">1.</span> <span class="toc-text">1 整体流程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%89%B9%E6%9D%83%E7%BA%A7"><span class="toc-number">2.</span> <span class="toc-text">2 特权级</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%89%B9%E6%9D%83%E7%BA%A7%E7%9A%84%E6%A6%82%E5%BF%B5"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 特权级的概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E7%9A%84%E5%88%87%E6%8D%A2"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 特权级的切换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2%E6%8C%87%E4%BB%A4%E5%92%8C%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 特权级切换指令和寄存器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E5%8F%91%E7%94%9F%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 什么时候会发生特权级切换?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2%E6%8C%87%E4%BB%A4%E5%92%8C%E5%AF%84%E5%AD%98%E5%99%A8"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 特权级切换指令和寄存器</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">3.</span> <span class="toc-text">3 特权级切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 系统调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%89%B9%E6%9D%83%E7%BA%A7%E5%88%87%E6%8D%A2"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 特权级切换</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81"><span class="toc-number">4.</span> <span class="toc-text">4 用户代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E6%A6%82%E8%A7%88"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 用户代码概览</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%94%A8%E6%88%B7%E5%BA%93user-lib"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 用户库user_lib</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%86%85%E6%A0%B8%E4%BB%A3%E7%A0%81"><span class="toc-number">5.</span> <span class="toc-text">5 内核代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%86%85%E6%A0%B8%E4%BB%A3%E7%A0%81%E5%92%8C%E7%94%A8%E6%88%B7%E4%BB%A3%E7%A0%81%E7%9A%84%E9%93%BE%E6%8E%A5"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 内核代码和用户代码的链接</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%86%85%E6%A0%B8%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 内核的调度</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-1-%E8%B0%83%E5%BA%A6%E5%99%A8%E7%9A%84%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">5.2.1.</span> <span class="toc-text">5.2.1 调度器的数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-2-%E5%8A%A0%E8%BD%BD%E7%A8%8B%E5%BA%8F"><span class="toc-number">5.2.2.</span> <span class="toc-text">5.2.2 加载程序</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Trap%E4%B8%8A%E4%B8%8B%E6%96%87%E5%88%87%E6%8D%A2"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Trap上下文切换</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-1-%E7%94%A8%E6%88%B7%E6%A0%88%E5%92%8C%E5%86%85%E6%A0%B8%E6%A0%88"><span class="toc-number">5.3.1.</span> <span class="toc-text">5.3.1 用户栈和内核栈</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-2-%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BF%A1%E6%81%AF"><span class="toc-number">5.3.2.</span> <span class="toc-text">5.3.2 上下文信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-3-app%E8%B0%83%E5%BA%A6"><span class="toc-number">5.3.3.</span> <span class="toc-text">5.3.3 app调度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-4-Trap%E6%81%A2%E5%A4%8D%E4%B8%8A%E4%B8%8B%E6%96%87"><span class="toc-number">5.3.4.</span> <span class="toc-text">5.3.4 Trap恢复上下文</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-Trap-Handler"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 Trap Handler</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">5.5.</span> <span class="toc-text">5.5 流程图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.</span> <span class="toc-text">6 补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-Rust%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 Rust补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-1-RefCell"><span class="toc-number">6.1.1.</span> <span class="toc-text">6.1.1 RefCell</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-2-bitflags"><span class="toc-number">6.1.2.</span> <span class="toc-text">6.1.2 bitflags</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-3-lazy-static"><span class="toc-number">6.1.3.</span> <span class="toc-text">6.1.3 lazy_static</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-4-drain"><span class="toc-number">6.1.4.</span> <span class="toc-text">6.1.4 drain</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-5-%E9%A1%B9%E7%9B%AE%E4%BB%A3%E7%A0%81%E4%B8%AD%E4%BD%BF%E7%94%A8%E8%BF%87%E7%9A%84%E5%AE%8F"><span class="toc-number">6.1.5.</span> <span class="toc-text">6.1.5 项目代码中使用过的宏</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-6-build-rs%E6%9E%84%E5%BB%BA%E8%84%9A%E6%9C%AC"><span class="toc-number">6.1.6.</span> <span class="toc-text">6.1.6 build.rs构建脚本</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-riscv%E6%B1%87%E7%BC%96%E4%BB%A3%E7%A0%81%E8%A1%A5%E5%85%85%E7%9F%A5%E8%AF%86"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 riscv汇编代码补充知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-1-%E5%8F%98%E9%87%8F%E5%A3%B0%E6%98%8E%E4%B8%8E%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%96%87%E4%BB%B6%E5%B5%8C%E5%85%A5"><span class="toc-number">6.2.1.</span> <span class="toc-text">6.2.1 变量声明与二进制文件嵌入</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-2-%E5%AE%8F%E5%AE%9A%E4%B9%89"><span class="toc-number">6.3.</span> <span class="toc-text">6.2.2 宏定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-stvec%E7%9A%84%E6%A8%A1%E5%BC%8F"><span class="toc-number">6.4.</span> <span class="toc-text">6.3 stvec的模式</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&text=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter2笔记&body=Check out this article: http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&title=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&name=清华大学开源操作系统训练营: rCore chapter2笔记&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/12/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch2%E7%AC%94%E8%AE%B0/&t=清华大学开源操作系统训练营: rCore chapter2笔记"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文将介绍lab3A部分的实现, lab3A要求基于raft实现一个容错的分布式KV数据库, 但不要求实现快照, 难度还是不小 Lab文档见: http:&#x2F;&#x2F;nil.csail.mit.edu&#x2F;6.5840&#x2F;2023&#x2F;labs&#x2F;lab-kvraft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;ToniXWD&#x2F;MIT6.5840&#x2F;tree&#x2F;lab3A 1 lab2:Raft bug">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lab3: 分布式KV数据库 3A">
+<meta property="og:url" content="http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="本文将介绍lab3A部分的实现, lab3A要求基于raft实现一个容错的分布式KV数据库, 但不要求实现快照, 难度还是不小 Lab文档见: http:&#x2F;&#x2F;nil.csail.mit.edu&#x2F;6.5840&#x2F;2023&#x2F;labs&#x2F;lab-kvraft.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;ToniXWD&#x2F;MIT6.5840&#x2F;tree&#x2F;lab3A 1 lab2:Raft bug">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/raft_diagram.png">
+<meta property="og:image" content="http://example.com/images/Lec06-raft-kv.png">
+<meta property="og:image" content="http://example.com/images/lab3-3A-test.png">
+<meta property="article:published_time" content="2024-01-30T12:21:22.000Z">
+<meta property="article:modified_time" content="2024-02-22T02:09:39.985Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/raft_diagram.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lab3: 分布式KV数据库 3A</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/02/02/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/%E7%BA%A2%E9%BB%91%E6%A0%91/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/19/MIT6.5840/Lec10%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&text=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&is_video=false&description=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A&body=Check out this article: http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&name=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&t=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-lab2-Raft-bug-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 lab2:Raft bug 修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%BF%83%E8%B7%B3%E5%8F%91%E9%80%81%E9%80%BB%E8%BE%91%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 心跳发送逻辑修复</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-1-bug%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1.1 bug描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-2-%E4%BF%AE%E6%94%B9%E6%96%B9%E6%A1%88"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.1.2 修改方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%8A%95%E7%A5%A8%E9%80%BB%E8%BE%91%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 投票逻辑修复</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-bug%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 bug描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E4%BF%AE%E6%94%B9%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 修改方案</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-KV%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 KV数据库架构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.</span> <span class="toc-text">3 设计思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E7%BA%BF%E6%80%A7%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 为什么会线性不一致?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E7%8E%B0%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E6%80%9D%E8%B7%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实现线性一致性的思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E9%87%8D%E5%A4%8D%E8%AF%B7%E6%B1%82%EF%BC%9F"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 如何判断重复请求？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E9%87%8D%E5%A4%8D%E8%AF%B7%E6%B1%82%EF%BC%9F"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 如何处理重复请求？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 具体实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-client%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 client实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-1-%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.1.</span> <span class="toc-text">4.1.1 结构体设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-2-client-RPC%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.2.</span> <span class="toc-text">4.1.2 client RPC设计</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2-1-RPC%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.2.1.</span> <span class="toc-text">4.1.2.1 RPC结构体设计</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2-2-Put-Append"><span class="toc-number">4.1.2.2.</span> <span class="toc-text">4.1.2.2 Put&#x2F;Append</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Server%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Server实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-Server%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 Server设计思路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 结构体设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-RPC-handler%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 RPC handler设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-4-ApplyHandler%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.4.</span> <span class="toc-text">4.2.4 ApplyHandler设计</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lab3: 分布式KV数据库 3A
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-01-30T12:21:22.000Z" class="dt-published" itemprop="datePublished">2024-01-30</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/Lab%E7%AC%94%E8%AE%B0/">Lab笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Go/" rel="tag">Go</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文将介绍<code>lab3A</code>部分的实现, <code>lab3A</code>要求基于<code>raft</code>实现一个容错的分布式<code>KV</code>数据库, 但不要求实现快照, 难度还是不小</p>
+<p><code>Lab</code>文档见: <a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.5840/2023/labs/lab-kvraft.html">http://nil.csail.mit.edu/6.5840/2023/labs/lab-kvraft.html</a></p>
+<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab3A">https://github.com/ToniXWD/MIT6.5840/tree/lab3A</a></p>
+<h1 id="1-lab2-Raft-bug-修复"><a href="#1-lab2-Raft-bug-修复" class="headerlink" title="1 lab2:Raft bug 修复"></a>1 <code>lab2:Raft bug </code>修复</h1><p>首先又是万恶的老旧代码<code>bug</code>修复</p>
+<h2 id="1-1-心跳发送逻辑修复"><a href="#1-1-心跳发送逻辑修复" class="headerlink" title="1.1 心跳发送逻辑修复"></a>1.1 心跳发送逻辑修复</h2><h3 id="1-1-1-bug描述"><a href="#1-1-1-bug描述" class="headerlink" title="1.1.1 bug描述"></a>1.1.1 <code>bug</code>描述</h3><p>在<code>lab3A</code>中, <code>kv</code>数据库的命令要求命令能够尽快被<code>commit</code>, 且要求比一个心跳间隔更快, 但我在<code>lab2</code>的实现中, 无论是否调用了<code>Start</code>, 都不影响心跳的发送频率, 因此自然<code>commit</code>速度很慢, 过不了测试。因此需要修改<code>lab2</code>中<code>Start</code>, 使其立即唤醒一次心跳</p>
+<h3 id="1-1-2-修改方案"><a href="#1-1-2-修改方案" class="headerlink" title="1.1.2 修改方案"></a>1.1.2 修改方案</h3><p>由于需要在发送心跳的携程函数<code>SendHeartBeats</code>外控制心跳发送, 因此可以简单地修改<code>SendHeartBeats</code>通过事件触发心跳发送, 而不是发送后简单地<code>Sleep</code>,</p>
+<ol>
+<li>首先设置一个心跳定时器<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Raft <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    heartTimer *time.Timer</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><code>SendHeartBeats</code>通过事件触发心跳发送<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> SendHeartBeats() &#123;</span><br><span class="line">	<span class="keyword">for</span> !rf.killed() &#123;</span><br><span class="line">		&lt;-rf.heartTimer.C</span><br><span class="line">		...</span><br><span class="line">		rf.ResetHeartTimer(HeartBeatTimeOut)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> ResetHeartTimer(timeStamp <span class="type">int</span>) &#123;</span><br><span class="line">	rf.heartTimer.Reset(time.Duration(timeStamp) * time.Millisecond)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><code>Start</code>函数理解触发心跳<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> Start(command <span class="keyword">interface</span>&#123;&#125;) (<span class="type">int</span>, <span class="type">int</span>, <span class="type">bool</span>) &#123;</span><br><span class="line">    ...</span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		rf.ResetHeartTimer(<span class="number">1</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> rf.VirtualLogIdx(<span class="built_in">len</span>(rf.log) - <span class="number">1</span>), rf.currentTerm, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+其余重设定时器的地方就不在赘述了</li>
+</ol>
+<h2 id="1-2-投票逻辑修复"><a href="#1-2-投票逻辑修复" class="headerlink" title="1.2 投票逻辑修复"></a>1.2 投票逻辑修复</h2><h3 id="1-2-1-bug描述"><a href="#1-2-1-bug描述" class="headerlink" title="1.2.1 bug描述"></a>1.2.1 <code>bug</code>描述</h3><p>简单说就是某节点2轮选举撞在了一起, 首先先回顾选举相关的结构体成员:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Raft <span class="keyword">struct</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">	muVote    sync.Mutex <span class="comment">// 保护投票数据</span></span><br><span class="line">	voteCount <span class="type">int</span>        <span class="comment">// 票数</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个<code>bug</code>原来本来是没有的, 因为之前<code>Start</code>并不会立即发送心跳，所以不容易出现如<code>RPC</code>重复, <code>RPC</code>乱序等问题, 但修改了<code>Start</code>后, 并发场景更复杂, 因此出现了如下的场景:</p>
+<ol>
+<li>某一时刻<code>Follower 2</code>进行选举</li>
+<li><code>Follower 2</code>选举还没结束时, 又收到了新的<code>Leader</code>的心跳, 证明选举结束了, 但由于选举的某个携程的<code>RPC</code>响应很慢, 其还没有进行选举是否结束(自身变为了<code>Follower</code>)的判断</li>
+<li>选举超时又被触发, <code>Follower 2</code>进行新一轮选举, 由于票数是以结构体成员<code>voteCount</code>保存的, 因此<code>voteCount</code>可能与之前的选票发生冲突</li>
+</ol>
+<h3 id="1-2-2-修改方案"><a href="#1-2-2-修改方案" class="headerlink" title="1.2.2 修改方案"></a>1.2.2 修改方案</h3><p>既然结构体成员会发生冲突, 那不如为每轮选票临时创建一个成员和投票锁:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> Elect() &#123;</span><br><span class="line">	<span class="comment">// 特别注意, 要先对muVote加锁, 再对mu加锁, 这是为了统一获取锁的顺序以避免死锁</span></span><br><span class="line"></span><br><span class="line">	...</span><br><span class="line">	voteCount := <span class="number">1</span>      <span class="comment">// 自己有一票</span></span><br><span class="line">	<span class="keyword">var</span> muVote sync.Mutex <span class="comment">// 临时的投票锁</span></span><br><span class="line">	...</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="built_in">len</span>(rf.peers); i++ &#123;</span><br><span class="line">		<span class="keyword">if</span> i == rf.me &#123;</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">go</span> rf.collectVote(i, args, &amp;muVote, &amp;voteCount)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>collectVote</code>函数就不展示了, 将原来的结构体成员<code>muVote</code>和<code>voteCount</code>换为临时创建的变量即可</p>
+<h1 id="2-KV数据库架构"><a href="#2-KV数据库架构" class="headerlink" title="2 KV数据库架构"></a>2 KV数据库架构</h1><p>首先先贴出官方提供的架构图:</p>
+<p><img src="/../../images/raft_diagram.png" alt="raftkv-structure1"></p>
+<p>简单说, 我们要建立的<code>KV</code>数据库是位于<code>raft</code>层之上的, 或者说我们的<code>KV</code>数据库使用了<code>raft</code>库。客户端（就是代码中的<code>clerk</code>）调用应用层(<code>server</code>)的<code>RPC</code>，应用层收到<code>RPC</code>之后，会调用<code>Start</code>函数，<code>Start</code>函数会立即返回，但是这时，应用层不会返回消息给客户端，因为它还没有执行客户端请求，它也不知道这个请求是否会被<code>Raft</code>层<code>commit</code>。只有在某一时刻，对应于这个客户端请求的消息在<code>applyCh channel</code>中出现, 应用层才会执行这个请求，并返回响应给客户端。</p>
+<p>对于上述过程, 可参考我在课堂笔记中画的图:</p>
+<p><img src="/../../images/Lec06-raft-kv.png" alt="raftkv-structure2"></p>
+<h1 id="3-设计思路"><a href="#3-设计思路" class="headerlink" title="3 设计思路"></a>3 设计思路</h1><h2 id="3-1-为什么会线性不一致"><a href="#3-1-为什么会线性不一致" class="headerlink" title="3.1 为什么会线性不一致?"></a>3.1 为什么会线性不一致?</h2><p><code>clerk</code>和真正的客户端交互并管理<code>RPC</code>, 而<code>server</code>收到请求后需要将请求传递给<code>raft</code>层进行集群复制, 然后收到<code>raft</code>的<code>commit</code>, 在应用到状态机并返回给客户端。</p>
+<p>但问题在于需要确保以上操作的线性一致性， 那什么时候会出现线形不一致的情况呢？就是重复的请求。因为网络问题，<code>clerk</code>可能认为之前的请求丢包了， 所以会再次发送请求。而<code>raft</code>层是无法判断这个请求是否重复的, 如果<code>server</code>层没有特殊处理, 有的请可能在客户端看来只执行了一次, 但在<code>server</code>执行了多次, 并且如果这是<code>Put</code>等改变状态机的请求, 执行了多次将导致逻辑错误。</p>
+<h2 id="3-2-实现线性一致性的思路"><a href="#3-2-实现线性一致性的思路" class="headerlink" title="3.2 实现线性一致性的思路"></a>3.2 实现线性一致性的思路</h2><h3 id="3-2-1-如何判断重复请求？"><a href="#3-2-1-如何判断重复请求？" class="headerlink" title="3.2.1 如何判断重复请求？"></a>3.2.1 如何判断重复请求？</h3><p>首先，<code>server</code>需要判断某一个请求是否重复，最简单的方法就是让<code>clerk</code>携带一个全局递增的序列号，并且<code>server</code>需要在第一次将这个请求应用到状态机时记录这个序列号, 用以判断后续的请求是否重复。由于<code>clerk</code>不是并发的, 所以<code>server</code>只需要记录某个<code>clerk</code>序列号最高的一个请求即可, 序列号更低的请求不会出现, 只需要考虑请求重复的场景。</p>
+<h3 id="3-2-2-如何处理重复请求？"><a href="#3-2-2-如何处理重复请求？" class="headerlink" title="3.2.2 如何处理重复请求？"></a>3.2.2 如何处理重复请求？</h3><p>除了记录某个<code>clerk</code>请求的序列号外， 还需要记录器执行结果，因为如果是一个重复的<code>Get</code>请求, 其返回的结果应该与其第一次发送请求时一致, 否则将导致线性不一致。如果是重复的<code>Put</code>等改变状态机的请求，就不应该被执行</p>
+<p><strong>总结下来, 思路就是:</strong></p>
+<ol>
+<li>重复的<code>Put/Append</code>请求只在第一次出现时应用到状态机</li>
+<li>记录每次应用到状态机的请求结果和序列号</li>
+</ol>
+<h1 id="4-具体实现"><a href="#4-具体实现" class="headerlink" title="4 具体实现"></a>4 具体实现</h1><h2 id="4-1-client实现"><a href="#4-1-client实现" class="headerlink" title="4.1 client实现"></a>4.1 <code>client</code>实现</h2><h3 id="4-1-1-结构体设计"><a href="#4-1-1-结构体设计" class="headerlink" title="4.1.1 结构体设计"></a>4.1.1 结构体设计</h3><p>先贴代码:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Clerk <span class="keyword">struct</span> &#123;</span><br><span class="line">	servers    []*labrpc.ClientEnd</span><br><span class="line">	seq        <span class="type">uint64</span></span><br><span class="line">	identifier <span class="type">int64</span></span><br><span class="line">	leaderId   <span class="type">int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>identifier</code>用于标识<code>clerk</code>, <code>seq</code>是单调递增的序列号, 标记请求, <code>identifier</code>和<code>seq</code>一起标记了唯一的请求, <code>leaderId</code>记录领导者</p>
+<h3 id="4-1-2-client-RPC设计"><a href="#4-1-2-client-RPC设计" class="headerlink" title="4.1.2 client RPC设计"></a>4.1.2 <code>client RPC</code>设计</h3><h4 id="4-1-2-1-RPC结构体设计"><a href="#4-1-2-1-RPC结构体设计" class="headerlink" title="4.1.2.1 RPC结构体设计"></a>4.1.2.1 <code>RPC</code>结构体设计</h4><p><code>RPC</code>请求只需要额外携带<code>identifier</code>和<code>seq</code>, <code>RPC</code>回复则需要携带结果和错误信息:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> PutAppendArgs <span class="keyword">struct</span> &#123;</span><br><span class="line">	Key        <span class="type">string</span></span><br><span class="line">	Value      <span class="type">string</span></span><br><span class="line">	Op         <span class="type">string</span> <span class="comment">// &quot;Put&quot; or &quot;Append&quot;</span></span><br><span class="line">	Seq        <span class="type">uint64</span></span><br><span class="line">	Identifier <span class="type">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> PutAppendReply <span class="keyword">struct</span> &#123;</span><br><span class="line">	Err Err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> GetArgs <span class="keyword">struct</span> &#123;</span><br><span class="line">	Key        <span class="type">string</span></span><br><span class="line">	Seq        <span class="type">uint64</span></span><br><span class="line">	Identifier <span class="type">int64</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> GetReply <span class="keyword">struct</span> &#123;</span><br><span class="line">	Err   Err</span><br><span class="line">	Value <span class="type">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-1-2-2-Put-Append"><a href="#4-1-2-2-Put-Append" class="headerlink" title="4.1.2.2 Put/Append"></a>4.1.2.2 <code>Put/Append</code></h4><p>这2个函数很简单 ,不断轮询<code>server</code>即可, 但是需要注意, 如果对方返回了超时错误和通道关闭错误等意料之外的错误, 需要重试</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> Get(key <span class="type">string</span>) <span class="type">string</span> &#123;</span><br><span class="line">	args := &amp;GetArgs&#123;Key: key, Seq: ck.GetSeq(), Identifier: ck.identifier&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		reply := &amp;GetReply&#123;&#125;</span><br><span class="line">		ok := ck.servers[ck.leaderId].Call(<span class="string">&quot;KVServer.Get&quot;</span>, args, reply)</span><br><span class="line">		<span class="keyword">if</span> !ok || reply.Err == ErrNotLeader || reply.Err == ErrLeaderOutDated &#123;</span><br><span class="line">			ck.leaderId += <span class="number">1</span></span><br><span class="line">			ck.leaderId %= <span class="built_in">len</span>(ck.servers)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">switch</span> reply.Err &#123;</span><br><span class="line">		<span class="keyword">case</span> ErrChanClose:</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrHandleOpTimeOut:</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrKeyNotExist:</span><br><span class="line">			<span class="keyword">return</span> reply.Value</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">return</span> reply.Value</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> PutAppend(key <span class="type">string</span>, value <span class="type">string</span>, op <span class="type">string</span>) &#123;</span><br><span class="line">	<span class="comment">// You will have to modify this function.</span></span><br><span class="line">	args := &amp;PutAppendArgs&#123;Key: key, Value: value, Op: op, Seq: ck.GetSeq(), Identifier: ck.identifier&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		reply := &amp;PutAppendReply&#123;&#125;</span><br><span class="line">		ok := ck.servers[ck.leaderId].Call(<span class="string">&quot;KVServer.PutAppend&quot;</span>, args, reply)</span><br><span class="line">		<span class="keyword">if</span> !ok || reply.Err == ErrNotLeader || reply.Err == ErrLeaderOutDated &#123;</span><br><span class="line">			ck.leaderId += <span class="number">1</span></span><br><span class="line">			ck.leaderId %= <span class="built_in">len</span>(ck.servers)</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">switch</span> reply.Err &#123;</span><br><span class="line">		<span class="keyword">case</span> ErrChanClose:</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		<span class="keyword">case</span> ErrHandleOpTimeOut:</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> Put(key <span class="type">string</span>, value <span class="type">string</span>) &#123;</span><br><span class="line">	ck.PutAppend(key, value, <span class="string">&quot;Put&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ck *Clerk)</span></span> Append(key <span class="type">string</span>, value <span class="type">string</span>) &#123;</span><br><span class="line">	ck.PutAppend(key, value, <span class="string">&quot;Append&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>重试<code>RPC</code>时, 需要新建<code>reply</code>结构体, 重复使用同一个结构体将导致<code>labgob</code>报错</p>
+</blockquote>
+<h2 id="4-2-Server实现"><a href="#4-2-Server实现" class="headerlink" title="4.2 Server实现"></a>4.2 <code>Server</code>实现</h2><h3 id="4-2-1-Server设计思路"><a href="#4-2-1-Server设计思路" class="headerlink" title="4.2.1 Server设计思路"></a>4.2.1 <code>Server</code>设计思路</h3><p>根据前文分析可知, <code>RPC handler</code>(就是<code>Get/Put handler</code>)只会在<code>raft</code>层的<code>commit</code>信息到达后才能回复, 因此其逻辑顺序就是</p>
+<ol>
+<li>将请求封装后通过接口<code>Start</code>交付给<code>raft</code>层<ol>
+<li>如果<code>raft</code>层节点不是<code>Leader</code>, 返回相应错误</li>
+<li>否则继续</li>
+</ol>
+</li>
+<li>等待<code>commit</code>信息<ol>
+<li>信息到达, 根据<code>commit</code>信息处理回复(具体是什么样的信息回复后面会说)</li>
+<li>超时, 返回相应错误</li>
+</ol>
+</li>
+</ol>
+<p>分析到这里可知, 必然有一个协程在不断地接收<code>raft</code>层的<code>commit</code>日志(此后称为<code>ApplyHandler</code>协程), 那上述提到的重复<code>RPC</code>判别和处理是在<code>ApplyHandler</code>中进行, 还是在<code>RPC handler</code>中进行呢?</p>
+<p>我的处理方式是在<code>ApplyHandler</code>中进行, 因为<code>ApplyHandler</code>是绝对串行的, 在其中处理这些日志是最安全的, 否则通过通道发送给<code>RPC handler</code>货条件变量唤醒<code>RPC handler</code>, 都存在一些并发同步的问题, 因此, <code>ApplyHandler</code>需要进行重复<code>RPC</code>判别和处理(可能需要存储), 并将这个请求(<code>commit log</code>就对应一个请求)的结果返回给<code>RPC handler</code></p>
+<h3 id="4-2-2-结构体设计"><a href="#4-2-2-结构体设计" class="headerlink" title="4.2.2 结构体设计"></a>4.2.2 结构体设计</h3><p>因此, 通过上述分析, <code>server</code>结构体如下:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> KVServer <span class="keyword">struct</span> &#123;</span><br><span class="line">	mu         sync.Mutex</span><br><span class="line">	me         <span class="type">int</span></span><br><span class="line">	rf         *raft.Raft</span><br><span class="line">	applyCh    <span class="keyword">chan</span> raft.ApplyMsg</span><br><span class="line">	dead       <span class="type">int32</span>                <span class="comment">// set by Kill()</span></span><br><span class="line">	waiCh      <span class="keyword">map</span>[<span class="type">int</span>]*<span class="keyword">chan</span> result <span class="comment">// 映射 startIndex-&gt;ch</span></span><br><span class="line">	historyMap <span class="keyword">map</span>[<span class="type">int64</span>]*result    <span class="comment">// 映射 Identifier-&gt;*result</span></span><br><span class="line"></span><br><span class="line">	maxraftstate <span class="type">int</span> <span class="comment">// snapshot if log grows this big</span></span><br><span class="line">	maxMapLen    <span class="type">int</span></span><br><span class="line">	db           <span class="keyword">map</span>[<span class="type">string</span>]<span class="type">string</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> result <span class="keyword">struct</span> &#123;</span><br><span class="line">	LastSeq <span class="type">uint64</span></span><br><span class="line">	Err     Err</span><br><span class="line">	Value   <span class="type">string</span></span><br><span class="line">	ResTerm <span class="type">int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中:</p>
+<ul>
+<li><code>historyMap</code>记录某<code>clerk</code>的最高序列号的请求的序列号和结果<code>result</code></li>
+<li><code>result</code>结构体存储一个请求的序列号和结果, 以及<code>ResTerm</code>记录<code>commit</code>被<code>apply</code>时的<code>term</code>, 因为其可能与<code>Start</code>相比发生了变化, 需要将这一信息返回给客户端</li>
+<li><code>waiCh</code>纪录等待<code>commit</code>信息的<code>RPC handler</code>的通道</li>
+</ul>
+<h3 id="4-2-3-RPC-handler设计"><a href="#4-2-3-RPC-handler设计" class="headerlink" title="4.2.3 RPC handler设计"></a>4.2.3 <code>RPC handler</code>设计</h3><p><code>RPC handler</code>设计较为简单,只需要调用<code>Start</code>, 等待<code>commit</code>信息即可, 不过还需要考虑超时的错误处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> Get(args *GetArgs, reply *GetReply) &#123;</span><br><span class="line">	<span class="comment">// 先判断是不是leader</span></span><br><span class="line">	_, isLeader := kv.rf.GetState()</span><br><span class="line">	<span class="keyword">if</span> !isLeader &#123;</span><br><span class="line">		reply.Err = ErrNotLeader</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	opArgs := &amp;Op&#123;OpType: OPGet, Seq: args.Seq, Key: args.Key, Identifier: args.Identifier&#125;</span><br><span class="line"></span><br><span class="line">	res := kv.HandleOp(opArgs)</span><br><span class="line">	reply.Err = res.Err</span><br><span class="line">	reply.Value = res.Value</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> PutAppend(args *PutAppendArgs, reply *PutAppendReply) &#123;</span><br><span class="line">	<span class="comment">// Your code here.</span></span><br><span class="line">	<span class="comment">// 先判断是不是leader</span></span><br><span class="line">	_, isLeader := kv.rf.GetState()</span><br><span class="line">	<span class="keyword">if</span> !isLeader &#123;</span><br><span class="line">		reply.Err = ErrNotLeader</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	opArgs := &amp;Op&#123;Seq: args.Seq, Key: args.Key, Val: args.Value, Identifier: args.Identifier&#125;</span><br><span class="line">	<span class="keyword">if</span> args.Op == <span class="string">&quot;Put&quot;</span> &#123;</span><br><span class="line">		opArgs.OpType = OPPut</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		opArgs.OpType = OPAppend</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	res := kv.HandleOp(opArgs)</span><br><span class="line">	reply.Err = res.Err</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Get</code>和<code>PutAppend</code>都将请求封装成<code>Op</code>结构体, 统一给<code>HandleOp</code>处理, <code>HandleOp</code>处理<code>ApplyHandler</code>发过来的<code>commit</code>信息并生成回复, 这里我采用的通信方式是管道, 每一个请求会将自己创建的管道存储在<code>waiCh</code>中, 并在函数离开时清理管道和<code>waiCh</code>:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> HandleOp(opArgs *Op) (res result) &#123;</span><br><span class="line">	startIndex, startTerm, isLeader := kv.rf.Start(*opArgs)</span><br><span class="line">	<span class="keyword">if</span> !isLeader &#123;</span><br><span class="line">		<span class="keyword">return</span> result&#123;Err: ErrNotLeader, Value: <span class="string">&quot;&quot;</span>&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	kv.mu.Lock()</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 直接覆盖之前记录的chan</span></span><br><span class="line">	newCh := <span class="built_in">make</span>(<span class="keyword">chan</span> result)</span><br><span class="line">	kv.waiCh[startIndex] = &amp;newCh</span><br><span class="line">	DPrintf(<span class="string">&quot;leader %v identifier %v Seq %v 的请求: 新建管道: %p\n&quot;</span>, kv.me, opArgs.Identifier, opArgs.Seq, &amp;newCh)</span><br><span class="line">	kv.mu.Unlock() <span class="comment">// Start函数耗时较长, 先解锁</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		kv.mu.Lock()</span><br><span class="line">		<span class="built_in">delete</span>(kv.waiCh, startIndex)</span><br><span class="line">		<span class="built_in">close</span>(newCh)</span><br><span class="line">		kv.mu.Unlock()</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 等待消息到达或超时</span></span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> &lt;-time.After(HandleOpTimeOut):</span><br><span class="line">		res.Err = ErrHandleOpTimeOut</span><br><span class="line">		DPrintf(<span class="string">&quot;server %v identifier %v Seq %v: 超时&quot;</span>, kv.me, opArgs.Identifier, opArgs.Seq)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	<span class="keyword">case</span> msg, success := &lt;-newCh:</span><br><span class="line">		<span class="keyword">if</span> success &amp;&amp; msg.ResTerm == startTerm &#123;</span><br><span class="line">			res = msg</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125; <span class="keyword">else</span> <span class="keyword">if</span> !success &#123;</span><br><span class="line">			<span class="comment">// 通道已经关闭, 有另一个协程收到了消息 或 通道被更新的RPC覆盖</span></span><br><span class="line">			<span class="comment">// <span class="doctag">TODO:</span> 是否需要判断消息到达时自己已经不是leader了?</span></span><br><span class="line">			DPrintf(<span class="string">&quot;server %v identifier %v Seq %v: 通道已经关闭, 有另一个协程收到了消息 或 更新的RPC覆盖, args.OpType=%v, args.Key=%+v&quot;</span>, kv.me, opArgs.Identifier, opArgs.Seq, opArgs.OpType, opArgs.Key)</span><br><span class="line">			res.Err = ErrChanClose</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">// term与一开始不匹配, 说明这个Leader可能过期了</span></span><br><span class="line">			DPrintf(<span class="string">&quot;server %v identifier %v Seq %v: term与一开始不匹配, 说明这个Leader可能过期了, res.ResTerm=%v, startTerm=%+v&quot;</span>, kv.me, opArgs.Identifier, opArgs.Seq, res.ResTerm, startTerm)</span><br><span class="line">			res.Err = ErrLeaderOutDated</span><br><span class="line">			res.Value = <span class="string">&quot;&quot;</span></span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里需要额外注意错误处理:</p>
+<ol>
+<li>超时错误</li>
+<li>通道关闭错误</li>
+<li><code>Leader</code>可能过期的错误(<code>term</code>不匹配)</li>
+<li>不是<code>Leader</code>的错误</li>
+</ol>
+<p>同时这里还有一个难点, 就是如果出现了重复的<code>RPC</code>, 他们都在等待<code>commit</code>信息, 那么他们的管道存储在<code>waiCh</code>中的<code>key</code>是什么呢? 如果使用<code>Identifier</code>或<code>Seq</code>, 那么必然后来的<code>RPC</code>会覆盖之前的管道, 可能造成错误, 因为两个重复<code>RPC</code>的<code>Identifier</code>或<code>Seq</code>是一样的。 这里可以巧妙地利用<code>Start</code>函数的第一个返回值， 其代表如果<code>commit</code>成功, 其日志项的索引号, 由于<code>raft</code>层不区分重复<code>RPC</code>的<code>log</code>, 因此这个索引号肯定是不同的, 不会相互覆盖</p>
+<h3 id="4-2-4-ApplyHandler设计"><a href="#4-2-4-ApplyHandler设计" class="headerlink" title="4.2.4 ApplyHandler设计"></a>4.2.4 <code>ApplyHandler</code>设计</h3><p><code>ApplyHandler</code>是<code>3A</code>的最核心的部分, 其思路是:</p>
+<ol>
+<li>先判断<code>log</code>请求的<code>Identifier</code>和<code>Seq</code>是否在历史记录<code>historyMap</code>中是否存在, 如果存在就直接返回历史记录</li>
+<li>不存在就需要应用到状态机, 并更新历史记录<code>historyMap</code></li>
+<li>如果<code>log</code>请求的<code>CommandIndex</code>对应的<code>key</code>在<code>waiCh</code>中存在, 表面当前节点可能是一个<code>Leader</code>, 需要将结果发送给<code>RPC handler</code><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> ApplyHandler() &#123;</span><br><span class="line">	<span class="keyword">for</span> !kv.killed() &#123;</span><br><span class="line">		log := &lt;-kv.applyCh</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> log.CommandValid &#123;</span><br><span class="line"></span><br><span class="line">			op := log.Command.(Op)</span><br><span class="line">			kv.mu.Lock()</span><br><span class="line"></span><br><span class="line">			<span class="comment">// 需要判断这个log是否需要被再次应用</span></span><br><span class="line">			<span class="keyword">var</span> res result</span><br><span class="line"></span><br><span class="line">			needApply := <span class="literal">false</span></span><br><span class="line">			<span class="keyword">if</span> hisMap, exist := kv.historyMap[op.Identifier]; exist &#123;</span><br><span class="line">				<span class="keyword">if</span> hisMap.LastSeq == op.Seq &#123;</span><br><span class="line">					<span class="comment">// 历史记录存在且Seq相同, 直接套用历史记录</span></span><br><span class="line">					res = *hisMap</span><br><span class="line">				&#125; <span class="keyword">else</span> <span class="keyword">if</span> hisMap.LastSeq &lt; op.Seq &#123;</span><br><span class="line">					<span class="comment">// 否则新建</span></span><br><span class="line">					needApply = <span class="literal">true</span></span><br><span class="line">				&#125;</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				<span class="comment">// 历史记录不存在</span></span><br><span class="line">				needApply = <span class="literal">true</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			_, isLeader := kv.rf.GetState()</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> needApply &#123;</span><br><span class="line">				<span class="comment">// 执行log</span></span><br><span class="line">				res = kv.DBExecute(&amp;op, isLeader)</span><br><span class="line">				res.ResTerm = log.SnapshotTerm</span><br><span class="line"></span><br><span class="line">				<span class="comment">// 更新历史记录</span></span><br><span class="line">				kv.historyMap[op.Identifier] = &amp;res</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">if</span> !isLeader &#123;</span><br><span class="line">				<span class="comment">// 不是leader则继续检查下一个log</span></span><br><span class="line">				kv.mu.Unlock()</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="comment">// Leader还需要额外通知handler处理clerk回复</span></span><br><span class="line">			ch, exist := kv.waiCh[log.CommandIndex]</span><br><span class="line">			<span class="keyword">if</span> !exist &#123;</span><br><span class="line">				<span class="comment">// 接收端的通道已经被删除了并且当前节点是 leader, 说明这是重复的请求, 但这种情况不应该出现, 所以panic</span></span><br><span class="line">				DPrintf(<span class="string">&quot;leader %v ApplyHandler 发现 identifier %v Seq %v 的管道不存在, 应该是超时被关闭了&quot;</span>, kv.me, op.Identifier, op.Seq)</span><br><span class="line">				kv.mu.Unlock()</span><br><span class="line">				<span class="keyword">continue</span></span><br><span class="line">			&#125;</span><br><span class="line">			kv.mu.Unlock()</span><br><span class="line">			<span class="comment">// 发送消息</span></span><br><span class="line">			<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">					<span class="keyword">if</span> <span class="built_in">recover</span>() != <span class="literal">nil</span> &#123;</span><br><span class="line">						<span class="comment">// 如果这里有 panic，是因为通道关闭</span></span><br><span class="line">						DPrintf(<span class="string">&quot;leader %v ApplyHandler 发现 identifier %v Seq %v 的管道不存在, 应该是超时被关闭了&quot;</span>, kv.me, op.Identifier, op.Seq)</span><br><span class="line">					&#125;</span><br><span class="line">				&#125;()</span><br><span class="line">				res.ResTerm = log.SnapshotTerm</span><br><span class="line">				*ch &lt;- res</span><br><span class="line">			&#125;()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>这里有几大易错点:</p>
+<ol>
+<li>需要额外传递<code>Term</code>以供<code>RPC handler</code>判断与调用<code>Start</code>时相比, <code>term</code>是否变化, 如果变化, 可能是<code>Leader</code>过期, 需要告知<code>clerk</code></li>
+<li>发送消息到通道时, 需要解锁</li>
+<li>因为发送消息到通道时解锁, 所以通道可能被关闭, 因此需要单独在一个函数中使用<code>recover</code>处理发送消息到不存在的通道时的错误</li>
+<li>这个<code>ApplyHandler</code>是<code>leader</code>和<code>follower</code>都存在的协程, 只不过<code>follower</code>到应用到状态机和判重那里就结束了, <code>leader</code>多出来告知<code>RPC handler</code>结果的部分</li>
+</ol>
+<p><code>DBExecute</code>就是将日志项应用到状态机, 逻辑很简单:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(kv *KVServer)</span></span> DBExecute(op *Op, isLeader <span class="type">bool</span>) (res result) &#123;</span><br><span class="line">	<span class="comment">// 调用该函数需要持有锁</span></span><br><span class="line">	res.LastSeq = op.Seq</span><br><span class="line">	<span class="keyword">switch</span> op.OpType &#123;</span><br><span class="line">	<span class="keyword">case</span> OPGet:</span><br><span class="line">		val, exist := kv.db[op.Key]</span><br><span class="line">		<span class="keyword">if</span> exist &#123;</span><br><span class="line">			kv.LogInfoDBExecute(op, <span class="string">&quot;&quot;</span>, val, isLeader)</span><br><span class="line">			res.Value = val</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			res.Err = ErrKeyNotExist</span><br><span class="line">			res.Value = <span class="string">&quot;&quot;</span></span><br><span class="line">			kv.LogInfoDBExecute(op, <span class="string">&quot;&quot;</span>, ErrKeyNotExist, isLeader)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	<span class="keyword">case</span> OPPut:</span><br><span class="line">		kv.db[op.Key] = op.Val</span><br><span class="line">		kv.LogInfoDBExecute(op, <span class="string">&quot;&quot;</span>, kv.db[op.Key], isLeader)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	<span class="keyword">case</span> OPAppend:</span><br><span class="line">		val, exist := kv.db[op.Key]</span><br><span class="line">		<span class="keyword">if</span> exist &#123;</span><br><span class="line">			kv.db[op.Key] = val + op.Val</span><br><span class="line">			kv.LogInfoDBExecute(op, <span class="string">&quot;&quot;</span>, kv.db[op.Key], isLeader)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			kv.db[op.Key] = op.Val</span><br><span class="line">			kv.LogInfoDBExecute(op, <span class="string">&quot;&quot;</span>, kv.db[op.Key], isLeader)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-测试"><a href="#5-测试" class="headerlink" title="5 测试"></a>5 测试</h1><p>执行测试命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go <span class="built_in">test</span> -v -run 3A</span><br></pre></td></tr></table></figure>
+<p>结果如下:<br><img src="/../../images/lab3-3A-test.png" alt="Alt text"></p>
+<p>该代码经过150次测试没有报错</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-lab2-Raft-bug-%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.</span> <span class="toc-text">1 lab2:Raft bug 修复</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%BF%83%E8%B7%B3%E5%8F%91%E9%80%81%E9%80%BB%E8%BE%91%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 心跳发送逻辑修复</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-1-bug%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.1.1.</span> <span class="toc-text">1.1.1 bug描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-2-%E4%BF%AE%E6%94%B9%E6%96%B9%E6%A1%88"><span class="toc-number">1.1.2.</span> <span class="toc-text">1.1.2 修改方案</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%8A%95%E7%A5%A8%E9%80%BB%E8%BE%91%E4%BF%AE%E5%A4%8D"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 投票逻辑修复</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-bug%E6%8F%8F%E8%BF%B0"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 bug描述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-%E4%BF%AE%E6%94%B9%E6%96%B9%E6%A1%88"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 修改方案</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-KV%E6%95%B0%E6%8D%AE%E5%BA%93%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 KV数据库架构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.</span> <span class="toc-text">3 设计思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E7%BA%BF%E6%80%A7%E4%B8%8D%E4%B8%80%E8%87%B4"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 为什么会线性不一致?</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E7%8E%B0%E7%BA%BF%E6%80%A7%E4%B8%80%E8%87%B4%E6%80%A7%E7%9A%84%E6%80%9D%E8%B7%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实现线性一致性的思路</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E9%87%8D%E5%A4%8D%E8%AF%B7%E6%B1%82%EF%BC%9F"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 如何判断重复请求？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E9%87%8D%E5%A4%8D%E8%AF%B7%E6%B1%82%EF%BC%9F"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 如何处理重复请求？</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 具体实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-client%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 client实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-1-%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.1.</span> <span class="toc-text">4.1.1 结构体设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-2-client-RPC%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.2.</span> <span class="toc-text">4.1.2 client RPC设计</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2-1-RPC%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.1.2.1.</span> <span class="toc-text">4.1.2.1 RPC结构体设计</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1-2-2-Put-Append"><span class="toc-number">4.1.2.2.</span> <span class="toc-text">4.1.2.2 Put&#x2F;Append</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Server%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Server实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-Server%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 Server设计思路</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E7%BB%93%E6%9E%84%E4%BD%93%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 结构体设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-RPC-handler%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 RPC handler设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-4-ApplyHandler%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.2.4.</span> <span class="toc-text">4.2.4 ApplyHandler设计</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&text=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&is_video=false&description=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A&body=Check out this article: http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&title=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&name=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/30/MIT6.5840/Lab2_Raft_3A/&t=MIT6.5840(6.824) Lab3: 分布式KV数据库 3A"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
