@@ -17,8 +17,8 @@
 <meta property="og:image" content="http://example.com/images/lab2-2C-test2C.png">
 <meta property="og:image" content="http://example.com/images/lab2-2C-test2C-2.png">
 <meta property="article:published_time" content="2024-01-13T09:15:38.000Z">
-<meta property="article:modified_time" content="2024-02-23T17:21:39.577Z">
-<meta property="article:author" content="GFX9">
+<meta property="article:modified_time" content="2024-02-23T17:30:56.130Z">
+<meta property="article:author" content="TONIXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
@@ -141,7 +141,7 @@
 
     <div class="meta">
       <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span class="p-name" itemprop="name">GFX9</span>
+        <span class="p-name" itemprop="name">TONIXWD</span>
       </span>
       
     <div class="postdate">
@@ -173,7 +173,7 @@
   <div class="content e-content" itemprop="articleBody">
     <p>本文将介绍<code>lab2C</code>部分的实现, <code>lab2C</code>要求实现<code>raft</code>中的持久化功能, 相比<code>lab2A</code>,和<code>lab2B</code>, 本节的难度其实很小, 但复杂的是<code>lab2A</code>,和<code>lab2B</code>中的一些微小的<code>bug</code>会在<code>2C</code>中显现, 并且相对不太容易注意到。</p>
 <p><code>Lab文档</code>见: <a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/labs/lab-raft.html">https://pdos.csail.mit.edu/6.824/labs/lab-raft.html</a></p>
-<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/GFX9/MIT6.5840/tree/lab2C">https://github.com/GFX9/MIT6.5840/tree/lab2C</a></p>
+<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/TONIXWD/MIT6.5840/tree/lab2C">https://github.com/TONIXWD/MIT6.5840/tree/lab2C</a></p>
 <p><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf">raft原论文</a></p>
 <h1 id="1-bug修复：重复的RPC"><a href="#1-bug修复：重复的RPC" class="headerlink" title="1 bug修复：重复的RPC"></a>1 <code>bug</code>修复：重复的<code>RPC</code></h1><p>在之前的<code>AppendEntries</code>中有这样的代码:</p>
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> <span class="built_in">len</span>(args.Entries) != <span class="number">0</span> &amp;&amp; <span class="built_in">len</span>(rf.log) &gt; args.PrevLogIndex+<span class="number">1</span> &amp;&amp; rf.log[args.PrevLogIndex+<span class="number">1</span>].Term != args.Entries[<span class="number">0</span>].Term &#123;</span><br><span class="line">    <span class="comment">// 发生了冲突, 移除冲突位置开始后面所有的内容</span></span><br><span class="line">    DPrintf(<span class="string">&quot;server %v 的log与args发生冲突, 进行移除\n&quot;</span>, rf.me)</span><br><span class="line">    rf.log = rf.log[:args.PrevLogIndex+<span class="number">1</span>]</span><br><span class="line">&#125;</span><br><span class="line">rf.log = <span class="built_in">append</span>(rf.log, args.Entries...)</span><br></pre></td></tr></table></figure>
@@ -198,7 +198,7 @@
 <figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> idx, log := <span class="keyword">range</span> args.Entries &#123;</span><br><span class="line">	ridx := args.PrevLogIndex + <span class="number">1</span> + idx</span><br><span class="line">	<span class="keyword">if</span> ridx &lt; <span class="built_in">len</span>(rf.log) &amp;&amp; rf.log[ridx].Term != log.Term &#123;</span><br><span class="line">		<span class="comment">// 某位置发生了冲突, 覆盖这个位置开始的所有内容</span></span><br><span class="line">		rf.log = rf.log[:ridx]</span><br><span class="line">		rf.log = <span class="built_in">append</span>(rf.log, args.Entries[idx:]...)</span><br><span class="line">		<span class="keyword">break</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> ridx == <span class="built_in">len</span>(rf.log) &#123;</span><br><span class="line">		<span class="comment">// 没有发生冲突但长度更长了, 直接拼接</span></span><br><span class="line">		rf.log = <span class="built_in">append</span>(rf.log, args.Entries[idx:]...)</span><br><span class="line">		<span class="keyword">break</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>这里的bug是完成<code>lab3</code>后才发现的<code>bug</code>, <code>lab2</code>分支的代码还没有进行这样的修改也能通过测例。原因是在我的设计中，<code>Start</code>并没有立即广播心跳, 因此不会存在<code>RPC</code>顺序颠倒的情况, 如果想看最新的代码修改, 参见: <a target="_blank" rel="noopener" href="https://github.com/GFX9/MIT6.5840/blob/lab3A/src/raft/raft.go#L606">https://github.com/GFX9/MIT6.5840/blob/lab3A/src/raft/raft.go#L606</a></p>
+<p>这里的bug是完成<code>lab3</code>后才发现的<code>bug</code>, <code>lab2</code>分支的代码还没有进行这样的修改也能通过测例。原因是在我的设计中，<code>Start</code>并没有立即广播心跳, 因此不会存在<code>RPC</code>顺序颠倒的情况, 如果想看最新的代码修改, 参见: <a target="_blank" rel="noopener" href="https://github.com/TONIXWD/MIT6.5840/blob/lab3A/src/raft/raft.go#L606">https://github.com/TONIXWD/MIT6.5840/blob/lab3A/src/raft/raft.go#L606</a></p>
 </blockquote>
 <h1 id="2-优化-快速回退"><a href="#2-优化-快速回退" class="headerlink" title="2 优化: 快速回退"></a>2 优化: 快速回退</h1><p>在之前的回退实现中, 如果有<code>Follower</code>的日志不匹配, 每次<code>RPC</code>中, <code>Leader</code>会将其<code>nextIndex</code>自减1来重试, 但其在某些情况下会导致效率很低, 因此需要<code>AppendEntries RPC</code>的回复信息携带更多的字段以加速回退, 核心思想就是:<strong><code>Follower</code>返回更多信息给<code>Leader</code>，使其可以以<code>Term</code>为单位来回退</strong></p>
 <p>教授在课堂上已经介绍了快速回退的实现机制, 可以看我整理的<a href="/2024/01/12/MIT6.5840/Lec06%E7%AC%94%E8%AE%B0/">笔记</a> </p>
@@ -327,7 +327,7 @@
     
     
     2016-2024
-    GFX9
+    TONIXWD
   </div>
   <div class="footer-right">
     <nav>
@@ -400,7 +400,7 @@
 <!-- utterances Comments -->
 
     <script type="text/javascript">
-      var utterances_repo = 'GFX9/GFX9.github.io';
+      var utterances_repo = 'TONIXWD/TONIXWD.github.io';
       var utterances_issue_term = 'pathname';
       var utterances_label = 'Comment';
       var utterances_theme = 'github-dark';

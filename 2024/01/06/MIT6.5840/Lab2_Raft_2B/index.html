@@ -6,19 +6,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;GFX9&#x2F;M">
+    <meta name="description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;TONIXW">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.5840(6.824) Lab2: Raft 2B">
 <meta property="og:url" content="http://example.com/2024/01/06/MIT6.5840/Lab2_Raft_2B/index.html">
 <meta property="og:site_name" content="ToniBlog">
-<meta property="og:description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;GFX9&#x2F;M">
+<meta property="og:description" content="本文将介绍lab2B部分的实现, lab2B要求实现raft中的日志复制和提交两部分的内容, 相比lab2A, lab2B的Hint更少, 难度也相对较大。 Lab文档见: https:&#x2F;&#x2F;pdos.csail.mit.edu&#x2F;6.824&#x2F;labs&#x2F;lab-raft.html 我的2A部分的实现在这里  raft原论文 我的代码:  时间戳实现: https:&#x2F;&#x2F;github.com&#x2F;TONIXW">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="http://example.com/images/lab2-2B-test1.png">
 <meta property="og:image" content="http://example.com/images/lab2-2B-test2.png">
 <meta property="og:image" content="http://example.com/images/lab2-2B-test3.png">
 <meta property="article:published_time" content="2024-01-06T09:17:01.000Z">
-<meta property="article:modified_time" content="2024-02-23T17:21:39.627Z">
-<meta property="article:author" content="GFX9">
+<meta property="article:modified_time" content="2024-02-23T17:30:56.090Z">
+<meta property="article:author" content="TONIXWD">
 <meta property="article:tag" content="分布式系统">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
@@ -141,7 +141,7 @@
 
     <div class="meta">
       <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span class="p-name" itemprop="name">GFX9</span>
+        <span class="p-name" itemprop="name">TONIXWD</span>
       </span>
       
     <div class="postdate">
@@ -177,8 +177,8 @@
 <p><a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf">raft原论文</a></p>
 <p>我的代码:</p>
 <ul>
-<li>时间戳实现: <a target="_blank" rel="noopener" href="https://github.com/GFX9/MIT6.5840/tree/lab2B">https://github.com/GFX9/MIT6.5840/tree/lab2B</a></li>
-<li>timer实现: <a target="_blank" rel="noopener" href="https://github.com/GFX9/MIT6.5840/tree/lab2B-timer">https://github.com/GFX9/MIT6.5840/tree/lab2B-timer</a></li>
+<li>时间戳实现: <a target="_blank" rel="noopener" href="https://github.com/TONIXWD/MIT6.5840/tree/lab2B">https://github.com/TONIXWD/MIT6.5840/tree/lab2B</a></li>
+<li>timer实现: <a target="_blank" rel="noopener" href="https://github.com/TONIXWD/MIT6.5840/tree/lab2B-timer">https://github.com/TONIXWD/MIT6.5840/tree/lab2B-timer</a></li>
 </ul>
 <h1 id="1-2A部分的bug修复"><a href="#1-2A部分的bug修复" class="headerlink" title="1 2A部分的bug修复"></a>1 2A部分的bug修复</h1><h2 id="1-1-修复孤立节点被选举的bug"><a href="#1-1-修复孤立节点被选举的bug" class="headerlink" title="1.1 修复孤立节点被选举的bug"></a>1.1 修复孤立节点被选举的bug</h2><ul>
 <li><strong>问题追溯</strong><br><code>2A</code>部分中, <code>RequestVote</code>中允许投票的判断我的实现是这样的:<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> rf.votedFor == <span class="number">-1</span> || rf.votedFor == args.CandidateId &#123;</span><br><span class="line">    <span class="comment">// 首先确保是没投过票的</span></span><br><span class="line">    <span class="keyword">if</span> args.Term &gt; rf.currentTerm ||</span><br><span class="line">        (args.LastLogIndex &gt;= <span class="built_in">len</span>(rf.log)<span class="number">-1</span> &amp;&amp; args.LastLogTerm &gt;= rf.log[<span class="built_in">len</span>(rf.log)<span class="number">-1</span>].Term) &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
@@ -380,7 +380,7 @@
     
     
     2016-2024
-    GFX9
+    TONIXWD
   </div>
   <div class="footer-right">
     <nav>
@@ -453,7 +453,7 @@
 <!-- utterances Comments -->
 
     <script type="text/javascript">
-      var utterances_repo = 'GFX9/GFX9.github.io';
+      var utterances_repo = 'TONIXWD/TONIXWD.github.io';
       var utterances_issue_term = 'pathname';
       var utterances_label = 'Comment';
       var utterances_theme = 'github-dark';
