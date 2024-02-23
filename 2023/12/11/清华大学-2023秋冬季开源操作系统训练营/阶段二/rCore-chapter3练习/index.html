@@ -6,16 +6,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter3&#x2F;5exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;ToniXWD&#x2F;2023a-rcore-ToniXWD&#x2F;tree&#x2F;ch3 1 编程作业  ch3 中，我们的系统已经能够支持多个任务分时轮流运行，我们希望引入一个新的系统调用 sys_tas">
+    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter3&#x2F;5exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;GFX9&#x2F;2023a-rcore-GFX9&#x2F;tree&#x2F;ch3 1 编程作业  ch3 中，我们的系统已经能够支持多个任务分时轮流运行，我们希望引入一个新的系统调用 sys_task_info">
 <meta property="og:type" content="article">
 <meta property="og:title" content="清华大学开源操作系统训练营: rCore chapter3练习">
 <meta property="og:url" content="http://example.com/2023/12/11/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter3%E7%BB%83%E4%B9%A0/index.html">
 <meta property="og:site_name" content="ToniBlog">
-<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter3&#x2F;5exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;ToniXWD&#x2F;2023a-rcore-ToniXWD&#x2F;tree&#x2F;ch3 1 编程作业  ch3 中，我们的系统已经能够支持多个任务分时轮流运行，我们希望引入一个新的系统调用 sys_tas">
+<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter3&#x2F;5exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;GFX9&#x2F;2023a-rcore-GFX9&#x2F;tree&#x2F;ch3 1 编程作业  ch3 中，我们的系统已经能够支持多个任务分时轮流运行，我们希望引入一个新的系统调用 sys_task_info">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-12-11T14:54:06.000Z">
-<meta property="article:modified_time" content="2024-02-23T17:32:21.819Z">
-<meta property="article:author" content="ToniXWD">
+<meta property="article:modified_time" content="2024-02-23T17:33:57.426Z">
+<meta property="article:author" content="GFX9">
 <meta property="article:tag" content="OS">
 <meta property="article:tag" content="操作系统">
 <meta property="article:tag" content="riscv">
@@ -137,7 +137,7 @@
 
     <div class="meta">
       <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
-        <span class="p-name" itemprop="name">ToniXWD</span>
+        <span class="p-name" itemprop="name">GFX9</span>
       </span>
       
     <div class="postdate">
@@ -168,7 +168,7 @@
 
   <div class="content e-content" itemprop="articleBody">
     <p><strong>练习实验书</strong>: <a target="_blank" rel="noopener" href="https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter3/5exercise.html">https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter3/5exercise.html</a></p>
-<p><strong>我的代码</strong>: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/2023a-rcore-ToniXWD/tree/ch3">https://github.com/ToniXWD/2023a-rcore-ToniXWD/tree/ch3</a></p>
+<p><strong>我的代码</strong>: <a target="_blank" rel="noopener" href="https://github.com/GFX9/2023a-rcore-GFX9/tree/ch3">https://github.com/GFX9/2023a-rcore-GFX9/tree/ch3</a></p>
 <h1 id="1-编程作业"><a href="#1-编程作业" class="headerlink" title="1 编程作业"></a>1 编程作业</h1><blockquote>
 <blockquote>
 <p>ch3 中，我们的系统已经能够支持多个任务分时轮流运行，我们希望引入一个新的系统调用 sys_task_info 以获取当前任务的信息…</p>
@@ -281,7 +281,7 @@
     
     
     2016-2024
-    ToniXWD
+    GFX9
   </div>
   <div class="footer-right">
     <nav>
@@ -354,7 +354,7 @@
 <!-- utterances Comments -->
 
     <script type="text/javascript">
-      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_repo = 'GFX9/GFX9.github.io';
       var utterances_issue_term = 'pathname';
       var utterances_label = 'Comment';
       var utterances_theme = 'github-dark';
