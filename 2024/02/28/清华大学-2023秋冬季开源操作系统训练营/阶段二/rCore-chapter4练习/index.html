@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter4&#x2F;7exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;LearningOS&#x2F;2023a-rcore-ToniXWD 1 编程作业   重写 sys_get_time 和 sys_task_info 实现 mmap 和 munmap 两个系统调用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="清华大学开源操作系统训练营: rCore chapter4练习">
+<meta property="og:url" content="http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="练习实验书: https:&#x2F;&#x2F;learningos.cn&#x2F;rCore-Tutorial-Guide-2023A&#x2F;chapter4&#x2F;7exercise.html 我的代码: https:&#x2F;&#x2F;github.com&#x2F;LearningOS&#x2F;2023a-rcore-ToniXWD 1 编程作业   重写 sys_get_time 和 sys_task_info 实现 mmap 和 munmap 两个系统调用">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/LearningOS/ch4-translate.png">
+<meta property="article:published_time" content="2024-02-28T06:03:30.000Z">
+<meta property="article:modified_time" content="2024-02-27T07:16:12.372Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="OS">
+<meta property="article:tag" content="操作系统">
+<meta property="article:tag" content="riscv">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/LearningOS/ch4-translate.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>清华大学开源操作系统训练营: rCore chapter4练习</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/20/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/ch4%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&text=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter4练习&body=Check out this article: http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&name=清华大学开源操作系统训练营: rCore chapter4练习&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&t=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1 编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E9%87%8D%E5%86%99-sys-get-time-%E5%92%8C-sys-task-info"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 重写 sys_get_time 和 sys_task_info</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%AE%9E%E7%8E%B0-mmap-%E5%92%8C-munmap"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 实现 mmap 和 munmap</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-MemorySet%E7%BB%93%E6%9E%84%E4%BD%93"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 MemorySet结构体</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-MemorySet-mmap-MemorySet-unmmap"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 MemorySet::mmap &amp;&amp; MemorySet::unmmap</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 简答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AF%B7%E5%88%97%E4%B8%BE-SV39-%E9%A1%B5%E8%A1%A8%E9%A1%B5%E8%A1%A8%E9%A1%B9%E7%9A%84%E7%BB%84%E6%88%90%EF%BC%8C%E6%8F%8F%E8%BF%B0%E5%85%B6%E4%B8%AD%E7%9A%84%E6%A0%87%E5%BF%97%E4%BD%8D%E6%9C%89%E4%BD%95%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 请列举 SV39 页表页表项的组成，描述其中的标志位有何作用？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BC%BA%E9%A1%B5"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 缺页</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E8%AF%B7%E9%97%AE%E5%93%AA%E4%BA%9B%E5%BC%82%E5%B8%B8%E5%8F%AF%E8%83%BD%E6%98%AF%E7%BC%BA%E9%A1%B5%E5%AF%BC%E8%87%B4%E7%9A%84%EF%BC%9F"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 请问哪些异常可能是缺页导致的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E5%8F%91%E7%94%9F%E7%BC%BA%E9%A1%B5%E6%97%B6%EF%BC%8C%E6%8F%8F%E8%BF%B0%E7%9B%B8%E5%85%B3%E9%87%8D%E8%A6%81%E5%AF%84%E5%AD%98%E5%99%A8%E7%9A%84%E5%80%BC%EF%BC%8C%E4%B8%8A%E6%AC%A1%E5%AE%9E%E9%AA%8C%E6%8F%8F%E8%BF%B0%E8%BF%87%E7%9A%84%E5%8F%AF%E4%BB%A5%E7%AE%80%E7%95%A5%E3%80%82"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-Lazy"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 Lazy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E4%BC%B0%E7%AE%97%E9%A1%B5%E8%A1%A8%E5%86%85%E5%AD%98%E6%B6%88%E8%80%97"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 估算页表内存消耗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-5-%E5%AE%9E%E7%8E%B0Lazy"><span class="toc-number">2.2.5.</span> <span class="toc-text">2.2.5 实现Lazy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-6-Swap"><span class="toc-number">2.2.6.</span> <span class="toc-text">2.2.6 Swap</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E5%8F%8C%E9%A1%B5%E8%A1%A8%E4%B8%8E%E5%8D%95%E9%A1%B5%E8%A1%A8"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 双页表与单页表</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        清华大学开源操作系统训练营: rCore chapter4练习
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-02-28T06:03:30.000Z" class="dt-published" itemprop="datePublished">2024-02-28</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/">训练营笔记</a> › <a class="category-link" href="/categories/%E8%AE%AD%E7%BB%83%E8%90%A5%E7%AC%94%E8%AE%B0/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A52023/">清华大学开源操作系统训练营2023</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/OS/" rel="tag">OS</a>, <a class="p-category" href="/tags/Rust/" rel="tag">Rust</a>, <a class="p-category" href="/tags/riscv/" rel="tag">riscv</a>, <a class="p-category" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><strong>练习实验书</strong>: <a target="_blank" rel="noopener" href="https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter4/7exercise.html">https://learningos.cn/rCore-Tutorial-Guide-2023A/chapter4/7exercise.html</a></p>
+<p><strong>我的代码</strong>: <a target="_blank" rel="noopener" href="https://github.com/LearningOS/2023a-rcore-ToniXWD">https://github.com/LearningOS/2023a-rcore-ToniXWD</a></p>
+<h1 id="1-编程作业"><a href="#1-编程作业" class="headerlink" title="1 编程作业"></a>1 编程作业</h1><blockquote>
+<blockquote>
+<ol>
+<li>重写 <code>sys_get_time</code> 和 <code>sys_task_info</code></li>
+<li>实现 <code>mmap</code> 和 <code>munmap</code> 两个系统调用，通过所有测例</li>
+</ol>
+</blockquote>
+</blockquote>
+<h2 id="1-1-重写-sys-get-time-和-sys-task-info"><a href="#1-1-重写-sys-get-time-和-sys-task-info" class="headerlink" title="1.1 重写 sys_get_time 和 sys_task_info"></a>1.1 重写 <code>sys_get_time</code> 和 <code>sys_task_info</code></h2><p>这一部分的实现很简单, 引入虚拟内存和页表后无非就是内核无法直接使用系统调用传递的地址了, 需要将这个用户空间的虚拟地址做一层手动翻译, 这样的方法已经为我们提供了: <code>translated_struct_ptr</code>, 因此实现很简单:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">sys_get_time</span>(_ts: *<span class="keyword">mut</span> TimeVal, _tz: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    trace!(<span class="string">&quot;kernel: sys_get_time&quot;</span>);</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">us</span> = <span class="title function_ invoke__">get_time_us</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">ts</span> = <span class="title function_ invoke__">translated_struct_ptr</span>(<span class="title function_ invoke__">current_user_token</span>(), _ts);</span><br><span class="line">    *ts = TimeVal &#123;</span><br><span class="line">        sec: us / <span class="number">1_000_000</span>,</span><br><span class="line">        usec: us % <span class="number">1_000_000</span>,</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="number">0</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">sys_task_info</span>(_ti: *<span class="keyword">mut</span> TaskInfo) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    trace!(<span class="string">&quot;kernel: sys_task_info NOT IMPLEMENTED YET!&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">ti</span> = <span class="title function_ invoke__">translated_struct_ptr</span>(<span class="title function_ invoke__">current_user_token</span>(), _ti);</span><br><span class="line"></span><br><span class="line">    *ti = TaskInfo &#123;</span><br><span class="line">        status: TaskStatus::Running,</span><br><span class="line">        syscall_times: <span class="title function_ invoke__">get_sys_call_times</span>(),</span><br><span class="line">        time: <span class="title function_ invoke__">get_task_run_times</span>(),</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="number">0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-2-实现-mmap-和-munmap"><a href="#1-2-实现-mmap-和-munmap" class="headerlink" title="1.2 实现 mmap 和 munmap"></a>1.2 实现 <code>mmap</code> 和 <code>munmap</code></h2><blockquote>
+<blockquote>
+<p><code>mmap</code> 在 <code>Linux</code> 中主要用于在内存中映射文件， 本次实验简化它的功能，仅用于申请内存</p>
+</blockquote>
+</blockquote>
+<h3 id="1-2-1-MemorySet结构体"><a href="#1-2-1-MemorySet结构体" class="headerlink" title="1.2.1 MemorySet结构体"></a>1.2.1 <code>MemorySet</code>结构体</h3><p>由于<code>mmap</code>要在地址空间中添加新的映射, 因此无非就是在<code>MemorySet</code>中添加一块映射的内存区域, 先看看每个内存地址空间本来的结构:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// address space</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">MemorySet</span> &#123;</span><br><span class="line">    page_table: PageTable,</span><br><span class="line">    areas: <span class="type">Vec</span>&lt;MapArea&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中<code>areas</code>存放的是本地址空间的多个逻辑段, 每个逻辑段的地址是连续的, 但<code>mmap</code>是动态申请地址空间的, 多次调用会创建多哥不连续的内存区域, 因此不适合存放在<code>areas</code>, 因此创建一个新的成员存放:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// address space</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">MemorySet</span> &#123;</span><br><span class="line">    page_table: PageTable,</span><br><span class="line">    areas: <span class="type">Vec</span>&lt;MapArea&gt;,</span><br><span class="line">    map_tree: BTreeMap&lt;VirtPageNum, FrameTracker&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>map_tree</code>还是<code>RAII</code>的思想, <code>munmap</code>调用时, 会将页帧从<code>map_tree</code>中释放, 触发<code>drop trait</code>使内存页分配器回收内存页</p>
+<h3 id="1-2-2-MemorySet-mmap-MemorySet-unmmap"><a href="#1-2-2-MemorySet-mmap-MemorySet-unmmap" class="headerlink" title="1.2.2 MemorySet::mmap &amp;&amp; MemorySet::unmmap"></a>1.2.2 <code>MemorySet::mmap</code> &amp;&amp; <code>MemorySet::unmmap</code></h3><p>有了上述的数据结构, <code>mmap</code>时只需要调用<code>frame_alloc</code>分配一个新的内存页即可:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/mm/memory_set.rs</span></span><br><span class="line"><span class="comment">/// mmap</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">mmap</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, start: <span class="type">usize</span>, len: <span class="type">usize</span>, port: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_start</span>: VirtAddr = start.<span class="title function_ invoke__">into</span>();</span><br><span class="line">    <span class="keyword">if</span> !va_start.<span class="title function_ invoke__">aligned</span>() &#123;</span><br><span class="line">        debug!(<span class="string">&quot;unmap fail don&#x27;t aligned&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">va_start</span>: VirtPageNum = va_start.<span class="title function_ invoke__">into</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">flags</span> = PTEFlags::<span class="title function_ invoke__">from_bits</span>(port <span class="keyword">as</span> <span class="type">u8</span>).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">    <span class="keyword">if</span> port &amp; <span class="number">0b0000_0001</span> != <span class="number">0</span> &#123;</span><br><span class="line">        flags |= PTEFlags::R;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> port &amp; <span class="number">0b0000_0010</span> != <span class="number">0</span> &#123;</span><br><span class="line">        flags |= PTEFlags::W;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> port &amp; <span class="number">0b0000_0100</span> != <span class="number">0</span> &#123;</span><br><span class="line">        flags |= PTEFlags::X;</span><br><span class="line">    &#125;</span><br><span class="line">    flags |= PTEFlags::U;</span><br><span class="line">    flags |= PTEFlags::V;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_end</span>: VirtAddr = (start + len).<span class="title function_ invoke__">into</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_end</span>: VirtPageNum = va_end.<span class="title function_ invoke__">ceil</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// println!(</span></span><br><span class="line">    <span class="comment">//     &quot;start = &#123;:x&#125; &amp;&amp; va_star = &#123;&#125; &amp;&amp; va_end = &#123;&#125;&quot;,</span></span><br><span class="line">    <span class="comment">//     start, va_start.0, va_end.0</span></span><br><span class="line">    <span class="comment">// );</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> va_start != va_end &#123;</span><br><span class="line">        <span class="comment">// println!(&quot;map va_start = &#123;&#125;&quot;, va_start.0);</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(pte) = <span class="keyword">self</span>.page_table.<span class="title function_ invoke__">translate</span>(va_start) &#123;</span><br><span class="line">            <span class="keyword">if</span> pte.<span class="title function_ invoke__">is_valid</span>() &#123;</span><br><span class="line">                <span class="comment">// println!(&quot;mmap found exit va_start &#123;&#125;&quot;, va_start.0);</span></span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(ppn) = <span class="title function_ invoke__">frame_alloc</span>() &#123;</span><br><span class="line">            <span class="keyword">self</span>.page_table.<span class="title function_ invoke__">map</span>(va_start, ppn.ppn, flags);</span><br><span class="line">            <span class="keyword">self</span>.map_tree.<span class="title function_ invoke__">insert</span>(va_start, ppn);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        va_start.<span class="title function_ invoke__">step</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="number">0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>unmmap</code>则更简单, 从<code>map_tree</code>中删除即可, 这会自动触发<code>drop trait</code>:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// os/src/mm/memory_set.rs</span></span><br><span class="line"><span class="comment">/// unmap</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">unmmap</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, start: <span class="type">usize</span>, len: <span class="type">usize</span>) <span class="punctuation">-&gt;</span> <span class="type">isize</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_start</span>: VirtAddr = start.<span class="title function_ invoke__">into</span>();</span><br><span class="line">    <span class="keyword">if</span> !va_start.<span class="title function_ invoke__">aligned</span>() &#123;</span><br><span class="line">        debug!(<span class="string">&quot;unmap fail don&#x27;t aligned&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">va_start</span>: VirtPageNum = va_start.<span class="title function_ invoke__">into</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_end</span>: VirtAddr = (start + len).<span class="title function_ invoke__">into</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">va_end</span>: VirtPageNum = va_end.<span class="title function_ invoke__">ceil</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> va_start != va_end &#123;</span><br><span class="line">        <span class="comment">// println!(&quot;unmap va_start = &#123;&#125;&quot;, va_start.0);</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(item) = <span class="keyword">self</span>.page_table.<span class="title function_ invoke__">translate</span>(va_start) &#123;</span><br><span class="line">            <span class="keyword">if</span> !item.<span class="title function_ invoke__">is_valid</span>() &#123;</span><br><span class="line">                debug!(<span class="string">&quot;unmap on no map vpn&quot;</span>);</span><br><span class="line">                <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">self</span>.page_table.<span class="title function_ invoke__">unmap</span>(va_start);</span><br><span class="line">        <span class="keyword">self</span>.map_tree.<span class="title function_ invoke__">remove</span>(&amp;va_start);</span><br><span class="line">        va_start.<span class="title function_ invoke__">step</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="number">0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="2-简答作业"><a href="#2-简答作业" class="headerlink" title="2 简答作业"></a>2 简答作业</h1><h2 id="2-1-请列举-SV39-页表页表项的组成，描述其中的标志位有何作用？"><a href="#2-1-请列举-SV39-页表页表项的组成，描述其中的标志位有何作用？" class="headerlink" title="2.1 请列举 SV39 页表页表项的组成，描述其中的标志位有何作用？"></a>2.1 请列举 <code>SV39</code> 页表页表项的组成，描述其中的标志位有何作用？</h2><p><img src="/../../../images/LearningOS/ch4-translate.png" alt="ch4-translate"></p>
+<p>如上图所示, 每个页表项是<code>PPN</code> + <code>Flags</code>组成, <code>PPN</code>指向下一级页表的物理页地址, <code>Flags</code>为各种标志位:</p>
+<ul>
+<li><strong>V</strong>: 页表项是否有效</li>
+<li><strong>R&#x2F;W&#x2F;X</strong>: 控制对应页是否具有读、写、执行权限。这些权限位为操作系统实现内存保护提供了机制。</li>
+<li><strong>U</strong>: 控制页的访问级别，标明用户空间是否可以访问。</li>
+<li><strong>G</strong>: 全局位用于性能优化，它允许某些页表项在多个上下文之间共享，减少TLB刷新。</li>
+<li><strong>A&#x2F;D</strong>: 访问和脏位用于页面替换策略，帮助操作系统确定哪些页面是活跃的，哪些页面可以被换出内存。</li>
+<li><strong>RSW</strong>: 保留位， 留给自定义的实现， 常用于实现<strong>COW</strong>写时复制，用于实现<code>fork</code>系统调用时的内存效率优化。</li>
+</ul>
+<h2 id="2-2-缺页"><a href="#2-2-缺页" class="headerlink" title="2.2 缺页"></a>2.2 <strong>缺页</strong></h2><p>缺页指的是进程访问页面时页面不在页表中或在页表中无效的现象，此时 MMU 将会返回一个中断， 告知 os 进程内存访问出了问题。os 选择填补页表并重新执行异常指令或者杀死进程</p>
+<h3 id="2-2-1-请问哪些异常可能是缺页导致的？"><a href="#2-2-1-请问哪些异常可能是缺页导致的？" class="headerlink" title="2.2.1 请问哪些异常可能是缺页导致的？"></a>2.2.1 请问哪些异常可能是缺页导致的？</h3><ul>
+<li>访问了一个没有映射的虚拟地址。</li>
+<li>访问了映射了虚拟地址但尚未加载到物理内存的页面。</li>
+<li>访问违反了权限的页面，如对只读页面进行写操作。</li>
+</ul>
+<h3 id="2-2-2-发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。"><a href="#2-2-2-发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。" class="headerlink" title="2.2.2 发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。"></a>2.2.2 发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。</h3><ul>
+<li><strong>PC (Program Counter)</strong>: 保存发生异常指令的地址。</li>
+<li><strong>stval&#x2F;utval (Store&#x2F;Trap Value Register)</strong>: 保存造成异常的虚拟地址。</li>
+<li><strong>satp (Supervisor Address Translation and Protection Register)</strong>: 包含页表的基址和一些控制位，用于地址转换。</li>
+</ul>
+<h3 id="2-2-3-Lazy"><a href="#2-2-3-Lazy" class="headerlink" title="2.2.3 Lazy"></a>2.2.3 <code>Lazy</code></h3><p>缺页有两个常见的原因，其一是 <code>Lazy</code> 策略，也就是直到内存页面被访问才实际进行页表操作。 比如，一个程序被执行时，进程的代码段理论上需要从磁盘加载到内存。但是 <code>os</code> 并不会马上这样做， 而是会保存 .<code>text</code> 段在磁盘的位置信息，在这些代码第一次被执行时才完成从磁盘的加载操作。<br>这样做有哪些好处？</p>
+<ul>
+<li>减少了初始化时的加载时间，加快了程序启动速度。</li>
+<li>仅加载实际使用的内存页面，节省了物理内存资源。</li>
+<li>避免了不必要的I&#x2F;O操作，提高了系统整体性能。</li>
+</ul>
+<h3 id="2-2-4-估算页表内存消耗"><a href="#2-2-4-估算页表内存消耗" class="headerlink" title="2.2.4 估算页表内存消耗"></a>2.2.4 估算页表内存消耗</h3><p>其实，我们的 <code>mmap</code> 也可以采取 <code>Lazy</code> 策略，比如：一个用户进程先后申请了 10G 的内存空间， 然后用了其中 1M 就直接退出了。按照现在的做法，我们显然亏大了，进行了很多没有意义的页表操作。<br>处理 10G 连续的内存页面，对应的 SV39 页表大致占用多少内存 (估算数量级即可)？</p>
+<ol>
+<li>每个页表项占用8字节，对于10G内存：</li>
+<li>一级页表（PTEs）: <code>10G / 4K</code>（每页大小）&#x3D; <code>2560K</code> 页表项 &#x3D; <code>2560K * 8</code> 字节。</li>
+<li>二级页表（PTEs）: <code>2560K / 512</code>（每级页表条目数）&#x3D; <code>5K</code> 页表项 &#x3D; <code>5K * 8</code> 字节。</li>
+<li>三级页表（PTEs）: <code>5K / 512</code> &#x3D; <code>10</code> 页表项 &#x3D; <code>10 * 8</code> 字节。</li>
+<li>总计约为<code>2560K * 8</code>字节 加上较小的二级和三级页表大小，数量级在几 M 字节。</li>
+</ol>
+<h3 id="2-2-5-实现Lazy"><a href="#2-2-5-实现Lazy" class="headerlink" title="2.2.5 实现Lazy"></a>2.2.5 实现<code>Lazy</code></h3><p>请简单思考如何才能实现 <code>Lazy</code> 策略，缺页时又如何处理？描述合理即可，不需要考虑实现。</p>
+<ul>
+<li>在进程开始时，只为虚拟地址空间分配页表结构，不分配实际的物理页面。</li>
+<li>页面第一次被访问时，通过缺页中断处理函数分配物理页面，并更新页表项。</li>
+<li>缺页处理时，查找磁盘上相应的数据（如果之前已经映射），然后加载到内存中。</li>
+</ul>
+<h3 id="2-2-6-Swap"><a href="#2-2-6-Swap" class="headerlink" title="2.2.6 Swap"></a>2.2.6 <code>Swap</code></h3><p>缺页的另一个常见原因是 <code>swap</code> 策略，也就是内存页面可能被换到磁盘上了，导致对应页面失效。<br>此时页面失效如何表现在页表项(PTE)上？</p>
+<ul>
+<li>有效位(<code>V</code>): 如果页面被换出到磁盘，页表项的有效位会被清除。</li>
+<li>使用<code>RSW</code>位来存储额外的状态信息，区分真正的无效的页表项和被换到磁盘上的页表项</li>
+</ul>
+<h2 id="2-3-双页表与单页表"><a href="#2-3-双页表与单页表" class="headerlink" title="2.3 双页表与单页表"></a>2.3 双页表与单页表</h2><p>为了防范侧信道攻击，我们的 <code>o</code>s 使用了双页表。但是传统的设计一直是单页表的，也就是说， 用户线程和对应的内核线程共用同一张页表，只不过内核对应的地址只允许在内核态访问。 (备注：这里的单&#x2F;双的说法仅为自创的通俗说法，并无这个名词概念，详情见 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Kernel_page-table_isolation"><code>KPTI</code></a> )</p>
+<ol>
+<li><p>在单页表情况下，如何更换页表？<br>单页表不需要切换, 因为页表已经包含了用户空间和内核空间的映射。但是，当切换进程时，需要更换页表以加载新进程的地址空间。通过更新 <code>satp</code>寄存器来完成，这个寄存器包含了当前活动页表的物理地址。</p>
+</li>
+<li><p>单页表情况下，如何控制用户态无法访问内核页面？<br>内核页表的页表项不设置<code>U</code>位即可</p>
+</li>
+<li><p>单页表有何优势？<br>陷入内核时不需要切换页表, 同时仍然可以用硬件完成地址翻译, 效率更高</p>
+</li>
+<li><p>双页表实现下，何时需要更换页表？假设你写一个单页表操作系统，你会选择何时更换页表（回答合理即可）？</p>
+<ol>
+<li>双页表实现下，上下文切换和陷入内核都需要切换页表</li>
+<li>单页表实现下, 切换不同的进程时才需要切换页表</li>
+</ol>
+</li>
+</ol>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%96%E7%A8%8B%E4%BD%9C%E4%B8%9A"><span class="toc-number">1.</span> <span class="toc-text">1 编程作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E9%87%8D%E5%86%99-sys-get-time-%E5%92%8C-sys-task-info"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 重写 sys_get_time 和 sys_task_info</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%AE%9E%E7%8E%B0-mmap-%E5%92%8C-munmap"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 实现 mmap 和 munmap</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-MemorySet%E7%BB%93%E6%9E%84%E4%BD%93"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 MemorySet结构体</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-MemorySet-mmap-MemorySet-unmmap"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 MemorySet::mmap &amp;&amp; MemorySet::unmmap</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%AE%80%E7%AD%94%E4%BD%9C%E4%B8%9A"><span class="toc-number">2.</span> <span class="toc-text">2 简答作业</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AF%B7%E5%88%97%E4%B8%BE-SV39-%E9%A1%B5%E8%A1%A8%E9%A1%B5%E8%A1%A8%E9%A1%B9%E7%9A%84%E7%BB%84%E6%88%90%EF%BC%8C%E6%8F%8F%E8%BF%B0%E5%85%B6%E4%B8%AD%E7%9A%84%E6%A0%87%E5%BF%97%E4%BD%8D%E6%9C%89%E4%BD%95%E4%BD%9C%E7%94%A8%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 请列举 SV39 页表页表项的组成，描述其中的标志位有何作用？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E7%BC%BA%E9%A1%B5"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 缺页</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E8%AF%B7%E9%97%AE%E5%93%AA%E4%BA%9B%E5%BC%82%E5%B8%B8%E5%8F%AF%E8%83%BD%E6%98%AF%E7%BC%BA%E9%A1%B5%E5%AF%BC%E8%87%B4%E7%9A%84%EF%BC%9F"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 请问哪些异常可能是缺页导致的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E5%8F%91%E7%94%9F%E7%BC%BA%E9%A1%B5%E6%97%B6%EF%BC%8C%E6%8F%8F%E8%BF%B0%E7%9B%B8%E5%85%B3%E9%87%8D%E8%A6%81%E5%AF%84%E5%AD%98%E5%99%A8%E7%9A%84%E5%80%BC%EF%BC%8C%E4%B8%8A%E6%AC%A1%E5%AE%9E%E9%AA%8C%E6%8F%8F%E8%BF%B0%E8%BF%87%E7%9A%84%E5%8F%AF%E4%BB%A5%E7%AE%80%E7%95%A5%E3%80%82"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 发生缺页时，描述相关重要寄存器的值，上次实验描述过的可以简略。</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-Lazy"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 Lazy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E4%BC%B0%E7%AE%97%E9%A1%B5%E8%A1%A8%E5%86%85%E5%AD%98%E6%B6%88%E8%80%97"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 估算页表内存消耗</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-5-%E5%AE%9E%E7%8E%B0Lazy"><span class="toc-number">2.2.5.</span> <span class="toc-text">2.2.5 实现Lazy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-6-Swap"><span class="toc-number">2.2.6.</span> <span class="toc-text">2.2.6 Swap</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E5%8F%8C%E9%A1%B5%E8%A1%A8%E4%B8%8E%E5%8D%95%E9%A1%B5%E8%A1%A8"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 双页表与单页表</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&text=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&is_video=false&description=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=清华大学开源操作系统训练营: rCore chapter4练习&body=Check out this article: http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&title=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&name=清华大学开源操作系统训练营: rCore chapter4练习&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/&t=清华大学开源操作系统训练营: rCore chapter4练习"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
