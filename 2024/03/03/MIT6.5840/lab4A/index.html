@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="最新的更新在博客 ToniBlog 本文将介绍lab4A部分的实现, lab4A要求实现分片控制器, 其实就是lab3的翻版, 基本上可以照搬lab3。如果仅仅是为了通过测试，lab4A倒是极其简单，只需要每次更新Group后随机完成Shard的映射就好了, 但还要考虑将配置项的改动最小话, 还是有一些坑的。 Lab文档见: http:&#x2F;&#x2F;nil.csail.mit.edu&#x2F;6.5840&#x2F;2023">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MIT6.5840(6.824) Lab4: 分片KV数据库 4A">
+<meta property="og:url" content="http://example.com/2024/03/03/MIT6.5840/lab4A/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="最新的更新在博客 ToniBlog 本文将介绍lab4A部分的实现, lab4A要求实现分片控制器, 其实就是lab3的翻版, 基本上可以照搬lab3。如果仅仅是为了通过测试，lab4A倒是极其简单，只需要每次更新Group后随机完成Shard的映射就好了, 但还要考虑将配置项的改动最小话, 还是有一些坑的。 Lab文档见: http:&#x2F;&#x2F;nil.csail.mit.edu&#x2F;6.5840&#x2F;2023">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/MIT6.5840/lab4A/lab4A-test.png">
+<meta property="article:published_time" content="2024-03-03T02:10:46.000Z">
+<meta property="article:modified_time" content="2024-03-03T03:09:14.176Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="Go">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/MIT6.5840/lab4A/lab4A-test.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>MIT6.5840(6.824) Lab4: 分片KV数据库 4A</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/02/28/%E6%B8%85%E5%8D%8E%E5%A4%A7%E5%AD%A6-2023%E7%A7%8B%E5%86%AC%E5%AD%A3%E5%BC%80%E6%BA%90%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E8%AE%AD%E7%BB%83%E8%90%A5/%E9%98%B6%E6%AE%B5%E4%BA%8C/rCore-chapter4%E7%BB%83%E4%B9%A0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/03/MIT6.5840/lab4A/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&text=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&is_video=false&description=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab4: 分片KV数据库 4A&body=Check out this article: http://example.com/2024/03/03/MIT6.5840/lab4A/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&name=MIT6.5840(6.824) Lab4: 分片KV数据库 4A&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/03/MIT6.5840/lab4A/&t=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">1 项目结构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Join"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Join</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Leave"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Leave</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Move-Query"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Move &amp;&amp; Query</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%98%93%E9%94%99%E7%82%B9%E8%A7%A3%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">3 易错点解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 代码实现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        MIT6.5840(6.824) Lab4: 分片KV数据库 4A
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-03-03T02:10:46.000Z" class="dt-published" itemprop="datePublished">2024-03-03</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/">MIT6.5840(6.824) 2023</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/MIT6-5840-6-824-2023/Lab%E7%AC%94%E8%AE%B0/">Lab笔记</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Go/" rel="tag">Go</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><em>最新的更新在博客 <a target="_blank" rel="noopener" href="https://tonixwd.github.io/">ToniBlog</a></em></p>
+<p>本文将介绍<code>lab4A</code>部分的实现, <code>lab4A</code>要求实现分片控制器, 其实就是<code>lab3</code>的翻版, 基本上可以照搬<code>lab3</code>。如果仅仅是为了通过测试，<code>lab4A</code>倒是极其简单，只需要每次更新<code>Group</code>后随机完成<code>Shard</code>的映射就好了, 但还要考虑将配置项的改动最小话, 还是有一些坑的。</p>
+<p><code>Lab</code>文档见: <a target="_blank" rel="noopener" href="http://nil.csail.mit.edu/6.5840/2023/labs/lab-shard.html">http://nil.csail.mit.edu/6.5840/2023/labs/lab-shard.html</a></p>
+<p>我的代码: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab4A">https://github.com/ToniXWD/MIT6.5840/tree/lab4A</a></p>
+<h1 id="1-项目结构"><a href="#1-项目结构" class="headerlink" title="1 项目结构"></a>1 项目结构</h1><p>分片数据库的组成结构是：1个<code>controller</code> + 多个<code>replica groups</code>。<code>controller</code>将数据进行分片， 存储在不同的集群上， 每个集群都是一个<code>raft</code>集群, <code>controller</code>负责管理分片, 也就是管理配置项。<code>clients</code> 和 <code>servers</code> 都会询问 <code>controller</code> 最新的配置信息。 分片控制器需要具备如下的功能:</p>
+<ol>
+<li>为了负载均衡 -&gt; 能够迁移分片</li>
+<li>需要处理请求和配置项更新几乎同时到达的情况</li>
+<li>建议的实现: <code>raft</code>集群也要保存配置项</li>
+<li>配置更新后, 新的负责某分片的<code>replica groups</code>需要从旧的<code>replica groups</code>复制旧分片</li>
+</ol>
+<p><code>Shard controller</code>使用下面的<code>RPC</code>来实现管理和查询:</p>
+<ol>
+<li><code>Join</code>:<ol>
+<li>重新分片时尽量平均</li>
+<li>重新分片时移动的分片尽量少</li>
+<li>允许重用<code>GID</code></li>
+</ol>
+</li>
+<li><code>Leave</code><ol>
+<li>重新分片时尽量平均</li>
+<li>重新分片时移动的分片尽量少</li>
+</ol>
+</li>
+<li><code>Move</code><ol>
+<li>将某个<code>shard</code>分配给某个<code>group</code></li>
+</ol>
+</li>
+<li><code>Query</code> <ol>
+<li>返回配置信息</li>
+<li>必须反映在其之前做出的配置信息更改</li>
+</ol>
+</li>
+</ol>
+<p>主要的坑包括:</p>
+<ol>
+<li>需要滤除重复的<code>RPC</code>(照抄<code>lab3</code>即可)</li>
+<li>执行碎片再平衡的状态机中的代码需要具有确定性(大坑)</li>
+</ol>
+<h1 id="2-实现思路"><a href="#2-实现思路" class="headerlink" title="2 实现思路"></a>2 实现思路</h1><p>由于我们的目标不仅仅是通过测例, 还需要完成下面2个目标:</p>
+<ol>
+<li>实现负载均衡<br> 实现负载均衡, 意味着所有的集群被映射的数量只差不能大于1(手动<code>Move</code>的情况除外), 因此需要对已经映射的集群号(<code>gid</code>)实现统计计数</li>
+<li>最小化改动<br>新配置和旧配置之间的改动要最小化</li>
+</ol>
+<p>因此我的实现思路和逻辑如下:</p>
+<h2 id="2-1-Join"><a href="#2-1-Join" class="headerlink" title="2.1 Join"></a>2.1 <code>Join</code></h2><ol>
+<li>首先继承旧配置<code>lastConfig</code>创建新配置<code>newConfig</code></li>
+<li>将要<code>Join</code>的<code>newGroups</code>追加到<code>newConfig.Groups</code>, 但需要注意下面的情况<ol>
+<li><code>len(lastConfig.Groups) + len(newGroups) &lt;= NShards</code>, 此时无脑将<code>Join</code>的<code>newGroups</code>追加到<code>newConfig.Groups</code>即可</li>
+<li><code>len(lastConfig.Groups) + len(newGroups) &gt; NShards</code>, 此时只需要将<code>newConfig.Groups</code>填充至<code>len(newConfig.Groups) == NShards</code>即可, 剩余的部分缓存起来, 记缓存区为<code>CachedGid</code></li>
+</ol>
+</li>
+<li>统计<code>newConfig.Groups</code>中对<code>Shard</code>的映射次数, 映射次数最高的和映射次数最低的绝对值不能大于1, 由于新增了目前没有映射的<code>Join</code>的新集群, 此特性不可能满足, 因此需要:<ol>
+<li>将目前对<code>Shard</code>的映射次数最少的<code>gid</code>剥夺一个映射, 被剥夺的这个映射本来是被映射到拥有<code>Shard</code>最多的一个<code>gid</code></li>
+<li>更新映射次数统计信息, 直到映射次数最少的<code>gid</code>(也就是之前新加入的)大于等于映射平均值(<code>NShards / len(newConfig.Groups)</code>)即可</li>
+</ol>
+</li>
+</ol>
+<h2 id="2-2-Leave"><a href="#2-2-Leave" class="headerlink" title="2.2 Leave"></a>2.2 <code>Leave</code></h2><ol>
+<li>首先继承旧配置<code>lastConfig</code>创建新配置<code>newConfig</code></li>
+<li>从<code>newConfig.Groups</code>和<code>newConfig.CachedGid</code>中移除指定的<code>gid</code>(因为可能目前所有的<code>gid</code>数量大于<code>NShards</code>, 部分被暂存到了<code>CachedGid</code>), 被移除的<code>gid</code>在<code>newConfig.Shards</code>用0标记</li>
+<li>如果<code>newConfig.CachedGid</code>还有剩余且<code>len(newConfig.Groups) &lt; NShards</code>, 将<code>newConfig.CachedGid</code>中的<code>gid</code>移动到<code>newConfig.Groups</code>使其填充满或者使<code>newConfig.CachedGid</code>为空</li>
+<li>获取当前映射数量最少的<code>gid</code>的统计信息</li>
+<li>在<code>newConfig.Shards</code>用0标记的位置用映射数量最少的<code>gid</code>代替, 每代替一次后需要重新统计</li>
+</ol>
+<h2 id="2-3-Move-Query"><a href="#2-3-Move-Query" class="headerlink" title="2.3 Move &amp;&amp; Query"></a>2.3 <code>Move &amp;&amp; Query</code></h2><p>这两个没啥坑, 就不说了</p>
+<h1 id="3-易错点解析"><a href="#3-易错点解析" class="headerlink" title="3 易错点解析"></a>3 易错点解析</h1><ol>
+<li><code>Go</code>的<code>map</code>的迭代顺序<br><code>Go</code>的<code>map</code>的迭代顺序是无序的, 即使其插入时的顺序和数据都是相同的, 但多次进行迭代, 其顺序不一致, 因此在多个副本上想保证确定性的话, 需要先对<code>map</code>的<code>key</code>获取切片并排序</li>
+<li><code>gid</code>的数量和<code>NShards</code>的关系<br>由于每个<code>Shard</code>都会映射一个<code>gid</code>, 因此如果<code>gid</code>的数量大于<code>NShard</code>的话, 会存在有<code>gid</code>映射不到的情况, 这时我的处理是将其放到暂存区, 保证<code>Group</code>中的<code>gid</code>数量</li>
+<li><code>map</code>的复制<br><code>Go</code>的<code>map</code>的复制是浅复制, 复制一个<code>map</code>时，只是复制了对底层数据结构的引用，而不是底层数据本身的副本。意味着如果在一个<code>map</code>中做出了改变（比如删除或添加键值对），这些改变会在所有对这个底层数据结构的引用中体现出来。因此，对原始<code>map</code>的修改会影响到复制后的<code>map</code>，因为它们都引用同一个数据结构。</li>
+</ol>
+<h1 id="4-代码实现"><a href="#4-代码实现" class="headerlink" title="4 代码实现"></a>4 代码实现</h1><p>我自己实现的代码比较繁琐(很丑), 但逻辑其实很简单, 参见: <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/MIT6.5840/tree/lab4A">https://github.com/ToniXWD/MIT6.5840/tree/lab4A</a></p>
+<h1 id="5-测试"><a href="#5-测试" class="headerlink" title="5 测试"></a>5 测试</h1><p><img src="/../../images/MIT6.5840/lab4A/lab4A-test.png" alt="lab4A-test"></p>
+<p>此测试经过50次没有报错</p>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%A1%B9%E7%9B%AE%E7%BB%93%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text">1 项目结构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 实现思路</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Join"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Join</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Leave"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Leave</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Move-Query"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Move &amp;&amp; Query</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%98%93%E9%94%99%E7%82%B9%E8%A7%A3%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">3 易错点解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 代码实现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">5 测试</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/03/MIT6.5840/lab4A/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&text=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&is_video=false&description=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab4: 分片KV数据库 4A&body=Check out this article: http://example.com/2024/03/03/MIT6.5840/lab4A/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&title=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/03/MIT6.5840/lab4A/&name=MIT6.5840(6.824) Lab4: 分片KV数据库 4A&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/03/MIT6.5840/lab4A/&t=MIT6.5840(6.824) Lab4: 分片KV数据库 4A"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>

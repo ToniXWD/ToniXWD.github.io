@@ -9,7 +9,7 @@
     <meta name="description" content="本文将介绍lab2D部分的实现, lab2D要求实现raft中的快照功能。从个人体验而言, lab2D是目前所有Lab中最难的一个, 各种边界情况层出不穷, debug时看着上千行的debug日志, 一度感到绝望…好在反复调试后终于实现了raft, 还是有点小感动☺️ 主要难度在于:  将日志数组截断后, 需要实现全局索引和数组索引之前的转化, 需要考虑更多数组越界的边界条件 在接收Install">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MIT6.5840(6.824) Lab2: Raft 2D">
-<meta property="og:url" content="http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/index.html">
+<meta property="og:url" content="http://example.com/2024/01/15/MIT6.5840/Lab2D/index.html">
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="本文将介绍lab2D部分的实现, lab2D要求实现raft中的快照功能。从个人体验而言, lab2D是目前所有Lab中最难的一个, 各种边界情况层出不穷, debug时看着上千行的debug日志, 一度感到绝望…好在反复调试后终于实现了raft, 还是有点小感动☺️ 主要难度在于:  将日志数组截断后, 需要实现全局索引和数组索引之前的转化, 需要考虑更多数组越界的边界条件 在接收Install">
 <meta property="og:locale" content="zh_CN">
@@ -93,7 +93,7 @@
         <li><a class="icon" aria-label="上一篇" href="/2024/01/16/MIT6.5840/Lec09%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
         
         
-        <li><a class="icon" aria-label="下一篇" href="/2024/01/13/MIT6.5840/Lab2_Raft_2C/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="下一篇" href="/2024/01/13/MIT6.5840/Lab2C/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
         
         <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
         <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
@@ -106,17 +106,17 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&text=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2D&body=Check out this article: http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&name=MIT6.5840(6.824) Lab2: Raft 2D&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&t=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/15/MIT6.5840/Lab2D/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&text=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2D&body=Check out this article: http://example.com/2024/01/15/MIT6.5840/Lab2D/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&name=MIT6.5840(6.824) Lab2: Raft 2D&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/15/MIT6.5840/Lab2D/&t=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -364,17 +364,17 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&text=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2D&body=Check out this article: http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&name=MIT6.5840(6.824) Lab2: Raft 2D&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/15/MIT6.5840/Lab2_Raft_2D/&t=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/01/15/MIT6.5840/Lab2D/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&text=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&is_video=false&description=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=MIT6.5840(6.824) Lab2: Raft 2D&body=Check out this article: http://example.com/2024/01/15/MIT6.5840/Lab2D/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&title=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/01/15/MIT6.5840/Lab2D/&name=MIT6.5840(6.824) Lab2: Raft 2D&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/01/15/MIT6.5840/Lab2D/&t=MIT6.5840(6.824) Lab2: Raft 2D"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
