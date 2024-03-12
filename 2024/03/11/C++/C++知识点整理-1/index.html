@@ -9,7 +9,7 @@
     <meta name="description" content="1 如果类的数据成员不包含指针, 是否可以使用memcmp逐字节比较2个对象?不可以, 原因如下:  虚函数表指针：如果对象是多态的，即它有虚函数，它可能包含一个指向虚函数表的隐藏指针（通常称为 vptr）。由于虚函数表的地址可能因为对象的创建方式不同而不同（比如通过不同的派生类创建基类的对象），这会导致 memcmp 认为对象不相等，即使它们在逻辑上是相同的。  填充字节和对齐：为了满足特定的对">
 <meta property="og:type" content="article">
 <meta property="og:title" content="C&#x2F;C++面经整理-1">
-<meta property="og:url" content="http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/index.html">
+<meta property="og:url" content="http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/index.html">
 <meta property="og:site_name" content="ToniBlog">
 <meta property="og:description" content="1 如果类的数据成员不包含指针, 是否可以使用memcmp逐字节比较2个对象?不可以, 原因如下:  虚函数表指针：如果对象是多态的，即它有虚函数，它可能包含一个指向虚函数表的隐藏指针（通常称为 vptr）。由于虚函数表的地址可能因为对象的创建方式不同而不同（比如通过不同的派生类创建基类的对象），这会导致 memcmp 认为对象不相等，即使它们在逻辑上是相同的。  填充字节和对齐：为了满足特定的对">
 <meta property="og:locale" content="zh_CN">
@@ -98,17 +98,17 @@
     <br/>
     <div id="share" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&text=C/C++面经整理-1"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&is_video=false&description=C/C++面经整理-1"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=C/C++面经整理-1&body=Check out this article: http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&name=C/C++面经整理-1&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&t=C/C++面经整理-1"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&text=C/C++面经整理-1"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&is_video=false&description=C/C++面经整理-1"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C/C++面经整理-1&body=Check out this article: http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&name=C/C++面经整理-1&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&t=C/C++面经整理-1"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
@@ -359,17 +359,17 @@
 
     <div id="share-footer" style="display: none">
       <ul>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&text=C/C++面经整理-1"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&is_video=false&description=C/C++面经整理-1"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" href="mailto:?subject=C/C++面经整理-1&body=Check out this article: http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&name=C/C++面经整理-1&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/11/C++/C++%E9%9D%A2%E7%BB%8F%E6%95%B4%E7%90%86-1/&t=C/C++面经整理-1"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&text=C/C++面经整理-1"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&is_video=false&description=C/C++面经整理-1"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C/C++面经整理-1&body=Check out this article: http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&title=C/C++面经整理-1"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&name=C/C++面经整理-1&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/03/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86-1/&t=C/C++面经整理-1"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
