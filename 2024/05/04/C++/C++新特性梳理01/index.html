@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="之前一直在准备暑期实习的笔试和面试, 因此博客断更了很久…回头做6.5840发现自己的代码逻辑都快忘了… 先整理下实习求职过程中学习的C++的新特性, 由于C++11已经使用得很广泛了, 包括智能指针、各种转换运算符、lambda表达式已经成为面试常见考点了，这里我就不提这些了，因此我只梳理从C++17开始的知识点，包括C++17、C++20、C++23和少量C++26。 之前断更的6.5840的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++新特性梳理01">
+<meta property="og:url" content="http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="之前一直在准备暑期实习的笔试和面试, 因此博客断更了很久…回头做6.5840发现自己的代码逻辑都快忘了… 先整理下实习求职过程中学习的C++的新特性, 由于C++11已经使用得很广泛了, 包括智能指针、各种转换运算符、lambda表达式已经成为面试常见考点了，这里我就不提这些了，因此我只梳理从C++17开始的知识点，包括C++17、C++20、C++23和少量C++26。 之前断更的6.5840的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-05-04T03:18:31.000Z">
+<meta property="article:modified_time" content="2024-05-04T04:08:58.579Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta property="article:tag" content="C++17">
+<meta property="article:tag" content="C++20">
+<meta property="article:tag" content="C++23">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++新特性梳理01</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/03/03/MIT6.5840/lab4A/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&text=C++新特性梳理01"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&is_video=false&description=C++新特性梳理01"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理01&body=Check out this article: http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&name=C++新特性梳理01&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&t=C++新特性梳理01"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-auto%E4%BD%9C%E4%B8%BA%E5%87%BD%E6%95%B0%E5%BD%A2%E5%8F%82"><span class="toc-number">1.</span> <span class="toc-text">1 auto作为函数形参</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-number">2.</span> <span class="toc-text">2 &lt;&#x3D;&gt;运算符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%9E%9A%E4%B8%BE%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 枚举优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%94%AF%E6%8C%81%E7%89%B9%E6%80%A7%E7%9A%84%E6%9E%9A%E4%B8%BE"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 支持特性的枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-switch%E4%B8%AD%E6%9E%9A%E4%B8%BE%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 switch中枚举的优化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9B%B4%E6%96%B9%E4%BE%BF%E7%9A%84%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">4 更方便的流程控制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E6%9D%A1%E4%BB%B6%E5%88%A4%E6%96%AD%E5%89%8D%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 条件判断前的初始化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%8C%87%E5%AE%9A%E8%BF%AD%E4%BB%A3%E8%8C%83%E5%9B%B4%E7%9A%84for%E5%BE%AA%E7%8E%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 指定迭代范围的for循环</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%AE%89%E5%85%A8%E7%9A%84%E8%81%94%E5%90%88%E4%BD%93variant"><span class="toc-number">5.</span> <span class="toc-text">5 安全的联合体variant</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%BF%E5%85%8Dunused-warning"><span class="toc-number">6.</span> <span class="toc-text">6 避免unused warning</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++新特性梳理01
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-05-04T03:18:31.000Z" class="dt-published" itemprop="datePublished">2024-05-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/C-17/" rel="tag">C++17</a>, <a class="p-category" href="/tags/C-20/" rel="tag">C++20</a>, <a class="p-category" href="/tags/C-23/" rel="tag">C++23</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>之前一直在准备暑期实习的笔试和面试, 因此博客断更了很久…回头做6.5840发现自己的代码逻辑都快忘了…</p>
+<p>先整理下实习求职过程中学习的C++的新特性, 由于C++11已经使用得很广泛了, 包括智能指针、各种转换运算符、lambda表达式已经成为面试常见考点了，这里我就不提这些了，因此我只梳理从C++17开始的知识点，包括C++17、C++20、C++23和少量C++26。</p>
+<p><del>之前断更的6.5840的最后一个lab4B也会补上</del></p>
+<h2 id="1-auto作为函数形参"><a href="#1-auto作为函数形参" class="headerlink" title="1 auto作为函数形参"></a>1 auto作为函数形参</h2><p>C++20 中允许在函数声明中直接使用 <code>auto</code> 作为参数类型，这其实是一种简化模板函数定义的语法糖。该 <code>auto</code> 的使用方式类似于模板函数，但语法更为简洁。</p>
+<ul>
+<li>原始的函数模板实现<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T x)</span> </span>&#123;</span><br><span class="line">    cout &lt;&lt; x &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><code>auto</code>作为形参的实现<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(<span class="keyword">auto</span> x)</span> </span>&#123;</span><br><span class="line">    cout &lt;&lt; x &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><p>当编译器遇到一个使用 <code>auto</code> 作为参数类型的函数定义时，它会将这个函数视为一个模板函数。编译器内部的处理过程如下：</p>
+<ol>
+<li><p><strong>模板化</strong>：编译器将 <code>auto</code> 参数的函数自动转换为模板函数。上述 <code>void f(auto x)</code> 实际上被编译器转换为：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T x)</span> </span>&#123;</span><br><span class="line">    cout &lt;&lt; x &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 <code>T</code> 是由编译器自动生成的一个模板参数。</p>
+</li>
+<li><p><strong>类型推导</strong>：当这个函数被调用时，编译器将根据传入的实参推导出 <code>T</code> 的具体类型。</p>
+</li>
+</ol>
+<h2 id="2-运算符"><a href="#2-运算符" class="headerlink" title="2 &lt;=&gt;运算符"></a>2 <code>&lt;=&gt;</code>运算符</h2><p>C++20 引入的了新的比较运算符<code>&lt;=&gt;</code>, 该运算符允许在一个表达式中执行多态的、全面的比较，并根据比较结果返回一个可传递到<code>std::strong_ordering</code>、<code>std::weak_ordering</code>或<code>std::partial_ordering</code>枚举类型的值, 其比较逻辑如下:。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">a &lt;=&gt; b</span><br></pre></td></tr></table></figure>
+<p>比较左右两边的操作数<code>a</code>和<code>b</code>，并可能返回以下三个值之一：</p>
+<ol>
+<li><p><code>std::strong_ordering</code>:</p>
+<ul>
+<li><code>std::strong_ordering::less</code>：如果<code>a</code>严格小于<code>b</code>。</li>
+<li><code>std::strong_ordering::equal</code>：如果<code>a</code>等于<code>b</code>。</li>
+<li><code>std::strong_ordering::greater</code>：如果<code>a</code>严格大于<code>b</code>。</li>
+</ul>
+</li>
+<li><p><code>std::weak_ordering</code>（适用于无法提供强排序的对象，比如浮点数NaN）：</p>
+<ul>
+<li><code>std::weak_ordering::less</code></li>
+<li><code>std::weak_ordering::equivalent</code>（不同于等于，可能涉及NaN的比较）</li>
+<li><code>std::weak_ordering::greater</code></li>
+</ul>
+</li>
+<li><p><code>std::partial_ordering</code>（用于那些只在部分情况下可以比较的对象）：</p>
+<ul>
+<li><code>std::partial_ordering::less</code></li>
+<li><code>std::partial_ordering::equivalent</code></li>
+<li><code>std::partial_ordering::greater</code></li>
+<li><code>std::partial_ordering::unordered</code>（表示两个操作数不可比较）</li>
+</ul>
+</li>
+</ol>
+<p>简而言之, <code>&lt;=&gt;</code>使得单一的运算符具备处理所有比较的情况的能力。其重载方式也类似其他如<code>=</code>的运算符:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyClass</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    <span class="keyword">auto</span> <span class="built_in">operator</span>&lt;=&gt;(<span class="type">const</span> MyClass&amp; other) <span class="type">const</span> &#123;</span><br><span class="line">        <span class="comment">// 根据类的成员或某种逻辑来比较两个对象</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="comment">/* some condition */</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> std::strong_ordering::less;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="comment">/* equality condition */</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> std::strong_ordering::equal;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> std::strong_ordering::greater;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-枚举优化"><a href="#3-枚举优化" class="headerlink" title="3 枚举优化"></a>3 枚举优化</h2><h3 id="3-1-支持特性的枚举"><a href="#3-1-支持特性的枚举" class="headerlink" title="3.1 支持特性的枚举"></a>3.1 支持特性的枚举</h3><p><code>C++17</code> 支持对枚举成员进行特性声明:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">enum class</span> <span class="title class_">Color</span> &#123; RED, GREEN, BLUE [[deprecated]] &#125;;</span><br><span class="line"><span class="keyword">auto</span> x = Color::BLUE; <span class="comment">// compiler warning</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-switch中枚举的优化"><a href="#3-2-switch中枚举的优化" class="headerlink" title="3.2 switch中枚举的优化"></a>3.2 switch中枚举的优化</h3><p><code>C++20</code>在<code>switch</code>枚举使做出了优化, 可以通过<code>using ...</code>的方式简化枚举类型的声明:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++11 enum/enum class allows setting the underlying type</span></span><br><span class="line"><span class="keyword">enum class</span> <span class="title class_">Color</span> : <span class="type">int</span> &#123; RED, GREEN, BLUE &#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// C++20 allows introducing the enumerator identiﬁers</span></span><br><span class="line"><span class="comment">// into the local scope todecrease the verbosity</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">printColor</span><span class="params">(Color color)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">switch</span> (color) &#123;</span><br><span class="line">    <span class="keyword">using</span> <span class="keyword">enum</span> <span class="title class_">Color</span>;</span><br><span class="line">  <span class="keyword">case</span> RED:</span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;RED\n&quot;</span>;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">case</span> GREEN:</span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;GREEN\n&quot;</span>;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">case</span> BLUE:</span><br><span class="line">    cout &lt;&lt; <span class="string">&quot;BLUE\n&quot;</span>;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-更方便的流程控制"><a href="#4-更方便的流程控制" class="headerlink" title="4 更方便的流程控制"></a>4 更方便的流程控制</h2><h3 id="4-1-条件判断前的初始化"><a href="#4-1-条件判断前的初始化" class="headerlink" title="4.1 条件判断前的初始化"></a>4.1 条件判断前的初始化</h3><p><code>C++17</code>允许在<code>if</code>和<code>switch</code>前进行变量的初始化(类似<code>golang</code>的语法):</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">func1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// C++17 introduces if statement with initializer</span></span><br><span class="line">  <span class="type">int</span> x = <span class="number">3</span>, y = <span class="number">4</span>;</span><br><span class="line">  <span class="keyword">if</span> (<span class="type">int</span> ret = x + y; ret &lt; <span class="number">10</span>)</span><br><span class="line">    cout &lt;&lt; ret &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// C++17 introduces switch statement with initializer</span></span><br><span class="line">  <span class="keyword">switch</span> (<span class="keyword">auto</span> i = <span class="built_in">f</span>(); x) &#123;</span><br><span class="line">  <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">    cout &lt;&lt; i + x &lt;&lt; endl;</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  <span class="keyword">default</span>:</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">-1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-指定迭代范围的for循环"><a href="#4-2-指定迭代范围的for循环" class="headerlink" title="4.2 指定迭代范围的for循环"></a>4.2 指定迭代范围的for循环</h3><p>C++20引入了指定范围的<code>for</code>循环语法, 其支持自定义的初始化列表:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">func2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// C++20 introduces range-for loop statement with initializer</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; <span class="keyword">auto</span> x : &#123;<span class="string">&#x27;A&#x27;</span>, <span class="string">&#x27;B&#x27;</span>, <span class="string">&#x27;C&#x27;</span>&#125;) &#123;</span><br><span class="line">    cout &lt;&lt; i++ &lt;&lt; <span class="string">&quot;:&quot;</span> &lt;&lt; x &lt;&lt; <span class="string">&quot; &quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  cout &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-安全的联合体variant"><a href="#5-安全的联合体variant" class="headerlink" title="5 安全的联合体variant"></a>5 安全的联合体variant</h2><p><code>C++17 </code>引入了一个 <code>std::variant</code> 提供类型安全的联合体（Type-Safe Union）。<code>std::variant</code> 是一个模板类，它可以存储一组预定义的不同类型的数据，但是在任何时候仅能存储其中的一种类型，类似于传统的 C 语言中的 <code>union</code>，但它带有现代 C++ 的类型安全保证。</p>
+<p><code>std::variant</code> 提供了多种工具来管理和访问存储的值，例如：</p>
+<ul>
+<li><code>index()</code> 函数用于返回当前存储类型的索引。</li>
+<li><code>holds_alternative&lt;SomeType&gt;()</code> 用于检查当前存储的值是否为特定类型。</li>
+<li><code>get&lt;T&gt;()</code> 或 <code>get_if&lt;T&gt;()</code> 方法用于访问存储的值；若试图访问错误的类型，则 <code>get()</code> 将抛出 <code>std::bad_variant_access</code> 异常，而 <code>get_if()</code> 则返回一个指向相应类型值的指针（若不匹配则返回 <code>nullptr</code>）。</li>
+</ul>
+<p>案例代码:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;variant&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 定义一个 variant 类型，可以存储 int 和 std::string</span></span><br><span class="line">    std::variant&lt;<span class="type">int</span>, std::string&gt; v;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化为 int 类型</span></span><br><span class="line">    v = <span class="number">42</span>;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;v contains: &quot;</span>; </span><br><span class="line">    <span class="comment">// 使用 std::visit 处理不同类型的值</span></span><br><span class="line">    std::<span class="built_in">visit</span>([](<span class="keyword">auto</span>&amp;&amp; arg) &#123; std::cout &lt;&lt; arg &lt;&lt; <span class="string">&#x27;\n&#x27;</span>; &#125;, v);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 改变 v 的内容为 string 类型</span></span><br><span class="line">    v = <span class="string">&quot;Hello, World!&quot;</span>;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;v now contains: &quot;</span>;</span><br><span class="line">    std::<span class="built_in">visit</span>([](<span class="keyword">auto</span>&amp;&amp; arg) &#123; std::cout &lt;&lt; arg &lt;&lt; <span class="string">&#x27;\n&#x27;</span>; &#125;, v);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 检查并安全访问 variant 中的值</span></span><br><span class="line">    <span class="keyword">if</span> (std::<span class="built_in">holds_alternative</span>&lt;std::string&gt;(v)) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;The string in v is: &quot;</span> &lt;&lt; std::<span class="built_in">get</span>&lt;std::string&gt;(v) &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 错误的访问尝试：尝试获取 int 类型，但 v 现在存储的是 string 类型</span></span><br><span class="line">        <span class="comment">// 这将会抛出 std::bad_variant_access 异常</span></span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;The int in v is: &quot;</span> &lt;&lt; std::<span class="built_in">get</span>&lt;<span class="type">int</span>&gt;(v) &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">    &#125; <span class="built_in">catch</span> (<span class="type">const</span> std::bad_variant_access&amp; e) &#123;</span><br><span class="line">        std::cerr &lt;&lt; <span class="string">&quot;Error: Tried to access the wrong type in the variant: &quot;</span> &lt;&lt; e.<span class="built_in">what</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-避免unused-warning"><a href="#6-避免unused-warning" class="headerlink" title="6 避免unused warning"></a>6 避免<code>unused warning</code></h2><p><code>C++17</code>和<code>C++26</code>引入了更优雅的避免<code>unused warning</code>的手段:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">func3</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> a = <span class="number">3</span>;</span><br><span class="line">  <span class="built_in">static_cast</span>&lt;<span class="type">void</span>&gt;(a);       <span class="comment">// C++17 以前的方式</span></span><br><span class="line">  [[maybe_unused]] <span class="type">int</span> x = <span class="number">5</span>; <span class="comment">// C++17</span></span><br><span class="line">  <span class="keyword">auto</span> _ = <span class="number">3</span>;                 <span class="comment">// C++26</span></span><br><span class="line">  cout &lt;&lt; _ &lt;&lt; endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-auto%E4%BD%9C%E4%B8%BA%E5%87%BD%E6%95%B0%E5%BD%A2%E5%8F%82"><span class="toc-number">1.</span> <span class="toc-text">1 auto作为函数形参</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-number">1.1.</span> <span class="toc-text">原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="toc-number">2.</span> <span class="toc-text">2 &lt;&#x3D;&gt;运算符</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E6%9E%9A%E4%B8%BE%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 枚举优化</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E6%94%AF%E6%8C%81%E7%89%B9%E6%80%A7%E7%9A%84%E6%9E%9A%E4%B8%BE"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 支持特性的枚举</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-switch%E4%B8%AD%E6%9E%9A%E4%B8%BE%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 switch中枚举的优化</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E6%9B%B4%E6%96%B9%E4%BE%BF%E7%9A%84%E6%B5%81%E7%A8%8B%E6%8E%A7%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">4 更方便的流程控制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E6%9D%A1%E4%BB%B6%E5%88%A4%E6%96%AD%E5%89%8D%E7%9A%84%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 条件判断前的初始化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E6%8C%87%E5%AE%9A%E8%BF%AD%E4%BB%A3%E8%8C%83%E5%9B%B4%E7%9A%84for%E5%BE%AA%E7%8E%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 指定迭代范围的for循环</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E5%AE%89%E5%85%A8%E7%9A%84%E8%81%94%E5%90%88%E4%BD%93variant"><span class="toc-number">5.</span> <span class="toc-text">5 安全的联合体variant</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E9%81%BF%E5%85%8Dunused-warning"><span class="toc-number">6.</span> <span class="toc-text">6 避免unused warning</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&text=C++新特性梳理01"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&is_video=false&description=C++新特性梳理01"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理01&body=Check out this article: http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&title=C++新特性梳理01"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&name=C++新特性梳理01&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/05/04/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8601/&t=C++新特性梳理01"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
