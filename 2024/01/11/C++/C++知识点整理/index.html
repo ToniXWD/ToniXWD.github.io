@@ -14,7 +14,7 @@
 <meta property="og:description" content="1 如果类的数据成员不包含指针, 是否可以使用memcmp逐字节比较2个对象?不可以, 原因如下:  虚函数表指针：如果对象是多态的，即它有虚函数，它可能包含一个指向虚函数表的隐藏指针（通常称为 vptr）。由于虚函数表的地址可能因为对象的创建方式不同而不同（比如通过不同的派生类创建基类的对象），这会导致 memcmp 认为对象不相等，即使它们在逻辑上是相同的。  填充字节和对齐：为了满足特定的对">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-01-11T11:40:36.000Z">
-<meta property="article:modified_time" content="2024-03-16T15:39:33.200Z">
+<meta property="article:modified_time" content="2024-10-03T17:47:36.138Z">
 <meta property="article:author" content="ToniXWD">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="面经">

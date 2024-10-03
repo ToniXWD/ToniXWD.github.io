@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="notify 主要用于文件系统监控，可以让你的应用程序监听文件或目录的变化。当需要在文件发生变化（如创建、删除、修改等）时得到通知，这个库就非常有用。notify 支持多种操作系统，并且在内部使用了特定平台的文件系统监控机制，比如在 Linux 上使用 inotify，在 macOS 上使用 FSEvents，在 Windows 上则使用 ReadDirectoryChangesW API。 库地">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust好库-notify">
+<meta property="og:url" content="http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/index.html">
+<meta property="og:site_name" content="ToniBlog">
+<meta property="og:description" content="notify 主要用于文件系统监控，可以让你的应用程序监听文件或目录的变化。当需要在文件发生变化（如创建、删除、修改等）时得到通知，这个库就非常有用。notify 支持多种操作系统，并且在内部使用了特定平台的文件系统监控机制，比如在 Linux 上使用 inotify，在 macOS 上使用 FSEvents，在 Windows 上则使用 ReadDirectoryChangesW API。 库地">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-10-03T17:18:55.000Z">
+<meta property="article:modified_time" content="2024-10-03T17:47:36.142Z">
+<meta property="article:author" content="ToniXWD">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/flash_dc.png">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/flash_dc.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/flash_dc.png">
+        
+      
+    
+    <!-- title -->
+    <title>Rust好库-notify</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="ToniBlog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/05/05/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8602/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&text=Rust好库-notify"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&is_video=false&description=Rust好库-notify"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rust好库-notify&body=Check out this article: http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&name=Rust好库-notify&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&t=Rust好库-notify"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%89%88%E6%9C%ACfeatures%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">1 版本features说明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E6%88%98%E6%A1%88%E4%BE%8B"><span class="toc-number">2.</span> <span class="toc-text">2 实战案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%8E%BB%E6%8A%96%E5%8A%A8%E5%99%A8debouncer%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">3 去抖动器debouncer的使用</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Rust好库-notify
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">ToniXWD</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-10-03T17:18:55.000Z" class="dt-published" itemprop="datePublished">2024-10-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/Rust%E9%9A%8F%E7%AC%94/">Rust随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Rust/" rel="tag">Rust</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p><code>notify</code> 主要用于文件系统监控，可以让你的应用程序监听文件或目录的变化。当需要在文件发生变化（如创建、删除、修改等）时得到通知，这个库就非常有用。<code>notify</code> 支持多种操作系统，并且在内部使用了特定平台的文件系统监控机制，比如在 <code>Linux</code> 上使用 <code>inotify，在</code> <code>macOS</code> 上使用 <code>FSEvents，在</code> <code>Windows</code> 上则使用 <code>ReadDirectoryChangesW</code> API。</p>
+<p>库地址: <a target="_blank" rel="noopener" href="https://github.com/notify-rs/notify">https://github.com/notify-rs/notify</a></p>
+<h1 id="1-版本features说明"><a href="#1-版本features说明" class="headerlink" title="1 版本features说明"></a>1 版本features说明</h1><table>
+<thead>
+<tr>
+<th>版本</th>
+<th>描述</th>
+<th>使用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>notify</code></td>
+<td>核心模块，提供基本的文件系统事件监听功能。内建去抖动逻辑。</td>
+<td>适合一般用途的文件系统监控，不需要额外的去抖动特性。</td>
+</tr>
+<tr>
+<td><code>notify_debouncer_mini</code></td>
+<td>轻量级去抖动实现，提供简单而有效的去抖动功能。</td>
+<td>性能敏感的应用场景，希望保持依赖关系简单。</td>
+</tr>
+<tr>
+<td><code>notify_debouncer_full</code></td>
+<td>全功能去抖动解决方案，提供更复杂的逻辑来处理各种情况下的去抖动需求。</td>
+<td>需要更强大、更灵活去抖动功能的情况，或在复杂环境中运行的应用程序。</td>
+</tr>
+</tbody></table>
+<p><strong>说明：</strong></p>
+<ul>
+<li><strong>去抖动</strong>：减少由于短时间内频繁触发事件而导致的重复或不必要的通知。</li>
+<li><strong>性能敏感</strong>：对于那些对执行效率有较高要求的应用程序。</li>
+<li><strong>复杂环境</strong>：指涉及多种类型的文件系统事件以及需要正确合并或过滤这些事件的情况。</li>
+</ul>
+<p><code>debouncer</code> 的作用:</p>
+<ul>
+<li>如果有多次重命名, 仅发出单个重命名事件</li>
+<li>合并多个重命名事件</li>
+<li>考虑重命名事件并更新重命名事件之前发生但尚未发出的事件的路径<br>（可选）跟踪文件系统 ID、所有文件和整合重命名事件（FSevents、Windows）</li>
+<li>删除目录时仅发出一个删除事件 (inotify)</li>
+<li>不发出重复的创建事件</li>
+<li>创建事件后不发出修改事件</li>
+</ul>
+<h1 id="2-实战案例"><a href="#2-实战案例" class="headerlink" title="2 实战案例"></a>2 实战案例</h1><p>这里最简单的应用就是创建一个文件缓存索引, 当监听到文件变化时, 惰性建立缓存索引</p>
+<p>完整的代码(包括客户端应用、数据库持久化、CRUD等)请参考 <a target="_blank" rel="noopener" href="https://github.com/ToniXWD/file_elf">file_elf</a>, 这里给出监听的逻辑</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">mod</span> util;</span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">mod</span> writer;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> std::path::PathBuf;</span><br><span class="line"><span class="keyword">use</span> std::sync::mpsc::Sender;</span><br><span class="line"><span class="keyword">use</span> std::&#123;sync::mpsc, time::Duration&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> log::&#123;debug, error, info, trace&#125;;</span><br><span class="line"><span class="keyword">use</span> notify::&#123;DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher&#125;;</span><br><span class="line"><span class="keyword">use</span> writer::DbAction;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> crate::db::DB;</span><br><span class="line"></span><br><span class="line"><span class="keyword">use</span> crate::util::is_blacklisted;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">file_checker</span>(target: &amp;<span class="type">str</span>, db_sender: mpsc::Sender&lt;DbAction&gt;) &#123;</span><br><span class="line">    <span class="keyword">let</span> (tx, rx) = mpsc::<span class="title function_ invoke__">channel</span>();</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">watcher</span>: RecommendedWatcher = Watcher::<span class="title function_ invoke__">new</span>(tx, Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">1</span>)).<span class="title function_ invoke__">unwrap</span>(); <span class="comment">// 制定监听器和通知间隔时间</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 监听指定目录 target</span></span><br><span class="line">    watcher</span><br><span class="line">        .<span class="title function_ invoke__">watch</span>(target, RecursiveMode::Recursive) <span class="comment">// RecursiveMode表示递归监听子文件夹</span></span><br><span class="line">        .<span class="title function_ invoke__">expect</span>(<span class="string">&quot;Failed to watch directory&quot;</span>);</span><br><span class="line"></span><br><span class="line">    info!(<span class="string">&quot;Watching directory: &#123;&#125; for changes...&quot;</span>, target);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">loop</span> &#123;</span><br><span class="line">        <span class="keyword">match</span> rx.<span class="title function_ invoke__">recv</span>() &#123;</span><br><span class="line">            <span class="title function_ invoke__">Ok</span>(event) =&gt; <span class="keyword">match</span> event &#123;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">Create</span>(path) | DebouncedEvent::<span class="title function_ invoke__">Write</span>(path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="title function_ invoke__">new_event_handler</span>(&amp;path, &amp;db_sender);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">Remove</span>(path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="title function_ invoke__">del_event_handler</span>(&amp;path, &amp;db_sender);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">Rename</span>(old_path, new_path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;old_path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, old_path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    info!(<span class="string">&quot;File renamed from &#123;:?&#125; to &#123;:?&#125;&quot;</span>, old_path, new_path);</span><br><span class="line">                    <span class="title function_ invoke__">del_event_handler</span>(&amp;old_path, &amp;db_sender);</span><br><span class="line">                    <span class="title function_ invoke__">new_event_handler</span>(&amp;new_path, &amp;db_sender);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">NoticeWrite</span>(path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    info!(<span class="string">&quot;File notice write: &#123;:?&#125;&quot;</span>, path);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">NoticeRemove</span>(path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    info!(<span class="string">&quot;File notice remove: &#123;:?&#125;&quot;</span>, path);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">Chmod</span>(path) =&gt; &#123;</span><br><span class="line">                    <span class="keyword">if</span> <span class="title function_ invoke__">is_blacklisted</span>(&amp;path) &#123;</span><br><span class="line">                        trace!(<span class="string">&quot;File: &#123;:#?&#125; is blacklisted, ignoring...&quot;</span>, path);</span><br><span class="line">                        <span class="keyword">continue</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">                    info!(<span class="string">&quot;File permissions changed: &#123;:?&#125;&quot;</span>, path);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::Rescan =&gt; &#123;</span><br><span class="line">                    info!(<span class="string">&quot;Directory rescan occurred.&quot;</span>);</span><br><span class="line">                &#125;</span><br><span class="line">                DebouncedEvent::<span class="title function_ invoke__">Error</span>(err, path) =&gt; &#123;</span><br><span class="line">                    error!(<span class="string">&quot;An error occurred: &#123;:?&#125;, related path &#123;:#?&#125;&quot;</span>, err, path);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(e) =&gt; error!(<span class="string">&quot;watch error: &#123;:?&#125;&quot;</span>, e),</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">new_event_handler</span>(path: &amp;PathBuf, db_sender: &amp;Sender&lt;DbAction&gt;) &#123;</span><br><span class="line">    <span class="comment">// CRUD、持久化等操作</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#[allow(unused)]</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">del_event_handler</span>(path: &amp;PathBuf, db_sender: &amp;Sender&lt;DbAction&gt;) &#123;</span><br><span class="line">    <span class="comment">// CRUD、持久化等操作</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-去抖动器debouncer的使用"><a href="#3-去抖动器debouncer的使用" class="headerlink" title="3 去抖动器debouncer的使用"></a>3 去抖动器debouncer的使用</h1><p>先看官方代码:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> notify_debouncer_full::&#123;notify::*, new_debouncer, DebounceEventResult&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Select recommended watcher for debouncer.</span></span><br><span class="line"><span class="comment">// Using a callback here, could also be a channel.</span></span><br><span class="line"><span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">debouncer</span> = <span class="title function_ invoke__">new_debouncer</span>(Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">2</span>), <span class="literal">None</span>, |result: DebounceEventResult| &#123;</span><br><span class="line">    <span class="keyword">match</span> result &#123;</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(events) =&gt; events.<span class="title function_ invoke__">iter</span>().for_each(|event| <span class="built_in">println!</span>(<span class="string">&quot;&#123;event:?&#125;&quot;</span>)),</span><br><span class="line">        <span class="title function_ invoke__">Err</span>(errors) =&gt; errors.<span class="title function_ invoke__">iter</span>().for_each(|error| <span class="built_in">println!</span>(<span class="string">&quot;&#123;error:?&#125;&quot;</span>)),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;).<span class="title function_ invoke__">unwrap</span>();</span><br></pre></td></tr></table></figure>
+<p>具体进行分析:</p>
+<ul>
+<li><code>DebounceEventResult</code> 是去抖动结果的类型。</li>
+<li><code>new_debouncer(Duration::from_secs(2), None, ...)</code> 创建一个新的去抖动器实例，设置去抖动延迟时间为2秒，并传入一个回调函数。</li>
+<li>回调函数接收一个 <code>DebounceEventResult</code> 类型的结果，该结果表示去抖动后的事件集合或错误集合。</li>
+<li><code>Ok(events)</code> 表示成功处理事件，打印每个事件。</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">debouncer.<span class="title function_ invoke__">watcher</span>().<span class="title function_ invoke__">watch</span>(Path::<span class="title function_ invoke__">new</span>(<span class="string">&quot;.&quot;</span>), RecursiveMode::Recursive).<span class="title function_ invoke__">unwrap</span>();</span><br></pre></td></tr></table></figure>
+<p>这行代码添加一个路径到去抖动器的监听列表中：</p>
+<ul>
+<li><code>debouncer.watcher()</code> 获取底层的 <code>Watcher</code> 实例。</li>
+<li><code>watch(Path::new(&quot;.&quot;), RecursiveMode::Recursive)</code> 监听当前目录及其所有子目录的文件系统变化。</li>
+<li><code>unwrap()</code> 确保监听操作成功，否则抛出错误。</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">debouncer.<span class="title function_ invoke__">cache</span>().<span class="title function_ invoke__">add_root</span>(Path::<span class="title function_ invoke__">new</span>(<span class="string">&quot;.&quot;</span>), RecursiveMode::Recursive);</span><br></pre></td></tr></table></figure>
+<p>这行代码向去抖动器的文件 ID 缓存中添加相同的路径：</p>
+<ul>
+<li><code>debouncer.cache()</code> 获取去抖动器的缓存实例。</li>
+<li><code>add_root(Path::new(&quot;.&quot;), RecursiveMode::Recursive)</code> 将当前目录及其所有子目录添加到文件 ID 缓存中。</li>
+<li>文件 ID 缓存利用文件系统提供的唯一文件 ID 来组合重命名事件，特别是在通知后端不提供重命名标记的情况下。</li>
+</ul>
+<p><strong>这里对<code>watcher()</code>和<code>cache()</code>进行特殊的区别说明</strong></p>
+<ul>
+<li><code>watcher()</code> 方法返回的是底层的 <code>Watcher</code> 实例，它负责实际的文件系统监听工作。</li>
+<li><code>cache()</code> 方法返回的是文件 ID 缓存组件，它主要用于处理文件系统的重命名事件。帮助正确识别和处理重命名事件：</li>
+</ul>
+
+  </div>
+</article>
+
+
+    <div class="blog-post-comments">
+        <div id="utterances_thread">
+            <noscript>加载评论需要在浏览器启用 JavaScript 脚本支持。</noscript>
+        </div>
+    </div>
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a href="/categories/">分类</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%89%88%E6%9C%ACfeatures%E8%AF%B4%E6%98%8E"><span class="toc-number">1.</span> <span class="toc-text">1 版本features说明</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E6%88%98%E6%A1%88%E4%BE%8B"><span class="toc-number">2.</span> <span class="toc-text">2 实战案例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%8E%BB%E6%8A%96%E5%8A%A8%E5%99%A8debouncer%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">3 去抖动器debouncer的使用</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&text=Rust好库-notify"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&is_video=false&description=Rust好库-notify"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rust好库-notify&body=Check out this article: http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&title=Rust好库-notify"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&name=Rust好库-notify&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/&t=Rust好库-notify"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2024
+    ToniXWD
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a href="/categories/">分类</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+    <script type="text/javascript">
+      var utterances_repo = 'ToniXWD/ToniXWD.github.io';
+      var utterances_issue_term = 'pathname';
+      var utterances_label = 'Comment';
+      var utterances_theme = 'github-dark';
+
+      (function(){
+          var script = document.createElement('script');
+
+          script.src = 'https://utteranc.es/client.js';
+          script.setAttribute('repo', utterances_repo);
+          script.setAttribute('issue-term', 'pathname');
+          script.setAttribute('label', utterances_label);
+          script.setAttribute('theme', utterances_theme);
+          script.setAttribute('crossorigin', 'anonymous');
+          script.async = true;
+          (document.getElementById('utterances_thread')).appendChild(script);
+      }());
+  </script>
+
+</body>
+</html>
