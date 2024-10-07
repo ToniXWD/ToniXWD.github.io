@@ -1,3 +1,4 @@
+http://example.com/2024/10/04/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/vcpkg%E5%8C%85%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7%E4%BB%8B%E7%BB%8D/
 http://example.com/2024/10/04/Rust%E9%9A%8F%E7%AC%94/Rust%E5%A5%BD%E5%BA%93-notify/
 http://example.com/2024/01/11/C++/C++%E7%9F%A5%E8%AF%86%E7%82%B9%E6%95%B4%E7%90%86/
 http://example.com/2024/05/05/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8602/
