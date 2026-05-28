@@ -1,0 +1,96 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.5 Chrome/126.0.6478.183 Electron/31.3.0 Safari/537.36" version="24.7.5">
+  <diagram name="第 1 页" id="KAeupqHJGu30hTS1Cn0d">
+    <mxGraphModel dx="691" dy="399" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-9" value="" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="110" y="550" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-2" value="&lt;div&gt;SkipList&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="170" y="580" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-3" value="&lt;div&gt;SkipList&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="170" y="600" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="EyFgKHBcryJEx8725KIh-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="NO_EXeqoRtdAfkvFbVfl-4" target="EyFgKHBcryJEx8725KIh-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="EyFgKHBcryJEx8725KIh-3" value="刷入磁盘" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="EyFgKHBcryJEx8725KIh-2">
+          <mxGeometry x="0.0278" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-4" value="&lt;div&gt;SkipList&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="120" y="600" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-5" value="&lt;div&gt;SkipList&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+          <mxGeometry x="120" y="580" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=1;entryDx=0;entryDy=0;" parent="1" source="NO_EXeqoRtdAfkvFbVfl-8" target="NO_EXeqoRtdAfkvFbVfl-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="230" y="600" />
+              <mxPoint x="230" y="600" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-12" value="Frozen" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="NO_EXeqoRtdAfkvFbVfl-11" vertex="1" connectable="0">
+          <mxGeometry x="-0.1778" y="1" relative="1" as="geometry">
+            <mxPoint x="1" y="9" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-8" value="&lt;div&gt;SkipList&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
+          <mxGeometry x="270" y="590" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-10" value="MemTable" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="250" y="550" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-13" value="" style="endArrow=classic;html=1;rounded=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" source="NO_EXeqoRtdAfkvFbVfl-17" target="NO_EXeqoRtdAfkvFbVfl-8" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="440" y="600" as="sourcePoint" />
+            <mxPoint x="330" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-14" value="r1. 查询活跃跳表" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#0000FF;" parent="NO_EXeqoRtdAfkvFbVfl-13" vertex="1" connectable="0">
+          <mxGeometry x="0.0533" y="-1" relative="1" as="geometry">
+            <mxPoint x="13" y="-14" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=1;entryDx=0;entryDy=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" source="NO_EXeqoRtdAfkvFbVfl-17" target="NO_EXeqoRtdAfkvFbVfl-3" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="465" y="650" />
+              <mxPoint x="170" y="650" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-19" value="r2. 查询冻结跳表" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#0000FF;" parent="NO_EXeqoRtdAfkvFbVfl-18" vertex="1" connectable="0">
+          <mxGeometry x="-0.2493" relative="1" as="geometry">
+            <mxPoint x="-38" y="10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" source="NO_EXeqoRtdAfkvFbVfl-17" target="NO_EXeqoRtdAfkvFbVfl-8" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="450" y="610" />
+              <mxPoint x="450" y="640" />
+              <mxPoint x="295" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-21" value="w1. 写入活跃跳表" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#CC0000;" parent="NO_EXeqoRtdAfkvFbVfl-20" vertex="1" connectable="0">
+          <mxGeometry x="-0.0765" y="-2" relative="1" as="geometry">
+            <mxPoint y="-8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="NO_EXeqoRtdAfkvFbVfl-17" value="&lt;div&gt;Client&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" parent="1" vertex="1">
+          <mxGeometry x="440" y="590" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="EyFgKHBcryJEx8725KIh-1" value="&lt;div&gt;SST&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="700" width="50" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
