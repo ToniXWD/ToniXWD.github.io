@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 简单介绍多核CPU(续上一节课)多核CPU就是将单个CPU复制很多份, 每一份有自己的ALU、上下文寄存器、乱序单元等等： 使用多核CPU进行并行计算时，简单的思路就是将不存在依赖关系的任务分配到不同的核上执行。 2 并行方案3——SIMDSIMD是Single Instruction Multiple Data的缩写，即单指令多数据。  SIMD的工作原理  一条指令（Single Inst">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD">
+<meta property="og:url" content="http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 简单介绍多核CPU(续上一节课)多核CPU就是将单个CPU复制很多份, 每一份有自己的ALU、上下文寄存器、乱序单元等等： 使用多核CPU进行并行计算时，简单的思路就是将不存在依赖关系的任务分配到不同的核上执行。 2 并行方案3——SIMDSIMD是Single Instruction Multiple Data的缩写，即单指令多数据。  SIMD的工作原理  一条指令（Single Inst">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec02/multi-core-cpu.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec02/simd.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec02/simd-branch.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec02/simd-branch-mask.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec02/gpu-structure.png">
+<meta property="article:published_time" content="2024-11-19T11:28:21.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec02/multi-core-cpu.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment1-%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&text=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&is_video=false&description=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD&body=Check out this article: http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&name=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&t=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E5%A4%9A%E6%A0%B8CPU-%E7%BB%AD%E4%B8%8A%E4%B8%80%E8%8A%82%E8%AF%BE"><span class="toc-number">1.</span> <span class="toc-text">1 简单介绍多核CPU(续上一节课)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%883%E2%80%94%E2%80%94SIMD"><span class="toc-number">2.</span> <span class="toc-text">2 并行方案3——SIMD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0SIMD%E7%9A%84AVX2%E6%A1%88%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">3.</span> <span class="toc-text">3 实现SIMD的AVX2案例代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%AD%E5%B8%B8%E7%94%A8%E7%9A%84%E5%87%BD%E6%95%B0%E6%80%BB%E7%BB%93"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 中常用的函数总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E6%B5%AE%E7%82%B9%E8%BF%90%E7%AE%97%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 浮点运算函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E6%95%B4%E5%9E%8B%E8%BF%90%E7%AE%97%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 整型运算函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-OpenMP%E7%9A%84%E5%B9%B6%E8%A1%8C%E5%8C%96%E6%8A%80%E6%9C%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 OpenMP的并行化技术</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E4%B8%89%E7%A7%8D%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AE%9A%E4%BD%8D"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 三种技术的定位</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 使用说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-OpenMP%E5%85%B3%E9%94%AE%E6%8C%87%E4%BB%A4%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 OpenMP关键指令说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-4-AVX2%E5%92%8COpenMP%E7%BB%84%E5%90%88%E4%BD%BF%E7%94%A8"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 AVX2和OpenMP组合使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%A1%88%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 案例代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-SIMD%E9%97%AE%E9%A2%98-%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E5%88%86%E6%94%AF"><span class="toc-number">4.</span> <span class="toc-text">4. SIMD问题: 如何处理分支</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%884%E2%80%94%E2%80%94%E8%B6%85%E7%BA%BF%E7%A8%8B%E6%8A%80%E6%9C%AF%E7%9A%84%E6%8F%90%E5%87%BA"><span class="toc-number">5.</span> <span class="toc-text">5 并行方案4——超线程技术的提出</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93-%E7%9B%AE%E5%89%8D%E5%AD%A6%E4%B9%A0%E7%9A%843%E4%B8%AD%E5%B9%B6%E8%A1%8C%E6%8A%80%E6%9C%AF"><span class="toc-number">6.</span> <span class="toc-text">6 小结: 目前学习的3中并行技术</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E8%B6%85%E6%A0%87%E9%87%8F%E6%89%A7%E8%A1%8C%EF%BC%88Superscalar%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 超标量执行（Superscalar）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-SIMD%EF%BC%88%E5%8D%95%E6%8C%87%E4%BB%A4%E5%A4%9A%E6%95%B0%E6%8D%AE%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 SIMD（单指令多数据）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E5%A4%9A%E6%A0%B8%E5%BF%83%EF%BC%88Multi-core%EF%BC%89"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 多核心（Multi-core）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E8%B6%85%E7%BA%BF%E7%A8%8B%E6%8A%80%E6%9C%AF"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 超线程技术</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-5-%E8%A1%A5%E5%85%85-GPU%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">6.5.</span> <span class="toc-text">6.5 补充: GPU的结构</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-11-19T11:28:21.000Z" class="dt-published" itemprop="datePublished">2024-11-19</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-简单介绍多核CPU-续上一节课"><a href="#1-简单介绍多核CPU-续上一节课" class="headerlink" title="1 简单介绍多核CPU(续上一节课)"></a>1 简单介绍多核CPU(续上一节课)</h1><p>多核CPU就是将单个CPU复制很多份, 每一份有自己的ALU、上下文寄存器、乱序单元等等：<br><img src="/../../images/CS149/Lec02/multi-core-cpu.png" alt="multi-core-cpu"></p>
+<p>使用多核CPU进行并行计算时，简单的思路就是将不存在依赖关系的任务分配到不同的核上执行。</p>
+<h1 id="2-并行方案3——SIMD"><a href="#2-并行方案3——SIMD" class="headerlink" title="2 并行方案3——SIMD"></a>2 并行方案3——SIMD</h1><p>SIMD是Single Instruction Multiple Data的缩写，即单指令多数据。<br><img src="/../../images/CS149/Lec02/simd.png" alt="simd"></p>
+<ol>
+<li><p><strong>SIMD的工作原理</strong></p>
+<ul>
+<li>一条指令（Single Instruction）</li>
+<li>多个ALU并行处理不同的数据（Multiple Data）</li>
+<li>每个ALU执行相同的操作，但处理不同的数据</li>
+</ul>
+</li>
+<li><p><strong>示例中的结构</strong></p>
+<ul>
+<li>8个ALU（ALU 0-7）</li>
+<li>一个取指&#x2F;解码单元（控制单元）</li>
+<li>当执行SIMD指令时：<ul>
+<li>同一指令广播给所有ALU</li>
+<li>每个ALU处理自己的数据部分</li>
+<li>8个数据同时被处理</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p>需要说明的是, 这多个<code>ALU</code>存在于同一个处理器中, 所以它们可以共享同一个取指&#x2F;解码单元。</p>
+<p>这里再对ALU和Fetch&#x2F;Decode组件的关系进行补充:</p>
+<ol>
+<li><p><strong>指令获取和解码过程</strong></p>
+<ul>
+<li><p><strong>Fetch</strong>：</p>
+<ul>
+<li>一次获取一条SIMD指令</li>
+<li>同时需要获取对应的多个数据操作数</li>
+<li>通常需要较宽的数据总线支持</li>
+</ul>
+</li>
+<li><p><strong>Decode</strong>：</p>
+<ul>
+<li>解析SIMD指令类型</li>
+<li>确定数据访问模式</li>
+<li>准备数据分发给各个ALU</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>数据流动</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Fetch/Decode ──┬→ ALU 0 ← Data[0]</span><br><span class="line">               ├→ ALU 1 ← Data[1]</span><br><span class="line">               ├→ ALU 2 ← Data[2]</span><br><span class="line">               └→ ALU 3 ← Data[3]</span><br><span class="line">               ...</span><br></pre></td></tr></table></figure>
+<p>需要注意的是, 虽然Fetch&#x2F;Decode是统一的控制单元, 但是实际数据获取可能需要多个周期才能完成, 这也是为什么SIMD处理器的设计需要考虑内存系统的优化。</p>
+</li>
+</ol>
+<h1 id="3-实现SIMD的AVX2案例代码"><a href="#3-实现SIMD的AVX2案例代码" class="headerlink" title="3 实现SIMD的AVX2案例代码"></a>3 实现<code>SIMD</code>的<code>AVX2</code>案例代码</h1><p><code>SIMD</code>这一思想对应的指令集就是我们常常在硬件评测类视频或文章中提到的<code>AVXxxx</code>系列指令集。<code>AVX2</code>是目前使用最广泛的<code>SIMD</code>指令集。<code>AVX512</code>支持的<code>SIMD</code>指令集的宽度更大, 但是目前还没有普及, 而且因为发热过大还在<code>Intel</code>最近几代<code>CPU</code>被移除了, 这里的案例代码也是基于<code>AVX2</code>的, 其支持的<code>SIMD</code>指令宽度为256位。</p>
+<p>查看个人PC是否支持<code>AVX2</code>指令集的方法:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cat</span> /proc/cpuinfo | grep avx2</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-1-中常用的函数总结"><a href="#3-1-中常用的函数总结" class="headerlink" title="3.1 中常用的函数总结"></a>3.1 中常用的函数总结</h2><h3 id="3-1-1-浮点运算函数"><a href="#3-1-1-浮点运算函数" class="headerlink" title="3.1.1 浮点运算函数"></a>3.1.1 浮点运算函数</h3><table>
+<thead>
+<tr>
+<th>函数名</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>单精度浮点运算 (float)</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_add_ps</code></td>
+<td>8个单精度浮点数相加</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sub_ps</code></td>
+<td>8个单精度浮点数相减</td>
+<td><code>a - b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_mul_ps</code></td>
+<td>8个单精度浮点数相乘</td>
+<td><code>a * b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_div_ps</code></td>
+<td>8个单精度浮点数相除</td>
+<td><code>a / b</code></td>
+</tr>
+<tr>
+<td><strong>双精度浮点运算 (double)</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_add_pd</code></td>
+<td>4个双精度浮点数相加</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sub_pd</code></td>
+<td>4个双精度浮点数相减</td>
+<td><code>a - b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_mul_pd</code></td>
+<td>4个双精度浮点数相乘</td>
+<td><code>a * b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_div_pd</code></td>
+<td>4个双精度浮点数相除</td>
+<td><code>a / b</code></td>
+</tr>
+<tr>
+<td><strong>数据加载存储</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_load_ps</code></td>
+<td>从对齐内存加载8个float</td>
+<td><code>load from memory</code></td>
+</tr>
+<tr>
+<td><code>_mm256_load_pd</code></td>
+<td>从对齐内存加载4个double</td>
+<td><code>load from memory</code></td>
+</tr>
+<tr>
+<td><code>_mm256_store_ps</code></td>
+<td>存储8个float到对齐内存</td>
+<td><code>store to memory</code></td>
+</tr>
+<tr>
+<td><code>_mm256_store_pd</code></td>
+<td>存储4个double到对齐内存</td>
+<td><code>store to memory</code></td>
+</tr>
+<tr>
+<td><strong>数据类型转换</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_cvtps_pd</code></td>
+<td>float转double (低4个)</td>
+<td><code>float -&gt; double</code></td>
+</tr>
+<tr>
+<td><code>_mm256_cvtpd_ps</code></td>
+<td>double转float (4个)</td>
+<td><code>double -&gt; float</code></td>
+</tr>
+<tr>
+<td><strong>比较操作</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_cmp_ps</code></td>
+<td>8个float比较</td>
+<td><code>a &lt; b, a == b</code> 等</td>
+</tr>
+<tr>
+<td><code>_mm256_cmp_pd</code></td>
+<td>4个double比较</td>
+<td><code>a &lt; b, a == b</code> 等</td>
+</tr>
+<tr>
+<td><strong>其他常用操作</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_sqrt_ps</code></td>
+<td>8个float平方根</td>
+<td><code>sqrt(a)</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sqrt_pd</code></td>
+<td>4个double平方根</td>
+<td><code>sqrt(a)</code></td>
+</tr>
+<tr>
+<td><code>_mm256_max_ps</code></td>
+<td>8个float最大值</td>
+<td><code>max(a,b)</code></td>
+</tr>
+<tr>
+<td><code>_mm256_min_ps</code></td>
+<td>8个float最小值</td>
+<td><code>min(a,b)</code></td>
+</tr>
+</tbody></table>
+<p>注意事项：</p>
+<ol>
+<li>函数名中的 <code>ps</code> 表示 packed single (单精度浮点)</li>
+<li>函数名中的 <code>pd</code> 表示 packed double (双精度浮点)</li>
+<li><code>256</code> 表示使用 256 位寄存器</li>
+<li>单精度运算一次处理 8 个数 (256&#x2F;32&#x3D;8)</li>
+<li>双精度运算一次处理 4 个数 (256&#x2F;64&#x3D;4)</li>
+</ol>
+<h3 id="3-1-2-整型运算函数"><a href="#3-1-2-整型运算函数" class="headerlink" title="3.1.2 整型运算函数"></a>3.1.2 整型运算函数</h3><table>
+<thead>
+<tr>
+<th>函数名</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>32位整数运算 (int)</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_add_epi32</code></td>
+<td>8个32位整数相加</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sub_epi32</code></td>
+<td>8个32位整数相减</td>
+<td><code>a - b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_mul_epi32</code></td>
+<td>4个32位整数相乘(低位)</td>
+<td><code>a * b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_mullo_epi32</code></td>
+<td>8个32位整数相乘(截断)</td>
+<td><code>a * b</code></td>
+</tr>
+<tr>
+<td><strong>16位整数运算 (short)</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_add_epi16</code></td>
+<td>16个16位整数相加</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sub_epi16</code></td>
+<td>16个16位整数相减</td>
+<td><code>a - b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_mullo_epi16</code></td>
+<td>16个16位整数相乘</td>
+<td><code>a * b</code></td>
+</tr>
+<tr>
+<td><strong>8位整数运算 (char)</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_add_epi8</code></td>
+<td>32个8位整数相加</td>
+<td><code>a + b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_sub_epi8</code></td>
+<td>32个8位整数相减</td>
+<td><code>a - b</code></td>
+</tr>
+<tr>
+<td><strong>数据加载存储</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_load_si256</code></td>
+<td>从对齐内存加载整数</td>
+<td><code>load from memory</code></td>
+</tr>
+<tr>
+<td><code>_mm256_store_si256</code></td>
+<td>存储整数到对齐内存</td>
+<td><code>store to memory</code></td>
+</tr>
+<tr>
+<td><strong>比较操作</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_cmpgt_epi32</code></td>
+<td>8个32位整数大于比较</td>
+<td><code>a &gt; b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_cmpeq_epi32</code></td>
+<td>8个32位整数相等比较</td>
+<td><code>a == b</code></td>
+</tr>
+<tr>
+<td><strong>位运算</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_and_si256</code></td>
+<td>按位与</td>
+<td><code>a &amp; b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_or_si256</code></td>
+<td>按位或</td>
+<td><code>a | b</code></td>
+</tr>
+<tr>
+<td><code>_mm256_xor_si256</code></td>
+<td>按位异或</td>
+<td><code>a ^ b</code></td>
+</tr>
+<tr>
+<td><strong>移位操作</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>_mm256_slli_epi32</code></td>
+<td>32位整数左移</td>
+<td><code>a &lt;&lt; n</code></td>
+</tr>
+<tr>
+<td><code>_mm256_srli_epi32</code></td>
+<td>32位整数逻辑右移</td>
+<td><code>a &gt;&gt; n</code></td>
+</tr>
+<tr>
+<td><code>_mm256_srai_epi32</code></td>
+<td>32位整数算术右移</td>
+<td><code>a &gt;&gt; n</code></td>
+</tr>
+</tbody></table>
+<p>函数名说明：</p>
+<ol>
+<li><code>epi32</code> 表示 32 位有符号整数</li>
+<li><code>epi16</code> 表示 16 位有符号整数</li>
+<li><code>epi8</code> 表示 8 位有符号整数</li>
+<li><code>epu32/epu16/epu8</code> 表示无符号整数版本</li>
+</ol>
+<p>一次处理的数量：</p>
+<ul>
+<li>32位整数：8个 (256&#x2F;32&#x3D;8)</li>
+<li>16位整数：16个 (256&#x2F;16&#x3D;16)</li>
+<li>8位整���：32个 (256&#x2F;8&#x3D;32)</li>
+</ul>
+<p>这些整数运算在图像处理、音频处理等需要大量整数运算的场景中特别有用。例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 8个32位整数同时相加的例子</span></span><br><span class="line">__m256i a = _mm256_set1_epi32(<span class="number">10</span>);    <span class="comment">// 设置8个整数都为10</span></span><br><span class="line">__m256i b = _mm256_set1_epi32(<span class="number">20</span>);    <span class="comment">// 设置8个整数都为20</span></span><br><span class="line">__m256i result = _mm256_add_epi32(a, b); <span class="comment">// 结果中的8个数都是30</span></span><br></pre></td></tr></table></figure>
+
+<p>这些函数都需要包含 <code>&lt;immintrin.h&gt;</code> 头文件才能使用。</p>
+<h2 id="3-2-OpenMP的并行化技术"><a href="#3-2-OpenMP的并行化技术" class="headerlink" title="3.2 OpenMP的并行化技术"></a>3.2 <code>OpenMP</code>的并行化技术</h2><p>我学习<code>avx2</code>的时候顺带学习了<code>OpenMP</code>的并行化技术, 这里也顺带总结一下。<br>这里阐释一下<code>OpenMP</code>, <code>SIMD</code>, <code>AVX</code>三者的关系和区别:</p>
+<h3 id="3-2-1-三种技术的定位"><a href="#3-2-1-三种技术的定位" class="headerlink" title="3.2.1 三种技术的定位"></a>3.2.1 三种技术的定位</h3><table>
+<thead>
+<tr>
+<th>技术</th>
+<th>层次</th>
+<th>并行类型</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OpenMP</td>
+<td>线程级</td>
+<td>多线程并行</td>
+<td>跨核心并行</td>
+</tr>
+<tr>
+<td>SIMD</td>
+<td>指令级</td>
+<td>数据并行</td>
+<td>单核内并行</td>
+</tr>
+<tr>
+<td>AVX</td>
+<td>指令级</td>
+<td>数据并行</td>
+<td>SIMD的具体实现</td>
+</tr>
+</tbody></table>
+<h3 id="3-2-2-使用说明"><a href="#3-2-2-使用说明" class="headerlink" title="3.2.2 使用说明"></a>3.2.2 使用说明</h3><p>安装:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install libomp-dev</span><br></pre></td></tr></table></figure>
+
+<p><strong>OpenMP</strong>：</p>
+<ul>
+<li>线程级并行化技术</li>
+<li>使用多个 CPU 核心</li>
+<li>主要通过 <code>#pragma</code> 指令实现</li>
+<li>适用场景：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel for</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">    result[i] = <span class="built_in">compute</span>(data[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="3-2-3-OpenMP关键指令说明"><a href="#3-2-3-OpenMP关键指令说明" class="headerlink" title="3.2.3 OpenMP关键指令说明"></a>3.2.3 OpenMP关键指令说明</h3><ol>
+<li><p><strong>#pragma omp parallel</strong></p>
+<ul>
+<li>创建一个并行区域</li>
+<li>会创建多个线程，默认为CPU核心数量</li>
+<li>并行区域内的代码会被所有线程执行</li>
+<li>适用场景：需要执行多个并行操作时<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 这里的代码会被所有线程执行</span></span><br><span class="line">    <span class="type">int</span> thread_id = <span class="built_in">omp_get_thread_num</span>(); <span class="comment">// 获取线程ID</span></span><br><span class="line">    <span class="comment">// ... 并行执行的代码 ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>#pragma omp parallel for</strong></p>
+<ul>
+<li>组合指令，专门用于并行化for循环</li>
+<li>自动将循环迭代分配给多个线程</li>
+<li>会自动处理循环的任务分配和同步</li>
+<li>适用场景：单个循环的并行化<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel for</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">    <span class="comment">// 循环的每次迭代会被自动分配给不同线程</span></span><br><span class="line">    result[i] = <span class="built_in">compute</span>(data[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>两者的主要区别</strong>：</p>
+<ul>
+<li><code>parallel</code>: 创建一个通用的并行区域，区域内的代码被所有线程执行</li>
+<li><code>parallel for</code>: 专门针对循环的并行化，自动进行任务分配，每个迭代只被一个线程执行</li>
+</ul>
+</li>
+<li><p><strong>性能考虑</strong>：</p>
+<ul>
+<li><code>parallel</code> 创建线程池的开销较大，适合包含多个并行操作的场景</li>
+<li><code>parallel for</code> 针对循环优化，对单个循环并行化更高效</li>
+</ul>
+</li>
+</ol>
+<h3 id="3-2-4-AVX2和OpenMP组合使用"><a href="#3-2-4-AVX2和OpenMP组合使用" class="headerlink" title="3.2.4 AVX2和OpenMP组合使用"></a>3.2.4 <code>AVX2</code>和<code>OpenMP</code>组合使用</h3><p>可以同时使用这些技术来获得最大性能：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel for        <span class="comment">// OpenMP多线程并行</span></span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i += <span class="number">8</span>) &#123;</span><br><span class="line">    __m256 a = _mm256_load_ps(&amp;data[i]);     <span class="comment">// AVX向量加载</span></span><br><span class="line">    __m256 b = _mm256_load_ps(&amp;other[i]);    </span><br><span class="line">    __m256 c = _mm256_add_ps(a, b);          <span class="comment">// AVX向量运算</span></span><br><span class="line">    _mm256_store_ps(&amp;result[i], c);          <span class="comment">// AVX向量存储</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-3-案例代码"><a href="#3-3-案例代码" class="headerlink" title="3.3 案例代码"></a>3.3 案例代码</h2><p>这里对官方PPT的<code>sin</code>函数进行了补充, 并添加了<code>OpenMP</code>的并行化比较:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;chrono&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstdio&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;immintrin.h&gt;</span> <span class="comment">// Intel 内联函数头文件，包含 SSE/AVX/AVX2 等 SIMD 指令集的内联函数</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;omp.h&gt;</span> <span class="comment">// OpenMP 头文件，用于支持多线程并行编程， #pragma omp parallel 和 #pragma omp for 指令需要该头文件</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">sinx_scalar</span><span class="params">(<span class="type">int</span> N, <span class="type">int</span> terms, <span class="type">float</span> *x, <span class="type">float</span> *y)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    <span class="type">float</span> value = x[i];</span><br><span class="line">    <span class="type">float</span> numer = x[i] * x[i] * x[i];</span><br><span class="line">    <span class="type">int</span> denom = <span class="number">6</span>; <span class="comment">// 3!</span></span><br><span class="line">    <span class="type">int</span> sign = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= terms; j++) &#123;</span><br><span class="line">      value += sign * numer / denom;</span><br><span class="line">      numer *= x[i] * x[i];</span><br><span class="line">      denom *= (<span class="number">2</span> * j + <span class="number">2</span>) * (<span class="number">2</span> * j + <span class="number">3</span>);</span><br><span class="line">      sign *= <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    y[i] = value;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">sinx_avx</span><span class="params">(<span class="type">int</span> N, <span class="type">int</span> terms, <span class="type">float</span> *x, <span class="type">float</span> *y)</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> i;</span><br><span class="line">  <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; N - <span class="number">7</span>; i += <span class="number">8</span>) &#123;</span><br><span class="line">    <span class="comment">// 从内存加载 8 个 float 到 256 位向量寄存器</span></span><br><span class="line">    __m256 x_vec = _mm256_loadu_ps(&amp;x[i]);</span><br><span class="line">    <span class="comment">// 初始化 value 向量为 x_vec</span></span><br><span class="line">    __m256 value = x_vec;</span><br><span class="line">    <span class="comment">// 计算 x^3 向量</span></span><br><span class="line">    __m256 x_n = _mm256_mul_ps(_mm256_mul_ps(x_vec, x_vec), x_vec);</span><br><span class="line">    <span class="comment">// 创建一个所有元素都是 6.0f 的向量</span></span><br><span class="line">    __m256 denom = _mm256_set1_ps(<span class="number">6.0f</span>);</span><br><span class="line">    <span class="comment">// 创建一个所有元素都是 -1.0f 的向量</span></span><br><span class="line">    __m256 sign = _mm256_set1_ps(<span class="number">-1.0f</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= terms; j++) &#123;</span><br><span class="line">      <span class="comment">// 计算当前项：sign * numer / denom</span></span><br><span class="line">      __m256 term = _mm256_div_ps(_mm256_mul_ps(sign, x_n), denom);</span><br><span class="line">      <span class="comment">// 将当前项加到 value 上</span></span><br><span class="line">      value = _mm256_add_ps(value, term);</span><br><span class="line">      <span class="comment">// 更新 numer：numer *= x^2</span></span><br><span class="line">      x_n = _mm256_mul_ps(x_n, _mm256_mul_ps(x_vec, x_vec));</span><br><span class="line">      <span class="comment">// 更新 denom：denom *= (2j+2) * (2j+3)</span></span><br><span class="line">      denom = _mm256_mul_ps(denom, _mm256_set1_ps((<span class="number">2</span> * j + <span class="number">2</span>) * (<span class="number">2</span> * j + <span class="number">3</span>)));</span><br><span class="line">      <span class="comment">// 翻转 sign 的符号</span></span><br><span class="line">      sign = _mm256_xor_ps(sign, _mm256_set1_ps(<span class="number">-0.0f</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将计算结果存回内存</span></span><br><span class="line">    _mm256_storeu_ps(&amp;y[i], value);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理剩余的元素</span></span><br><span class="line">  <span class="keyword">for</span> (; i &lt; N; i++) &#123;</span><br><span class="line">    <span class="type">float</span> value = x[i];</span><br><span class="line">    <span class="type">float</span> numer = x[i] * x[i] * x[i];</span><br><span class="line">    <span class="type">int</span> denom = <span class="number">6</span>; <span class="comment">// 3!</span></span><br><span class="line">    <span class="type">int</span> sign = <span class="number">-1</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= terms; j++) &#123;</span><br><span class="line">      value += sign * numer / denom;</span><br><span class="line">      numer *= x[i] * x[i];</span><br><span class="line">      denom *= (<span class="number">2</span> * j + <span class="number">2</span>) * (<span class="number">2</span> * j + <span class="number">3</span>);</span><br><span class="line">      sign *= <span class="number">-1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    y[i] = value;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">sinx_avx_parallel</span><span class="params">(<span class="type">int</span> N, <span class="type">int</span> terms, <span class="type">float</span> *x, <span class="type">float</span> *y)</span> </span>&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel <span class="comment">// 创建一个并行区域，默认创建与 CPU 核心数相同的线程</span></span></span><br><span class="line">  &#123;</span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp for <span class="comment">// 并行化 for 循环：不同的线程会同时处理不同的 i 值区间</span></span></span><br><span class="line">    <span class="comment">// 例如有 4 个线程时的处理方式：</span></span><br><span class="line">    <span class="comment">// 线程 0 处理：i = 0,  32, 64, ...</span></span><br><span class="line">    <span class="comment">// 线程 1 处理：i = 8,  40, 72, ...</span></span><br><span class="line">    <span class="comment">// 线程 2 处理：i = 16, 48, 80, ...</span></span><br><span class="line">    <span class="comment">// 线程 3 处理：i = 24, 56, 88, ...</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N - <span class="number">7</span>; i += <span class="number">8</span>) &#123;</span><br><span class="line">      <span class="comment">// 每个线程内部使用 AVX 并行处理 8 个数据</span></span><br><span class="line">      <span class="comment">// 实现了两级并行：</span></span><br><span class="line">      <span class="comment">// 1 级：OpenMP 多线程并行（不同线程处理不同的 i 区间）</span></span><br><span class="line">      <span class="comment">// 2 级：AVX SIMD 并行（每个线程内同时处理 8 个数）</span></span><br><span class="line">      __m256 x_vec = _mm256_loadu_ps(&amp;x[i]); <span class="comment">// 加载 8 个连续的 float 数</span></span><br><span class="line">      __m256 value = x_vec;</span><br><span class="line">      __m256 x_n = _mm256_mul_ps(_mm256_mul_ps(x_vec, x_vec), x_vec);</span><br><span class="line">      __m256 denom = _mm256_set1_ps(<span class="number">6.0f</span>);</span><br><span class="line">      __m256 sign = _mm256_set1_ps(<span class="number">-1.0f</span>);</span><br><span class="line"></span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= terms; j++) &#123;</span><br><span class="line">        __m256 term = _mm256_div_ps(_mm256_mul_ps(sign, x_n), denom);</span><br><span class="line">        value = _mm256_add_ps(value, term);</span><br><span class="line">        x_n = _mm256_mul_ps(x_n, _mm256_mul_ps(x_vec, x_vec));</span><br><span class="line">        denom = _mm256_mul_ps(denom, _mm256_set1_ps((<span class="number">2</span> * j + <span class="number">2</span>) * (<span class="number">2</span> * j + <span class="number">3</span>)));</span><br><span class="line">        sign = _mm256_xor_ps(sign, _mm256_set1_ps(<span class="number">-0.0f</span>));</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      _mm256_storeu_ps(&amp;y[i], value); <span class="comment">// 存储 8 个结果</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 处理剩余元素（不能被 8 整除的部分）</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp for <span class="comment">// 剩余元素也使用多线程并行处理</span></span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = N - (N % <span class="number">8</span>); i &lt; N; i++) &#123;</span><br><span class="line">      <span class="comment">// 例如 N=1027 时，最后 3 个元素 (1024,1025,1026) 会被不同线程并行处理</span></span><br><span class="line">      <span class="type">float</span> value = x[i];</span><br><span class="line">      <span class="type">float</span> numer = x[i] * x[i] * x[i];</span><br><span class="line">      <span class="type">int</span> denom = <span class="number">6</span>;</span><br><span class="line">      <span class="type">int</span> sign = <span class="number">-1</span>;</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">1</span>; j &lt;= terms; j++) &#123;</span><br><span class="line">        value += sign * numer / denom;</span><br><span class="line">        numer *= x[i] * x[i];</span><br><span class="line">        denom *= (<span class="number">2</span> * j + <span class="number">2</span>) * (<span class="number">2</span> * j + <span class="number">3</span>);</span><br><span class="line">        sign *= <span class="number">-1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      y[i] = value;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="type">const</span> <span class="type">int</span> N = <span class="number">1000000</span>;</span><br><span class="line">  <span class="type">const</span> <span class="type">int</span> terms = <span class="number">10</span>;</span><br><span class="line">  <span class="type">float</span> *x = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line">  <span class="type">float</span> *y_scalar = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line">  <span class="type">float</span> *y_avx = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化输入数组</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    x[i] = <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(i) / N;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 测量标量版本的性能</span></span><br><span class="line">  <span class="keyword">auto</span> start = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="built_in">sinx_scalar</span>(N, terms, x, y_scalar);</span><br><span class="line">  <span class="keyword">auto</span> end = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="keyword">auto</span> duration_scalar =</span><br><span class="line">      std::chrono::<span class="built_in">duration_cast</span>&lt;std::chrono::microseconds&gt;(end - start);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 测量 AVX 版本的性能</span></span><br><span class="line">  start = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="built_in">sinx_avx</span>(N, terms, x, y_avx);</span><br><span class="line">  end = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="keyword">auto</span> duration_avx =</span><br><span class="line">      std::chrono::<span class="built_in">duration_cast</span>&lt;std::chrono::microseconds&gt;(end - start);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 测量并行 AVX 版本的性能</span></span><br><span class="line">  <span class="type">float</span> *y_avx_parallel = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line">  start = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="built_in">sinx_avx_parallel</span>(N, terms, x, y_avx_parallel);</span><br><span class="line">  end = std::chrono::high_resolution_clock::<span class="built_in">now</span>();</span><br><span class="line">  <span class="keyword">auto</span> duration_avx_parallel =</span><br><span class="line">      std::chrono::<span class="built_in">duration_cast</span>&lt;std::chrono::microseconds&gt;(end - start);</span><br><span class="line">  <span class="comment">// 打印结果</span></span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;标量版本耗时：%ld 微秒\n&quot;</span>, duration_scalar.<span class="built_in">count</span>());</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;AVX 版本耗时：%ld 微秒\n&quot;</span>, duration_avx.<span class="built_in">count</span>());</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;并行 AVX 版本耗时：%ld 微秒\n&quot;</span>, duration_avx_parallel.<span class="built_in">count</span>());</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;加速比：%.2f\n&quot;</span>,</span><br><span class="line">         <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(duration_scalar.<span class="built_in">count</span>()) / duration_avx.<span class="built_in">count</span>());</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;并行 AVX 加速比：%.2f\n&quot;</span>,</span><br><span class="line">         <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(duration_scalar.<span class="built_in">count</span>()) /</span><br><span class="line">             duration_avx_parallel.<span class="built_in">count</span>());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 验证结果</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span> (std::<span class="built_in">abs</span>(y_scalar[i] - y_avx[i]) &gt; <span class="number">1e-5</span>) &#123;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;结果不匹配在索引 %d: 标量 = %f, AVX = %f\n&quot;</span>, i, y_scalar[i],</span><br><span class="line">             y_avx[i]);</span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 清理内存</span></span><br><span class="line">  <span class="keyword">delete</span>[] x;</span><br><span class="line">  <span class="keyword">delete</span>[] y_scalar;</span><br><span class="line">  <span class="keyword">delete</span>[] y_avx;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译执行:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">g++ -mavx2 -O3 -march=native avx.cpp -o avx</span><br><span class="line">./sinx</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>编译选项</th>
+<th>说明</th>
+<th>具体作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>-mavx2</td>
+<td>启用 AVX2 指令集</td>
+<td>- 允许使用 AVX2 向量指令<br>- 支持 256 位向量运算<br>- 启用 <em>mm256</em>* 函数</td>
+</tr>
+<tr>
+<td>-O3</td>
+<td>最高级别优化</td>
+<td>- 函数内联<br>- 循环优化<br>- 向量化<br>- 分支预测优化<br>- 更积极的指令调度</td>
+</tr>
+<tr>
+<td>-march&#x3D;native</td>
+<td>针对本机优化</td>
+<td>- 自动检测 CPU 特性<br>- 使用 CPU 支持的所有指令集<br>- 生成最优化的机器码</td>
+</tr>
+</tbody></table>
+<p>结果:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ ./avx</span><br><span class="line">标量版本耗时：14692 微秒</span><br><span class="line">AVX 版本耗时：3203 微秒</span><br><span class="line">并行 AVX 版本耗时：2813 微秒</span><br><span class="line">加速比：4.59</span><br><span class="line">并行 AVX 加速比：5.22</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-SIMD问题-如何处理分支"><a href="#4-SIMD问题-如何处理分支" class="headerlink" title="4. SIMD问题: 如何处理分支"></a>4. SIMD问题: 如何处理分支</h1><p>当并行计算多个通道时, 可能有些通道的计算会由于不同的if判断条件导致不同的计算处理方式, 那么如何处理这种情况?</p>
+<p><img src="/../../images/CS149/Lec02/simd-branch.png" alt="simd-branch"></p>
+<p>处理方式: 加上掩码滤除即可:<br><img src="/../../images/CS149/Lec02/simd-branch-mask.png" alt="simd-branch-mask"></p>
+<p>这里的处理会在第一个作业中使用到, 如果感兴趣可以看下第一个作业: <a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/CS149-asst1">https://github.com/Vanilla-Beauty/CS149-asst1</a></p>
+<p>这里引入了一些新新概念:</p>
+<ol>
+<li><p><strong>指令流一致性（Instruction Stream Coherence）</strong></p>
+<ul>
+<li><p><strong>定义</strong>：</p>
+<ul>
+<li>同一指令序列应用于多个数据元素的程序特性</li>
+<li>类似于”同步执行”的概念</li>
+</ul>
+</li>
+<li><p><strong>重要性</strong>：</p>
+<ul>
+<li>对SIMD处理至关重要</li>
+<li>能够充分利用SIMD硬件资源</li>
+<li>提高并行效率</li>
+</ul>
+</li>
+<li><p><strong>多核心情况</strong>：</p>
+<ul>
+<li>不要求指令流一致性</li>
+<li>每个核心可以独立执行不同的指令流</li>
+<li>更灵活的并行处理方式</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>发散执行（Divergent Execution）</strong></p>
+<ul>
+<li><p><strong>定义</strong>：</p>
+<ul>
+<li>指令流不一致的情况</li>
+<li>不同数据需要执行不同的指令序列</li>
+</ul>
+</li>
+<li><p><strong>影响</strong>：</p>
+<ul>
+<li>降低SIMD效率</li>
+<li>可能导致串行化</li>
+<li>浪费硬件资源</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>实际应用示例</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 一致性执行（好）</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">    result[i] = a[i] + b[i];  <span class="comment">// 所有数据执行相同操作</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 发散执行（差）</span></span><br><span class="line"><span class="keyword">for</span>(<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">    <span class="keyword">if</span>(a[i] &gt; <span class="number">0</span>)</span><br><span class="line">        result[i] = a[i] + b[i];  <span class="comment">// 条件分支导致发散</span></span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        result[i] = a[i] - b[i];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h1 id="5-并行方案4——超线程技术的提出"><a href="#5-并行方案4——超线程技术的提出" class="headerlink" title="5 并行方案4——超线程技术的提出"></a>5 并行方案4——超线程技术的提出</h1><p>实际CPU运行时, 由于缓存不命中, 会导致CPU的<code>Stall</code>, 因为<code>CPU</code>太快, 而需要等待慢速的<code>L3 Cache</code>加载数据。</p>
+<p>这看起来是一个无解的问题，因为<code>CPU</code>的速度不存在能够与之匹敌的缓存。为了解决这个问题，Intel提出了<code>超线程</code>（Hyper-Threading）技术：</p>
+<ol>
+<li><p><strong>核心思路</strong>：</p>
+<ul>
+<li>在一个物理核心中维护多个（通常是2个）线程的执行上下文</li>
+<li>每个线程都有自己独立的寄存器组和程序计数器</li>
+<li>共享核心的执行单元、缓存和其他硬件资源</li>
+</ul>
+</li>
+<li><p><strong>工作原理</strong>：</p>
+<ul>
+<li>当一个线程因缓存未命中而停顿时</li>
+<li>CPU可以快速切换到另一个线程继续执行</li>
+<li>切换开销很小，因为硬件维护了完整的线程状态</li>
+</ul>
+</li>
+<li><p><strong>优势</strong>：</p>
+<ul>
+<li>提高CPU利用率</li>
+<li>隐藏内存访问延迟</li>
+<li>不需要完整的上下文切换（与操作系统级线程切换相比）</li>
+</ul>
+</li>
+<li><p><strong>限制</strong>：</p>
+<ul>
+<li>线程间共享物理核心的资源</li>
+<li>如果两个线程都需要相同的执行资源，性能提升有限</li>
+<li>不是所有工作负载都能从超线程中受益</li>
+</ul>
+</li>
+</ol>
+<h1 id="6-小结-目前学习的3中并行技术"><a href="#6-小结-目前学习的3中并行技术" class="headerlink" title="6 小结: 目前学习的3中并行技术"></a>6 小结: 目前学习的3中并行技术</h1><h2 id="6-1-超标量执行（Superscalar）"><a href="#6-1-超标量执行（Superscalar）" class="headerlink" title="6.1 超标量执行（Superscalar）"></a>6.1 超标量执行（Superscalar）</h2><ul>
+<li><strong>定义</strong>：在指令流中利用指令级并行性（ILP）</li>
+<li><strong>特点</strong>：<ul>
+<li>在同一核心内并行处理来自同一指令流的不同指令</li>
+<li>并行性由硬件在执行过程中自动发现</li>
+</ul>
+</li>
+<li><strong>实现</strong>：<ul>
+<li>动态指令调度</li>
+<li>乱序执行</li>
+<li>分支预测</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-2-SIMD（单指令多数据）"><a href="#6-2-SIMD（单指令多数据）" class="headerlink" title="6.2 SIMD（单指令多数据）"></a>6.2 SIMD（单指令多数据）</h2><ul>
+<li><strong>定义</strong>：多个ALU由同一指令控制（在核心内）</li>
+<li><strong>优势</strong>：<ul>
+<li>对数据并行工作负载高效</li>
+<li>在多个ALU上分摊控制成本</li>
+</ul>
+</li>
+<li><strong>实现方式</strong>：<ul>
+<li>显式SIMD：由编译器完成向量化</li>
+<li>隐式SIMD：由硬件在运行时完成向量化</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-3-多核心（Multi-core）"><a href="#6-3-多核心（Multi-core）" class="headerlink" title="6.3 多核心（Multi-core）"></a>6.3 多核心（Multi-core）</h2><ul>
+<li><strong>定义</strong>：使用多个处理核心</li>
+<li><strong>提供</strong>：线程级并行性（Thread-level Parallelism）</li>
+<li><strong>特点</strong>：<ul>
+<li>每个核心可以同时执行完全不同的指令流</li>
+<li>通过软件创建线程来向硬件暴露并行性</li>
+</ul>
+</li>
+<li><strong>实现</strong>：<ul>
+<li>通过线程API创建和管理线程</li>
+<li>每个核心独立执行不同的线程</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-4-超线程技术"><a href="#6-4-超线程技术" class="headerlink" title="6.4 超线程技术"></a>6.4 超线程技术</h2><ul>
+<li><strong>定义</strong>：在加载数据时，单核执行另一个不需要IO的控制流</li>
+<li><strong>优势</strong>：<ul>
+<li>提高ALU利用率</li>
+</ul>
+</li>
+<li><strong>实现方式</strong>：<ul>
+<li>在CPU单核内创建多个上下文寄存器</li>
+</ul>
+</li>
+</ul>
+<h2 id="6-5-补充-GPU的结构"><a href="#6-5-补充-GPU的结构" class="headerlink" title="6.5 补充: GPU的结构"></a>6.5 补充: GPU的结构</h2><p><img src="/../../images/CS149/Lec02/gpu-structure.png" alt="gpu-structure"></p>
+<p>GPU的主要结构可以与CPU进行如下类比：</p>
+<ol>
+<li><p><strong>SM (Streaming Multiprocessor)</strong></p>
+<ul>
+<li>类比CPU的一个核心</li>
+<li>是GPU的主要计算单元</li>
+<li>4090有80个SM单元</li>
+</ul>
+</li>
+<li><p><strong>CUDA Core</strong></p>
+<ul>
+<li>类比CPU中的SIMD ALU</li>
+<li>每个SM有128个CUDA Core</li>
+<li>专门用于并行执行相同指令的不同数据</li>
+<li>与CPU的SIMD ALU类似，都是用于数据并行处理</li>
+</ul>
+</li>
+<li><p><strong>层级关系</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">GPU ─┬→ SM 0 (类比CPU核心) ─┬→ CUDA Core 0 (类比SIMD ALU)</span><br><span class="line">     │                      ├→ CUDA Core 1</span><br><span class="line">     │                      └→ ... (共128个)</span><br><span class="line">     │</span><br><span class="line">     ├→ SM 1 ─┬→ CUDA Core 0</span><br><span class="line">     │        ├→ CUDA Core 1</span><br><span class="line">     │        └→ ...</span><br><span class="line">     │</span><br><span class="line">     └→ ... (共80个SM)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>主要区别</strong></p>
+<ul>
+<li>CPU的SIMD ALU通常一次处理4-8个数据</li>
+<li>GPU的CUDA Core数量更多，可以同时处理更多数据</li>
+<li>GPU更适合大规模数据并行计算</li>
+</ul>
+</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%E5%A4%9A%E6%A0%B8CPU-%E7%BB%AD%E4%B8%8A%E4%B8%80%E8%8A%82%E8%AF%BE"><span class="toc-number">1.</span> <span class="toc-text">1 简单介绍多核CPU(续上一节课)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%883%E2%80%94%E2%80%94SIMD"><span class="toc-number">2.</span> <span class="toc-text">2 并行方案3——SIMD</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0SIMD%E7%9A%84AVX2%E6%A1%88%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">3.</span> <span class="toc-text">3 实现SIMD的AVX2案例代码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%AD%E5%B8%B8%E7%94%A8%E7%9A%84%E5%87%BD%E6%95%B0%E6%80%BB%E7%BB%93"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 中常用的函数总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-%E6%B5%AE%E7%82%B9%E8%BF%90%E7%AE%97%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 浮点运算函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E6%95%B4%E5%9E%8B%E8%BF%90%E7%AE%97%E5%87%BD%E6%95%B0"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 整型运算函数</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-OpenMP%E7%9A%84%E5%B9%B6%E8%A1%8C%E5%8C%96%E6%8A%80%E6%9C%AF"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 OpenMP的并行化技术</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E4%B8%89%E7%A7%8D%E6%8A%80%E6%9C%AF%E7%9A%84%E5%AE%9A%E4%BD%8D"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 三种技术的定位</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 使用说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-OpenMP%E5%85%B3%E9%94%AE%E6%8C%87%E4%BB%A4%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 OpenMP关键指令说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-4-AVX2%E5%92%8COpenMP%E7%BB%84%E5%90%88%E4%BD%BF%E7%94%A8"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 AVX2和OpenMP组合使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%A1%88%E4%BE%8B%E4%BB%A3%E7%A0%81"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 案例代码</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-SIMD%E9%97%AE%E9%A2%98-%E5%A6%82%E4%BD%95%E5%A4%84%E7%90%86%E5%88%86%E6%94%AF"><span class="toc-number">4.</span> <span class="toc-text">4. SIMD问题: 如何处理分支</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%884%E2%80%94%E2%80%94%E8%B6%85%E7%BA%BF%E7%A8%8B%E6%8A%80%E6%9C%AF%E7%9A%84%E6%8F%90%E5%87%BA"><span class="toc-number">5.</span> <span class="toc-text">5 并行方案4——超线程技术的提出</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E7%BB%93-%E7%9B%AE%E5%89%8D%E5%AD%A6%E4%B9%A0%E7%9A%843%E4%B8%AD%E5%B9%B6%E8%A1%8C%E6%8A%80%E6%9C%AF"><span class="toc-number">6.</span> <span class="toc-text">6 小结: 目前学习的3中并行技术</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E8%B6%85%E6%A0%87%E9%87%8F%E6%89%A7%E8%A1%8C%EF%BC%88Superscalar%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 超标量执行（Superscalar）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-SIMD%EF%BC%88%E5%8D%95%E6%8C%87%E4%BB%A4%E5%A4%9A%E6%95%B0%E6%8D%AE%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 SIMD（单指令多数据）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E5%A4%9A%E6%A0%B8%E5%BF%83%EF%BC%88Multi-core%EF%BC%89"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 多核心（Multi-core）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E8%B6%85%E7%BA%BF%E7%A8%8B%E6%8A%80%E6%9C%AF"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 超线程技术</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-5-%E8%A1%A5%E5%85%85-GPU%E7%9A%84%E7%BB%93%E6%9E%84"><span class="toc-number">6.5.</span> <span class="toc-text">6.5 补充: GPU的结构</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&text=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&is_video=false&description=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD&body=Check out this article: http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&name=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/&t=Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

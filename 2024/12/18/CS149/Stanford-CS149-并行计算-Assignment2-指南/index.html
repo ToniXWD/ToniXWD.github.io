@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="0 作业简单介绍这次的作业是实现一个任务执行库, 可以看做是mini版的ispc, 需要实现task的创建、执行, 并且需要支持task的依赖关系, 也就是task的执行顺序。难度基本上就是一个C++并发编程的练习, 这里做一个简单的介绍。 作业的核心就是下面几个函数： 12345678910virtual void run(IRunnable* runnable, int num_total_t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Assignment2-任务执行库">
+<meta property="og:url" content="http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="0 作业简单介绍这次的作业是实现一个任务执行库, 可以看做是mini版的ispc, 需要实现task的创建、执行, 并且需要支持task的依赖关系, 也就是task的执行顺序。难度基本上就是一个C++并发编程的练习, 这里做一个简单的介绍。 作业的核心就是下面几个函数： 12345678910virtual void run(IRunnable* runnable, int num_total_t">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-12-18T07:09:53.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Assignment2-任务执行库</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/18/%E7%96%91%E9%9A%BE%E6%9D%82%E7%97%87%E5%90%88%E9%9B%86/Ubuntu%E4%B8%8B%E4%B8%8D%E7%94%9F%E4%BA%A7core%20dump%E6%96%87%E4%BB%B6%E5%88%86%E6%9E%90/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/17/%E9%9A%8F%E7%AC%94/%E5%88%A9%E7%94%A8Github%E5%92%8CHexo%E8%87%AA%E5%BB%BA%E5%8D%9A%E5%AE%A2/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&text=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&is_video=false&description=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Assignment2-任务执行库&body=Check out this article: http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&name=Stanford-CS149-并行计算-Assignment2-任务执行库&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&t=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E4%BD%9C%E4%B8%9A%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">0 作业简单介绍</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Part-A"><span class="toc-number">2.</span> <span class="toc-text">1 Part A</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 顺序执行的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E7%AB%8B%E5%8D%B3%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.2.</span> <span class="toc-text">1.2 立即创建线程的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E4%BD%BF%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.3.</span> <span class="toc-text">1.3 使用线程池的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-4-%E4%BD%BF%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.4.</span> <span class="toc-text">1.4 使用线程池+条件变量的版本</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Part-B"><span class="toc-number">3.</span> <span class="toc-text">2 Part B</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Assignment2-任务执行库
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-18T07:09:53.000Z" class="dt-published" itemprop="datePublished">2024-12-18</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="0-作业简单介绍"><a href="#0-作业简单介绍" class="headerlink" title="0 作业简单介绍"></a>0 作业简单介绍</h1><p>这次的作业是实现一个任务执行库, 可以看做是<code>mini</code>版的<code>ispc</code>, 需要实现<code>task</code>的创建、执行, 并且需要支持<code>task</code>的依赖关系, 也就是<code>task</code>的执行顺序。难度基本上就是一个C++并发编程的练习, 这里做一个简单的介绍。</p>
+<p>作业的核心就是下面几个函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">run</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks)</span> </span>= <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">virtual</span> TaskID <span class="title">runAsyncWithDeps</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks,</span></span></span><br><span class="line"><span class="params"><span class="function">                                <span class="type">const</span> std::vector&lt;TaskID&gt;&amp; deps)</span> </span>= <span class="number">0</span>;</span><br><span class="line"><span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">sync</span><span class="params">()</span> </span>= <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IRunnable</span> &#123;</span><br><span class="line">    <span class="keyword">public</span>:</span><br><span class="line">        <span class="keyword">virtual</span> ~<span class="built_in">IRunnable</span>();</span><br><span class="line">        <span class="function"><span class="keyword">virtual</span> <span class="type">void</span> <span class="title">runTask</span><span class="params">(<span class="type">int</span> task_id, <span class="type">int</span> num_total_tasks)</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这里的<code>IRunnable</code>是一个接口, 对应的就是具体的并行计算任务, 这里我们只需要调用<code>IRunnable</code>的<code>runTask</code>函数即可。<code>task_id</code>就是单个任务的序号, 类似<code>ispc</code>的<code>programIndex</code>, 而<code>num_total_tasks</code>就类似总<code>ispc</code>的<code>programCount</code>, 这里就不展开了。</li>
+<li><code>run</code>函数是同步执行的, 也就是<code>run</code>函数执行完毕后, 所有的<code>task</code>都执行完毕了。</li>
+<li><code>runAsyncWithDeps</code>函数是异步执行的, 其不等待<code>task</code>执行完毕, 而是直接返回。返回的<code>TaskID</code>是<code>task</code>的唯一标识, 可以用于后续的依赖关系设置。</li>
+<li><code>sync</code>: 同步函数, 等待所有<code>task</code>执行完毕。</li>
+</ul>
+<h1 id="1-Part-A"><a href="#1-Part-A" class="headerlink" title="1 Part A"></a>1 Part A</h1><p>Part A只要求完成同步的<code>run</code>函数, 官方还贴心的给出了逐步的实现步骤, 首先是顺序执行的版本, 然后是立即创建线程的版本, 再然后是使用线程池的版本, 最后是使用线程池+条件变量的版本。</p>
+<h2 id="1-1-顺序执行的版本"><a href="#1-1-顺序执行的版本" class="headerlink" title="1.1 顺序执行的版本"></a>1.1 顺序执行的版本</h2><p>这个版本不需要自己做啥操作, 官方给出了实现</p>
+<h2 id="1-2-立即创建线程的版本"><a href="#1-2-立即创建线程的版本" class="headerlink" title="1.2 立即创建线程的版本"></a>1.2 立即创建线程的版本</h2><p>这里要求使用的线程不超过给定的数量, 这里我的实现是直接创建容许的最大线程数, 然后每个线程不断地轮序下一个执行任务的序号：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelSpawn::run</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks)</span> </span>&#123;</span><br><span class="line">    <span class="function">std::atomic&lt;<span class="type">int</span>&gt; <span class="title">task_id</span><span class="params">(<span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> func = [&amp;]() &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="type">int</span> cur_task_id = task_id.<span class="built_in">fetch_add</span>(<span class="number">1</span>);</span><br><span class="line">            <span class="keyword">if</span> (cur_task_id &gt;= num_total_tasks) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            runnable-&gt;<span class="built_in">runTask</span>(cur_task_id, num_total_tasks);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    std::vector&lt;std::thread&gt; threads;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; max_threads; i++) &#123;</span><br><span class="line">        threads.<span class="built_in">push_back</span>(std::<span class="built_in">thread</span>(func));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; thread : threads) &#123;</span><br><span class="line">        thread.<span class="built_in">join</span>();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="1-3-使用线程池的版本"><a href="#1-3-使用线程池的版本" class="headerlink" title="1.3 使用线程池的版本"></a>1.3 使用线程池的版本</h2><p>这个稍微复杂一点，但对于<code>Cpper</code>来说也算是经典的面试场景或者八股了</p>
+<p>首先线程池的每个线程需要不断地从任务队列中取出任务并执行，因此一定是个死循环的函数:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSpinning::worker</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (!is_terminate) &#123;</span><br><span class="line">        <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mspin)</span></span>;</span><br><span class="line">        <span class="keyword">if</span> (left_task_num &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            lock.<span class="built_in">unlock</span>();</span><br><span class="line">            std::this_thread::<span class="built_in">yield</span>(); <span class="comment">// 让出 CPU 时间片，减少自旋等待</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">int</span> task_id = total_task_num - left_task_num;</span><br><span class="line">        left_task_num--;</span><br><span class="line">        lock.<span class="built_in">unlock</span>(); <span class="comment">// 提前释放锁</span></span><br><span class="line"></span><br><span class="line">        runner-&gt;<span class="built_in">runTask</span>(task_id, total_task_num);</span><br><span class="line"></span><br><span class="line">        finished_task_num++;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>构造函数需要创建线程池:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">TaskSystemParallelThreadPoolSpinning::<span class="built_in">TaskSystemParallelThreadPoolSpinning</span>(<span class="type">int</span> num_threads): <span class="built_in">ITaskSystem</span>(num_threads), <span class="built_in">max_threads</span>(num_threads) &#123;</span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// CS149 student implementations may decide to perform setup</span></span><br><span class="line">    <span class="comment">// operations (such as thread pool construction) here.</span></span><br><span class="line">    <span class="comment">// Implementations are free to add new class member variables</span></span><br><span class="line">    <span class="comment">// (requiring changes to tasksys.h).</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>-&gt;max_threads; i++) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;worker_pool.<span class="built_in">push_back</span>(std::<span class="built_in">thread</span>([<span class="keyword">this</span>]() &#123;</span><br><span class="line">            <span class="built_in">worker</span>();</span><br><span class="line">        &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>run</code>函数直接修改任务参数即可:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSpinning::run</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// CS149 students will modify the implementation of this</span></span><br><span class="line">    <span class="comment">// method in Part A.  The implementation provided below runs all</span></span><br><span class="line">    <span class="comment">// tasks sequentially on the calling thread.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">    finished_task_num = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">this</span>-&gt;total_task_num = num_total_tasks;</span><br><span class="line">    runner = runnable;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mspin)</span></span>;</span><br><span class="line">        left_task_num = num_total_tasks;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> (finished_task_num &lt; num_total_tasks) &#123;</span><br><span class="line">        std::this_thread::<span class="built_in">yield</span>(); <span class="comment">// 让出 CPU 时间片，减少自旋等待</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>需要注意的是, 这里并没有显式的<code>队列</code>的概念, 因为每个任务只需要一个序号即可, 因此维护的<code>left_task_num</code>就是逻辑上的一个队列。<br>另一方面, <code>td::this_thread::yield()</code>是让出当前线程的执行权, 减少自旋等待, 从而减少CPU的消耗。</p>
+</blockquote>
+<h2 id="1-4-使用线程池-条件变量的版本"><a href="#1-4-使用线程池-条件变量的版本" class="headerlink" title="1.4 使用线程池+条件变量的版本"></a>1.4 使用线程池+条件变量的版本</h2><p>这个版本需要使用条件变量来等待所有任务执行完毕, 这里需要使用<code>std::condition_variable</code>和<code>std::mutex</code>来实现。其实和前者差距不大，就是在<code>while</code>循环中使用<code>cv.wait</code>来等待所有任务执行完毕。</p>
+<p><strong>worker函数:</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSleeping::worker</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_worker)</span></span>;</span><br><span class="line">        <span class="keyword">auto</span> wait_func = [<span class="keyword">this</span>] &#123; <span class="keyword">return</span> <span class="keyword">this</span>-&gt;stop || <span class="keyword">this</span>-&gt;left_task_num &gt; <span class="number">0</span>; &#125;;</span><br><span class="line">        cv_worker.<span class="built_in">wait</span>(lock, wait_func);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (stop &amp;&amp; left_task_num == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> task_id = total_task_num - left_task_num;</span><br><span class="line">        left_task_num--;</span><br><span class="line">        lock.<span class="built_in">unlock</span>();</span><br><span class="line"></span><br><span class="line">        runner-&gt;<span class="built_in">runTask</span>(task_id, total_task_num);</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">finish_lock</span><span class="params">(mtx_finish)</span></span>;</span><br><span class="line">            finished_task_num++;</span><br><span class="line">            <span class="keyword">if</span> (finished_task_num == total_task_num) &#123;</span><br><span class="line">                cv_finish.<span class="built_in">notify_one</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>run函数:</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSleeping::run</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks)</span> </span>&#123;</span><br><span class="line">    runner = runnable;</span><br><span class="line">    finished_task_num = <span class="number">0</span>;</span><br><span class="line">    total_task_num = num_total_tasks;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_worker)</span></span>;</span><br><span class="line">        left_task_num = num_total_tasks;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv_worker.<span class="built_in">notify_all</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_finish)</span></span>;</span><br><span class="line">    <span class="keyword">auto</span> wait_func = [<span class="keyword">this</span>]()&#123;<span class="keyword">return</span> <span class="keyword">this</span>-&gt;finished_task_num == <span class="keyword">this</span>-&gt;total_task_num;&#125;;</span><br><span class="line">    cv_finish.<span class="built_in">wait</span>(lock, wait_func);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="2-Part-B"><a href="#2-Part-B" class="headerlink" title="2 Part B"></a>2 Part B</h1><p>这一部分要求实现<code>runAsyncWithDeps</code>函数, 也就是异步执行的函数, 需要支持任务的依赖关系。<br>直接贴出代码吧:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * ================================================================</span></span><br><span class="line"><span class="comment"> * Parallel Thread Pool Sleeping Task System Implementation</span></span><br><span class="line"><span class="comment"> * ================================================================</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">const</span> <span class="type">char</span>* <span class="title">TaskSystemParallelThreadPoolSleeping::name</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;Parallel + Thread Pool + Sleep&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSleeping::worker</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_worker)</span></span>;</span><br><span class="line">        <span class="keyword">auto</span> wait_func = [<span class="keyword">this</span>] &#123; <span class="keyword">return</span> <span class="keyword">this</span>-&gt;stop || <span class="keyword">this</span>-&gt;left_task_num &gt; <span class="number">0</span>; &#125;;</span><br><span class="line">        cv_worker.<span class="built_in">wait</span>(lock, wait_func);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (stop &amp;&amp; left_task_num == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> task_id = total_task_num - left_task_num;</span><br><span class="line">        left_task_num--;</span><br><span class="line">        lock.<span class="built_in">unlock</span>();</span><br><span class="line"></span><br><span class="line">        runner-&gt;<span class="built_in">runTask</span>(task_id, total_task_num);</span><br><span class="line"></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">finish_lock</span><span class="params">(mtx_finish)</span></span>;</span><br><span class="line">            finished_task_num++;</span><br><span class="line">            <span class="keyword">if</span> (finished_task_num == total_task_num) &#123;</span><br><span class="line">                cv_finish.<span class="built_in">notify_one</span>();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TaskSystemParallelThreadPoolSleeping::<span class="built_in">TaskSystemParallelThreadPoolSleeping</span>(<span class="type">int</span> num_threads): <span class="built_in">ITaskSystem</span>(num_threads), <span class="built_in">num_threads</span>(num_threads) &#123;</span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> CS149 student implementations may decide to perform setup</span></span><br><span class="line">    <span class="comment">// operations (such as thread pool construction) here.</span></span><br><span class="line">    <span class="comment">// Implementations are free to add new class member variables</span></span><br><span class="line">    <span class="comment">// (requiring changes to tasksys.h).</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    stop = <span class="literal">false</span>;</span><br><span class="line">    total_task_num = left_task_num = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>-&gt;num_threads; ++i) &#123;</span><br><span class="line">        workers.<span class="built_in">push_back</span>(std::<span class="built_in">thread</span>([<span class="keyword">this</span>]() &#123; <span class="built_in">worker</span>(); &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TaskSystemParallelThreadPoolSleeping::~<span class="built_in">TaskSystemParallelThreadPoolSleeping</span>() &#123;</span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> CS149 student implementations may decide to perform cleanup</span></span><br><span class="line">    <span class="comment">// operations (such as thread pool shutdown construction) here.</span></span><br><span class="line">    <span class="comment">// Implementations are free to add new class member variables</span></span><br><span class="line">    <span class="comment">// (requiring changes to tasksys.h).</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">this</span>-&gt;stop = <span class="literal">true</span>;</span><br><span class="line">    cv_worker.<span class="built_in">notify_all</span>();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; worker : workers) &#123;</span><br><span class="line">        <span class="keyword">if</span> (worker.<span class="built_in">joinable</span>()) &#123;</span><br><span class="line">            worker.<span class="built_in">join</span>(); <span class="comment">// 等待所有线程完成</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放所有任务上下文</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; pair : task_contexts) &#123;</span><br><span class="line">        <span class="keyword">delete</span> pair.second;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSleeping::run</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> CS149 students will modify the implementation of this</span></span><br><span class="line">    <span class="comment">// method in Parts A and B.  The implementation provided below runs all</span></span><br><span class="line">    <span class="comment">// tasks sequentially on the calling thread.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">    runner = runnable;</span><br><span class="line">    finished_task_num = <span class="number">0</span>;</span><br><span class="line">    total_task_num = num_total_tasks;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_worker)</span></span>;</span><br><span class="line">        left_task_num = num_total_tasks;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    cv_worker.<span class="built_in">notify_all</span>();</span><br><span class="line"></span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_finish)</span></span>;</span><br><span class="line">    <span class="keyword">auto</span> wait_func = [<span class="keyword">this</span>]()&#123;<span class="keyword">return</span> <span class="keyword">this</span>-&gt;finished_task_num == <span class="keyword">this</span>-&gt;total_task_num;&#125;;</span><br><span class="line">    cv_finish.<span class="built_in">wait</span>(lock, wait_func);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">TaskID <span class="title">TaskSystemParallelThreadPoolSleeping::runAsyncWithDeps</span><span class="params">(IRunnable* runnable, <span class="type">int</span> num_total_tasks,</span></span></span><br><span class="line"><span class="params"><span class="function">                                                    <span class="type">const</span> std::vector&lt;TaskID&gt;&amp; deps)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> CS149 students will implement this method in Part B.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> cur_task_id = <span class="keyword">this</span>-&gt;next_task_id.<span class="built_in">fetch_add</span>(<span class="number">1</span>);</span><br><span class="line">    TaskContext* task_context = <span class="keyword">new</span> <span class="built_in">TaskContext</span>(cur_task_id);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 在另一个线程中执行任务 TaskSystemParallelThreadPoolSleeping::run 函数</span></span><br><span class="line">    std::<span class="built_in">thread</span>([<span class="keyword">this</span>, runnable, num_total_tasks, task_context, &amp;deps]() &#123;</span><br><span class="line">            <span class="comment">// 先等待依赖任务完成</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; dep : deps) &#123;</span><br><span class="line">            TaskContext* task_context = <span class="keyword">this</span>-&gt;task_contexts[dep];</span><br><span class="line">            std::unique_lock&lt;std::mutex&gt; <span class="built_in">lock</span>(task_context-&gt;mtx);</span><br><span class="line">            task_context-&gt;cv.<span class="built_in">wait</span>(lock, [task_context]() &#123; <span class="keyword">return</span> task_context-&gt;is_finished; &#125;);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">this</span>-&gt;<span class="built_in">run</span>(runnable, num_total_tasks);</span><br><span class="line">        &#123;</span><br><span class="line">            std::lock_guard&lt;std::mutex&gt; <span class="built_in">lock</span>(task_context-&gt;mtx);</span><br><span class="line">            task_context-&gt;is_finished = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        task_context-&gt;cv.<span class="built_in">notify_all</span>();</span><br><span class="line">    &#125;).<span class="built_in">detach</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">this</span>-&gt;task_contexts[cur_task_id] = task_context;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> cur_task_id;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">TaskSystemParallelThreadPoolSleeping::sync</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// <span class="doctag">TODO:</span> CS149 students will modify the implementation of this method in Part B.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; pair : <span class="keyword">this</span>-&gt;task_contexts) &#123;</span><br><span class="line">        TaskContext* task_context = pair.second;</span><br><span class="line"></span><br><span class="line">        <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(task_context-&gt;mtx)</span></span>;</span><br><span class="line">        task_context-&gt;cv.<span class="built_in">wait</span>(lock, [task_context]() &#123; <span class="keyword">return</span> task_context-&gt;is_finished; &#125;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>目前的实现还有些性能问题, 这里mark一下, 最近时间比较紧张, 等有时间了再优化一下。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E4%BD%9C%E4%B8%9A%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">0 作业简单介绍</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Part-A"><span class="toc-number">2.</span> <span class="toc-text">1 Part A</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E9%A1%BA%E5%BA%8F%E6%89%A7%E8%A1%8C%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.1.</span> <span class="toc-text">1.1 顺序执行的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E7%AB%8B%E5%8D%B3%E5%88%9B%E5%BB%BA%E7%BA%BF%E7%A8%8B%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.2.</span> <span class="toc-text">1.2 立即创建线程的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E4%BD%BF%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.3.</span> <span class="toc-text">1.3 使用线程池的版本</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-4-%E4%BD%BF%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0-%E6%9D%A1%E4%BB%B6%E5%8F%98%E9%87%8F%E7%9A%84%E7%89%88%E6%9C%AC"><span class="toc-number">2.4.</span> <span class="toc-text">1.4 使用线程池+条件变量的版本</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Part-B"><span class="toc-number">3.</span> <span class="toc-text">2 Part B</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&text=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&is_video=false&description=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Assignment2-任务执行库&body=Check out this article: http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&title=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&name=Stanford-CS149-并行计算-Assignment2-任务执行库&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment2-%E6%8C%87%E5%8D%97/&t=Stanford-CS149-并行计算-Assignment2-任务执行库"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

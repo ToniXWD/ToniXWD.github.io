@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1. Consul 简介Consul 是 HashiCorp 开发的分布式服务管理框架，提供服务发现、健康检查、配置中心和完整的分布式并行性维护技术。它特别适合应用于小型到大型的分布式集群环境，通过同步机制维护集群内定义好的服务和信息。 官方文档: https:&#x2F;&#x2F;www.consul.io&#x2F;代码仓库: https:&#x2F;&#x2F;github.com&#x2F;hashicorp&#x2F;consul 核心特性：  服务发现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Consul学习笔记1-简介与Demo">
+<meta property="og:url" content="http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1. Consul 简介Consul 是 HashiCorp 开发的分布式服务管理框架，提供服务发现、健康检查、配置中心和完整的分布式并行性维护技术。它特别适合应用于小型到大型的分布式集群环境，通过同步机制维护集群内定义好的服务和信息。 官方文档: https:&#x2F;&#x2F;www.consul.io&#x2F;代码仓库: https:&#x2F;&#x2F;github.com&#x2F;hashicorp&#x2F;consul 核心特性：  服务发现">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-04-30T09:48:18.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.665Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="服务注册与发现">
+<meta property="article:tag" content="Consul">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Consul学习笔记1-简介与Demo</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&text=Consul学习笔记1-简介与Demo"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&is_video=false&description=Consul学习笔记1-简介与Demo"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Consul学习笔记1-简介与Demo&body=Check out this article: http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&name=Consul学习笔记1-简介与Demo&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&t=Consul学习笔记1-简介与Demo"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Consul-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1. Consul 简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84-Demo"><span class="toc-number">2.</span> <span class="toc-text">2. 基于虚拟机的 Demo</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 环境准备</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-1-VMWare%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E4%B8%8B%E8%BD%BD%E4%B8%8E%E5%AE%89%E8%A3%85"><span class="toc-number">2.1.1.</span> <span class="toc-text">2.1.1 VMWare虚拟机的下载与安装**</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-2-%E5%88%9B%E5%BB%BA4%E4%BB%BD-Ubuntu-22-04-Server-%E5%AE%9E%E4%BE%8B-%E5%AE%89%E8%A3%85"><span class="toc-number">2.1.2.</span> <span class="toc-text">2.1.2 创建4份 Ubuntu 22.04 Server 实例 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-3-%E5%AE%89%E8%A3%85%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%93%BE%EF%BC%88Go%E3%80%81jq-%E7%AD%89%EF%BC%89"><span class="toc-number">2.1.3.</span> <span class="toc-text">2.1.3 安装开发工具链（Go、jq 等）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-4-%E8%8E%B7%E5%8F%96-Consul-%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6"><span class="toc-number">2.1.4.</span> <span class="toc-text">2.1.4 获取 Consul 可执行文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%90%AF%E5%8A%A8-agent"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 启动 agent</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-agent-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 agent 的基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-server-agent-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 server agent 配置文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-3-client-agent-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.3.</span> <span class="toc-text">2.2.3 client agent 配置文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4%E5%90%8E%E7%9A%84%E7%8A%B6%E6%80%81"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.2.4 启动集群后的状态</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%8F%91%E7%8E%B0"><span class="toc-number">2.4.</span> <span class="toc-text">2.3 服务注册与发现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-Go-%E6%9C%8D%E5%8A%A1%E4%BB%A3%E7%A0%81"><span class="toc-number">2.4.1.</span> <span class="toc-text">2.3.1 Go 服务代码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="toc-number">2.5.</span> <span class="toc-text">3.2 命令行方式注册服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Go-%E4%BB%A3%E7%A0%81%E5%BC%95%E5%85%A5%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="toc-number">2.6.</span> <span class="toc-text">3.3 Go 代码引入第三方库注册服务</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B0%8F%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">3 小结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Consul学习笔记1-简介与Demo
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-30T09:48:18.000Z" class="dt-published" itemprop="datePublished">2025-04-30</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a> › <a class="category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/">Consul</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Consul/" rel="tag">Consul</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" rel="tag">分布式</a>, <a class="p-category" href="/tags/%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%8F%91%E7%8E%B0/" rel="tag">服务注册与发现</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-Consul-简介"><a href="#1-Consul-简介" class="headerlink" title="1. Consul 简介"></a>1. Consul 简介</h1><p><code>Consul</code> 是 <code>HashiCorp</code> 开发的分布式服务管理框架，提供服务发现、健康检查、配置中心和完整的分布式并行性维护技术。它特别适合应用于小型到大型的分布式集群环境，通过同步机制维护集群内定义好的服务和信息。</p>
+<p>官方文档: <a target="_blank" rel="noopener" href="https://www.consul.io/">https://www.consul.io/</a><br>代码仓库: <a target="_blank" rel="noopener" href="https://github.com/hashicorp/consul">https://github.com/hashicorp/consul</a></p>
+<p><strong>核心特性</strong>：</p>
+<ul>
+<li><strong>服务发现</strong>：支持服务注册与自动发现，便于其他服务快速找到可用的服务实例。</li>
+<li><strong>健康检查</strong>：内置对服务和节点的健康状态监控，能动态剔除不健康的节点。</li>
+<li><strong>KV 存储</strong>：提供键值存储功能，可用于动态配置管理和协调分布式系统的行为。</li>
+<li><strong>多数据中心支持</strong>：天然支持多数据中心部署，确保跨区域服务的高可用性和一致性。</li>
+<li><strong>安全通信</strong>：通过加密和访问控制保障服务间通信的安全性。</li>
+</ul>
+<p><strong>应用场景</strong>：</p>
+<ul>
+<li>微服务架构中的服务注册与发现。</li>
+<li>动态负载均衡和服务路由。</li>
+<li>分布式系统的配置管理。</li>
+<li>健康监控与故障转移。</li>
+</ul>
+<p><code>Consul</code> 的设计目标是简化分布式系统的管理难度，并提供一套统一的工具链来提升开发和运维效率。<code>Consul</code> 自推出以来，因其强大的功能和易用性被广泛应用于多个知名项目和企业中, 例如<code>Netflix</code>在其微服务架构中使用 Consul 进行服务发现与健康检查。</p>
+<p>但由于<code>Consul</code>的特性和功能太多, 而官方的<code>Tutorial</code>使用了<code>AWS</code>等云服务进行讲解, 对于国内的小伙伴不是很友好, 因此这里我使用<code>VMWare</code>虚拟机做一个<code>Consul</code>的小<code>demo</code>, 从这个<code>demo</code>的开发演示中，学习如何使用<code>Consul</code>进行服务注册与发现。</p>
+<p>本章是学习<code>Consul</code>的第一部分, 因此除了<code>demo</code>外不会涉及太多琐碎的知识点, 目的是让大家对<code>Consul</code>的功能、使用方式有一个大体的局具象感知，更详细的使用和原理介绍将在后续章节中进行。</p>
+<h1 id="2-基于虚拟机的-Demo"><a href="#2-基于虚拟机的-Demo" class="headerlink" title="2. 基于虚拟机的 Demo"></a>2. 基于虚拟机的 Demo</h1><p>由于官方的<code>Tutorial</code>比较复杂, 这里我采用一个极简的<code>demo</code>进行演示。</p>
+<h2 id="2-1-环境准备"><a href="#2-1-环境准备" class="headerlink" title="2.1 环境准备"></a>2.1 环境准备</h2><p>环境准备包括以下关键步骤：</p>
+<h3 id="2-1-1-VMWare虚拟机的下载与安装"><a href="#2-1-1-VMWare虚拟机的下载与安装" class="headerlink" title="2.1.1 VMWare虚拟机的下载与安装**"></a>2.1.1 VMWare虚拟机的下载与安装**</h3><p><code>VMWare Workstation Player</code> 可以从官网免费下载（适用于非商业用途），安装后可用于创建和运行虚拟机。</p>
+<p>官方下载地址：<a target="_blank" rel="noopener" href="https://www.vmware.com/products/workstation-player.html">https://www.vmware.com/products/workstation-player.html</a></p>
+<blockquote>
+<p>这里采用<code>VMWare</code>而不是<code>WSL</code>的原因是, <code>VMWare</code>默认会给创建的虚拟机分配一个随机的 <code>IP</code> 地址，且不同虚拟机实例的<code>IP</code>不同, 而<code>WSL</code>需要进行一定的配置, 相对麻烦一点。另一方面， <code>VMWare</code>提供虚拟机的快速克隆, 我们可以在一台虚拟机上部署好所有环境, 然后直接克隆即可, 不需要在4个虚拟机实例上分别布置环境依赖</p>
+</blockquote>
+<h3 id="2-1-2-创建4份-Ubuntu-22-04-Server-实例-安装"><a href="#2-1-2-创建4份-Ubuntu-22-04-Server-实例-安装" class="headerlink" title="2.1.2 创建4份 Ubuntu 22.04 Server 实例 安装"></a>2.1.2 创建4份 Ubuntu 22.04 Server 实例 安装</h3><p>创建 4 台 <code>Ubuntu Server 22.04</code> 虚拟机，用于部署 <code>Consul</code> 集群。这里之所以要创建4台虚拟机, 是因为<code>consul</code>的<code>sever</code>集群采用的是基于<code>raft</code>的<code>KV</code>存储, 因此至少要3个节点, 才能形成<code>server</code>集群, 另外我们还需要一个<code>client</code>节点，其是被<code>server</code>服务的对象。</p>
+<blockquote>
+<p>这里不推荐<code>Desktop</code>版本的<code>Ubuntu</code>, 因为我们要安装4份虚拟机实例, 要是使用<code>Desktop</code>版本的话, 内存压力会非常大! 同时, <code>VMWare</code>虚拟机的安装方式我也不介绍了, 默认大家有基础</p>
+</blockquote>
+<h3 id="2-1-3-安装开发工具链（Go、jq-等）"><a href="#2-1-3-安装开发工具链（Go、jq-等）" class="headerlink" title="2.1.3 安装开发工具链（Go、jq 等）"></a>2.1.3 安装开发工具链（Go、jq 等）</h3><ul>
+<li><code>Go</code>: 用于编译和运行服务注册代码, 我们的服务用<code>Go</code>写起来最方便, 因为<code>consul</code>本身使用<code>Go</code>作为开发语言, 可以直接<code>import</code>官方源码仓库的<code>api</code>在<code>go</code>代码中直接进行集群相关操作。</li>
+<li><code>jq</code>: 用于命令行下对 JSON 数据格式化查看，便于调试和验证 <code>Consul</code> 网络接口返回的数据。</li>
+<li><code>OpenSSh-Server</code>: 用于在宿主机和虚拟机之间进行 <code>SSH</code> 登录，方便调试和验证, 总不可能在虚拟机这样丑陋的环境里敲命令吧…</li>
+<li><code>VSCode</code>：远程连接虚拟机编写配置文件和代码</li>
+</ul>
+<blockquote>
+<p>至于 <code>SSH</code>秘钥配置、<code>VSCode</code>插件配置, <code>jq</code>的使用方法等, 我就不具体介绍了, 默认大家有一定的基础</p>
+</blockquote>
+<h3 id="2-1-4-获取-Consul-可执行文件"><a href="#2-1-4-获取-Consul-可执行文件" class="headerlink" title="2.1.4 获取 Consul 可执行文件"></a>2.1.4 获取 Consul 可执行文件</h3><p>可以直接从 <a target="_blank" rel="noopener" href="https://www.consul.io/downloads">Consul 官网</a> 下载对应操作系统的二进制文件，解压后将 <code>consul</code> 放入系统路径 <code>/usr/local/bin/</code> 即可使用；也可以通过源码编译生成可执行文件。</p>
+<h2 id="2-2-启动-agent"><a href="#2-2-启动-agent" class="headerlink" title="2.2 启动 agent"></a>2.2 启动 agent</h2><h3 id="2-2-1-agent-的基本概念"><a href="#2-2-1-agent-的基本概念" class="headerlink" title="2.2.1 agent 的基本概念"></a>2.2.1 agent 的基本概念</h3><p>这里先对 <code>Consul</code> 中的重要概念 <code>agent</code> 进行介绍：</p>
+<p><code>Consul</code> 以 <strong>agent</strong> 的形式运行在每一个节点上，agent 可以是 <strong>server</strong> 或 <strong>client</strong> 角色。<code>server</code> 负责参与 Raft 协议、维护集群状态和处理请求；<code>client</code> 则负责注册服务、运行健康检查，并将请求转发给 <code>server</code> 集群。</p>
+<p>每个 <code>agent</code> 独立运行，通过配置文件（如 <code>.hcl</code> 文件）定义其行为，包括节点名、IP 地址、运行模式、数据目录、通信端口等信息。agent 启动后会尝试加入集群，并持续与其他节点保持通信以维护集群视图和服务状态。</p>
+<p>在本 <code>demo</code> 中，我们分别启动了 3 个<code> server agent</code> 和 1 个 <code>client agent</code>，构成一个最小化的 Consul 集群。</p>
+<h3 id="2-2-2-server-agent-配置文件"><a href="#2-2-2-server-agent-配置文件" class="headerlink" title="2.2.2 server agent 配置文件"></a>2.2.2 server agent 配置文件</h3><p>这里<code>server</code>的<code>consul aent</code>的启动命令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">consul agent -config-file=server.hcl</span><br></pre></td></tr></table></figure>
+<p>这里的<code>server.hcl</code>是配置文件, 其内容如下：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">datacenter</span> = <span class="string">&quot;dc1&quot;</span></span><br><span class="line"><span class="attr">node_name</span>  = <span class="string">&quot;consul-server-1&quot;</span></span><br><span class="line"><span class="attr">data_dir</span>   = <span class="string">&quot;/home/toni/consul-tutorial/consul-data&quot;</span></span><br><span class="line"><span class="attr">bind_addr</span>  = <span class="string">&quot;192.168.110.129&quot;</span> <span class="comment"># ! 当前节点的内网地址</span></span><br><span class="line"><span class="attr">client_addr</span> = <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">server</span> = <span class="literal">true</span></span><br><span class="line"><span class="attr">bootstrap_expect</span> = <span class="number">3</span></span><br><span class="line"></span><br><span class="line">ui_config &#123;</span><br><span class="line">  <span class="attr">enabled</span> = <span class="literal">true</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="attr">log_level</span> = <span class="string">&quot;INFO&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># ! 其他 Server 节点的地址, 需要排除自身</span></span><br><span class="line"><span class="attr">retry_join</span> = [</span><br><span class="line">    <span class="string">&quot;192.168.110.130&quot;</span>,</span><br><span class="line">    <span class="string">&quot;192.168.110.132&quot;</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+
+<p>这里说明如下:</p>
+<ul>
+<li><code>datacenter</code>: 设置当前节点所属的数据中心名称为 <code>dc1</code>。Consul 支持多数据中心部署，该配置用于标识该节点归属于哪个数据中心。数据中心是部署的最高级别单位，通常对应于一个物理数据中心或云提供商的一个区域<br>-<code>node_name</code>: 指定当前 <code>Consul</code> 节点（<code>agent</code>）的唯一名称，在集群中通过这个名称来识别不同的节点。</li>
+<li><code>data_dir</code>: 定义 <code>Consul</code> 持久化数据的存储目录，例如节点状态、服务信息和 <code>Raft</code> 日志等都保存在此路径下。</li>
+<li><code>bind_addr</code>: 设置当前节点与其他 <code>Consul agent</code> 通信时绑定的 IP 地址。不需要指定端口, 内部会指定一个默认端口。</li>
+<li><code>client_addr</code>: 指定客户端接口监听的地址，用于接收 HTTP&#x2F;DNS&#x2F;gRPC 等客户端请求。设置为 <code>0.0.0.0</code> 表示允许从任意 IP 访问 API 接口。</li>
+<li><code>server = true</code>: 表示该节点是以 <strong>server</strong> 角色运行。<code>server</code> 是 <code>Consul</code> 集群的核心组件，负责参与 <code>Raft</code> 协议、维护集群一致性等关键任务。</li>
+<li><code>bootstrap_expect</code>: 声明集群中预期加入的 <code>server</code> 节点总数。当第一个 <code>server</code> 启动时，它会等待直到有 3 个 <code>server</code> 加入后才进行 <code>Raft</code> 初始化，从而避免脑裂问题。</li>
+<li><code>ui_config</code>: 启用内置 Web UI 界面，可以通过浏览器访问 <code>Consul</code> 的可视化界面，查看节点、服务、健康状态等信息。</li>
+<li><code>log_level</code>: 设置日志输出级别为 <code>INFO</code>，即显示正常运行日志。也可以设为 <code>DEBUG</code> 或 <code>ERROR</code> 来控制日志详细程度。</li>
+<li><code>retry_join</code>: 配置自动重试加入的其他 <code>Consul</code> 节点地址。在启动过程中，如果首次连接失败，<code>Consul</code> 会持续尝试与这些节点建立连接，以加入集群。此处列出的是其他两个 <code>server</code> 节点的 IP 地址。</li>
+</ul>
+<blockquote>
+<p>注意：每个 <code>server</code> 节点的 <code>bind_addr</code> 和 <code>node_name</code> 应根据实际机器进行修改，而 <code>retry_join</code> 列表应包含除自身外的所有 server 节点地址。</p>
+</blockquote>
+<h2 id="2-2-3-client-agent-配置文件"><a href="#2-2-3-client-agent-配置文件" class="headerlink" title="2.2.3 client agent 配置文件"></a>2.2.3 client agent 配置文件</h2><p>这里<code>client</code>的<code>consul aent</code>的启动命令如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">consul agent -config-file=client.hcl</span><br></pre></td></tr></table></figure>
+<p>这里的<code>client.hcl</code>是配置文件, 其内容如下：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">datacenter</span> = <span class="string">&quot;dc1&quot;</span></span><br><span class="line"><span class="attr">node_name</span>  = <span class="string">&quot;consul-client-1&quot;</span></span><br><span class="line"><span class="attr">data_dir</span>   = <span class="string">&quot;/home/toni/consul-tutorial/consul-data&quot;</span></span><br><span class="line"><span class="attr">bind_addr</span>  = <span class="string">&quot;192.168.110.133&quot;</span></span><br><span class="line"><span class="attr">client_addr</span> = <span class="string">&quot;0.0.0.0&quot;</span></span><br><span class="line"><span class="attr">log_level</span> = <span class="string">&quot;INFO&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">retry_join</span> = [</span><br><span class="line">  <span class="string">&quot;192.168.110.129&quot;</span>,</span><br><span class="line">  <span class="string">&quot;192.168.110.130&quot;</span>,</span><br><span class="line">  <span class="string">&quot;192.168.110.132&quot;</span></span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p><code>client</code>这里的配置文件内容和 <code>server</code> 配置文件基本一致，只是去掉了 <code>server = true</code> 和 <code>bootstrap_expect</code> 这两个配置项。并且需要指定整个<code>server</code>的 <code>retry_join</code> 列表，以包含所有 <code>server</code> 节点地址。</p>
+<h3 id="2-2-4-启动集群后的状态"><a href="#2-2-4-启动集群后的状态" class="headerlink" title="2.2.4 启动集群后的状态"></a>2.2.4 启动集群后的状态</h3><p>在3个节点启动<code>server agnet</code>以及1个节点启动<code>client agent</code>后, 我们的集群就已经正常搭建好了。可以在任意一个节点上云霄下面的命令查看集群节点状态：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">l$ consul members</span><br><span class="line">Node             Address               Status  Type    Build      Protocol  DC   Partition  Segment</span><br><span class="line">consul-server-1  192.168.110.129:8301  alive   server  1.22.0dev  2         dc1  default    &lt;all&gt;</span><br><span class="line">consul-server-2  192.168.110.130:8301  alive   server  1.22.0dev  2         dc1  default    &lt;all&gt;</span><br><span class="line">consul-server-3  192.168.110.132:8301  alive   server  1.22.0dev  2         dc1  default    &lt;all&gt;</span><br><span class="line">consul-client-1  192.168.110.131:8301  alive   client  1.22.0dev  2         dc1  default    &lt;default&gt;</span><br></pre></td></tr></table></figure>
+<p>其输出包含健康状态、IP、类型等信息。</p>
+<p>我们也可以只查看<code>server</code>这样参与选举的节点信息：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ consul operator raft list-peers</span><br><span class="line">Node             ID                                    Address               State     Voter  RaftProtocol  Commit Index  Trails Leader By</span><br><span class="line">consul-server-3  83d7a1c9-442d-beaf-82dd-8409952bd0bb  192.168.110.132:8300  follower  <span class="literal">true</span>   3             486           0 commits</span><br><span class="line">consul-server-2  6a464d5c-eda5-4d93-11e6-842292468c1d  192.168.110.130:8300  leader    <span class="literal">true</span>   3             486           -</span><br><span class="line">consul-server-1  e61233cd-e9f4-3fac-b76b-016f1125b76b  192.168.110.129:8300  follower  <span class="literal">true</span>   3             486           0 commits</span><br></pre></td></tr></table></figure>
+
+<p>这是我们可以杀掉其中某个&#96;&#96;server&#96;节点，然后观察集群状态变化:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">$ consul operator raft list-peers</span><br><span class="line">Node             ID                                    Address               State     Voter  RaftProtocol  Commit Index  Trails Leader By</span><br><span class="line">consul-server-3  83d7a1c9-442d-beaf-82dd-8409952bd0bb  192.168.110.132:8300  follower  <span class="literal">true</span>   3             1195          0 commits</span><br><span class="line">consul-server-1  e61233cd-e9f4-3fac-b76b-016f1125b76b  192.168.110.129:8300  leader    <span class="literal">true</span>   3             1195          -</span><br></pre></td></tr></table></figure>
+<p>发现掉了一个<code>leader</code>节<code>consul-server-2</code>点之后触发了重新选举, 集群仍然可以正常工作(这方面的只是可以搜索关键字<code>raft</code>了解)</p>
+<p>当我们重启<code>consul-server-2</code>后再次查询:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ consul operator raft list-peers</span><br><span class="line">Node             ID                                    Address               State     Voter  RaftProtocol  Commit Index  Trails Leader By</span><br><span class="line">consul-server-3  83d7a1c9-442d-beaf-82dd-8409952bd0bb  192.168.110.132:8300  follower  <span class="literal">true</span>   3             1213          0 commits</span><br><span class="line">consul-server-1  e61233cd-e9f4-3fac-b76b-016f1125b76b  192.168.110.129:8300  leader    <span class="literal">true</span>   3             1213          -</span><br><span class="line">consul-server-2  6a464d5c-eda5-4d93-11e6-842292468c1d  192.168.110.130:8300  follower  <span class="literal">false</span>  3             1213          0 commits</span><br></pre></td></tr></table></figure>
+<p>其能够在此加入集群。</p>
+<blockquote>
+<p>你也可以测试杀掉<code>client</code>节点试试看看</p>
+</blockquote>
+<h2 id="2-3-服务注册与发现"><a href="#2-3-服务注册与发现" class="headerlink" title="2.3 服务注册与发现"></a>2.3 服务注册与发现</h2><p>现在我们有了集群, 但还没有服务, 我们需要先编写一个服务注册的代码, 然后运行这个服务并注册</p>
+<h3 id="2-3-1-Go-服务代码"><a href="#2-3-1-Go-服务代码" class="headerlink" title="2.3.1 Go 服务代码"></a>2.3.1 Go 服务代码</h3><p>这里我们用<code>Go</code>写一段简单的代码:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		fmt.Fprintln(w, <span class="string">&quot;Hello from service A!&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">&quot;Starting server on :5000...&quot;</span>)</span><br><span class="line">	http.ListenAndServe(<span class="string">&quot;0.0.0.0:5000&quot;</span>, <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这段 <code>Go</code> 代码实现了一个简单的 <code>HTTP Web</code> 服务，主要作用是监听本地的 <code>5000</code> 端口，并对所有访问根路径 &#x2F; 的请求返回 “Hello from service A!” 的响应。</p>
+<p>写完之后我们直接:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">go build -o app</span><br><span class="line">./app  &gt;/dev/null &amp;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这段代码当然是在 <code>consul-client-1</code> 这个节点上编写并运行的。</p>
+</blockquote>
+<h2 id="3-2-命令行方式注册服务"><a href="#3-2-命令行方式注册服务" class="headerlink" title="3.2 命令行方式注册服务"></a>3.2 命令行方式注册服务</h2><p>我们现在在<code>consul-client-1</code> 这个节点已经运行了一个服务, 我们现在需要将其注册到<code>consul</code>集群中。<code>Consul</code>支持通过<code>http</code>接口发送注册服务的请求, 这里我们把<code>Post</code>请求的<code>body</code>写在一个<code>json</code>文件里，然后通过<code>curl</code>发送请求:<br><strong>service.json</strong>:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;Name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;service-a&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;ID&quot;</span><span class="punctuation">:</span> <span class="string">&quot;service-a-1&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Address&quot;</span><span class="punctuation">:</span> <span class="string">&quot;192.168.110.131&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Port&quot;</span><span class="punctuation">:</span> <span class="number">5000</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;Check&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;HTTP&quot;</span><span class="punctuation">:</span> <span class="string">&quot;http://192.168.110.131:5000/&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;Interval&quot;</span><span class="punctuation">:</span> <span class="string">&quot;10s&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>这里重点讲解<code>Check</code>, 其就是规定了<code>Consul</code>通过什么网络接口判断服务是否健康。</p>
+<p>发送请求:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --request PUT   --data @service.json   http://127.0.0.1:8500/v1/agent/service/register</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>8500 是<code>consul</code>的<code>http</code>端口</p>
+</blockquote>
+<p>然后我们就可以在<code>consul</code>集群中看到这个服务了:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ consul catalog services</span><br><span class="line">consul</span><br><span class="line">service-a</span><br></pre></td></tr></table></figure>
+
+<p>另一方面, 我们也可以通过<code>http</code>查询服务的具体健康信息:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">$ curl http://localhost:8500/v1/health/service/service-a | jq</span><br><span class="line">  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</span><br><span class="line">                                 Dload  Upload   Total   Spent    Left  Speed</span><br><span class="line">100  1448  100  1448    0     0  88948      0 --:--:-- --:--:-- --:--:-- 90500</span><br><span class="line">[</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="string">&quot;Node&quot;</span>: &#123;</span><br><span class="line">      ...</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">&quot;Service&quot;</span>: &#123;</span><br><span class="line">      <span class="string">&quot;ID&quot;</span>: <span class="string">&quot;service-a-1&quot;</span>,</span><br><span class="line">      <span class="string">&quot;Service&quot;</span>: <span class="string">&quot;service-a&quot;</span>,</span><br><span class="line">      <span class="string">&quot;Tags&quot;</span>: [],</span><br><span class="line">      ...</span><br><span class="line">      ...</span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="string">&quot;Checks&quot;</span>: [</span><br><span class="line">      &#123;</span><br><span class="line">        ...</span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">        <span class="string">&quot;Node&quot;</span>: <span class="string">&quot;consul-client-1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;CheckID&quot;</span>: <span class="string">&quot;service:service-a-1&quot;</span>,</span><br><span class="line">        <span class="string">&quot;Name&quot;</span>: <span class="string">&quot;Service &#x27;service-a&#x27; check&quot;</span>,</span><br><span class="line">        <span class="string">&quot;Status&quot;</span>: <span class="string">&quot;passing&quot;</span>,</span><br><span class="line">        ...</span><br><span class="line">      &#125;</span><br><span class="line">    ]</span><br><span class="line">  &#125;</span><br><span class="line">]</span><br></pre></td></tr></table></figure>
+<p>原始的结果比较长, 这里我省略了部分, 需要重点关注的就是<code>Checks</code>字段的<code>Status</code>, 案例的<code>Status</code>字段为<code>passing</code>, 表示服务正常。</p>
+<p>现在我们杀掉服务:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">kill</span> -9 $(ps aux | grep <span class="string">&#x27;app&#x27;</span> | awk <span class="string">&#x27;&#123;print $2&#125;&#x27;</span>)</span><br><span class="line">$ curl http://localhost:8500/v1/health/service/service-a | jq</span><br></pre></td></tr></table></figure>
+<p>此时返回的结果中:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line"><span class="attr">&quot;Node&quot;</span><span class="punctuation">:</span> <span class="string">&quot;consul-client-1&quot;</span><span class="punctuation">,</span></span><br><span class="line"><span class="attr">&quot;CheckID&quot;</span><span class="punctuation">:</span> <span class="string">&quot;service:service-a-1&quot;</span><span class="punctuation">,</span></span><br><span class="line"><span class="attr">&quot;Name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Service &#x27;service-a&#x27; check&quot;</span><span class="punctuation">,</span></span><br><span class="line"><span class="attr">&quot;Status&quot;</span><span class="punctuation">:</span> <span class="string">&quot;critical&quot;</span><span class="punctuation">,</span></span><br><span class="line">...</span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p><code>Status</code>字段为<code>critical</code>, 表示服务已经挂了。</p>
+<p>当我们重新启动服务后再次检查, <code>Status</code>字段变为<code>passing</code>, 这就是<code>Consul</code>对服务状态维护的检测功能</p>
+<h2 id="3-3-Go-代码引入第三方库注册服务"><a href="#3-3-Go-代码引入第三方库注册服务" class="headerlink" title="3.3 Go 代码引入第三方库注册服务"></a>3.3 Go 代码引入第三方库注册服务</h2><p>尽管我们也可以通过<code>http</code>接口注册服务, 但<code>Consul</code>提供了<code>SDK</code>来简化操作, 我们可以引入第三方库来注册服务，这样运行代码就可以自动进行注册服务等基础的操作， 不需要额外通过人工命令行的方式进行操作。</p>
+<p>安装 SDK:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/hashicorp/consul/api</span><br></pre></td></tr></table></figure>
+
+<p>服务代码：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line"></span><br><span class="line">	<span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 注册服务到 Consul</span></span><br><span class="line">	registerServiceWithConsul()</span><br><span class="line"></span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/&quot;</span>, helloHandler)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;Starting server on :5000...&quot;</span>)</span><br><span class="line">	err := http.ListenAndServe(<span class="string">&quot;0.0.0.0:5000&quot;</span>, <span class="literal">nil</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="string">&quot;Error starting server:&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">helloHandler</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	fmt.Fprintln(w, <span class="string">&quot;Hello from service A!&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">registerServiceWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// 创建 Consul 客户端</span></span><br><span class="line">	config := api.DefaultConfig()</span><br><span class="line">	config.Address = <span class="string">&quot;127.0.0.1:8500&quot;</span> <span class="comment">// Consul agent 地址</span></span><br><span class="line">	client, err := api.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(<span class="string">&quot;Failed to create Consul client: %v&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 定义服务注册信息</span></span><br><span class="line">	registration := &amp;api.AgentServiceRegistration&#123;</span><br><span class="line">		ID:      <span class="string">&quot;service-a-1&quot;</span>,</span><br><span class="line">		Name:    <span class="string">&quot;service-a&quot;</span>,</span><br><span class="line">		Address: <span class="string">&quot;127.0.0.1&quot;</span>,</span><br><span class="line">		Port:    <span class="number">5000</span>,</span><br><span class="line">		Check: &amp;api.AgentServiceCheck&#123;</span><br><span class="line">			HTTP:     <span class="string">&quot;http://127.0.0.1:5000/&quot;</span>,</span><br><span class="line">			Interval: <span class="string">&quot;10s&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// 注册服务</span></span><br><span class="line">	err = client.Agent().ServiceRegister(registration)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Fatalf(<span class="string">&quot;Failed to register service with Consul: %v&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>现在我们编译后运行服务，其会自动进行注册</p>
+<h1 id="3-小结"><a href="#3-小结" class="headerlink" title="3 小结"></a>3 小结</h1><p>通过本章的实践，我们完成了以下关键内容：</p>
+<ul>
+<li><p><strong>了解 Consul 的基本概念与核心功能</strong><br>Consul 是一个分布式服务管理工具，提供服务发现、健康检查、KV 存储、多数据中心支持和安全通信等能力。它适用于从单机开发环境到大规模生产集群的各种场景。</p>
+</li>
+<li><p><strong>搭建 Consul 集群环境</strong><br>我们基于 VMWare 创建了 4 台 Ubuntu 虚拟机，其中 3 台作为 server agent 组成 Raft 集群，1 台作为 client agent 接入集群。通过 <code>.hcl</code> 配置文件分别配置其角色和网络信息，并成功启动了 Consul 集群。</p>
+</li>
+<li><p><strong>理解 Agent 的运行机制</strong><br>Consul 以 agent 的形式运行在每个节点上，server agent 负责集群状态维护，client agent 负责注册服务并转发请求。agent 启动后会持续与其他节点通信，维护集群一致性。</p>
+</li>
+<li><p><strong>配置 Consul Server 与 Client</strong><br>详细讲解了 <code>server.hcl</code> 和 <code>client.hcl</code> 配置文件中各个参数的作用，包括数据中心设置、节点名称、数据目录、监听地址、集群加入方式等，为搭建高可用集群打下基础。</p>
+</li>
+<li><p><strong>验证集群状态与容错能力</strong><br>使用 <code>consul members</code> 和 <code>consul operator raft list-peers</code> 查看集群成员与 Raft 状态。测试 kill 掉某个 server 节点后，集群仍能正常进行 leader 选举和状态同步，体现了 Consul 的高可用特性。</p>
+</li>
+<li><p><strong>实现服务注册与健康检查</strong><br>编写了一个简单的 HTTP Web 服务，并通过两种方式将其注册到 Consul：</p>
+<ul>
+<li><strong>命令行方式</strong>：使用 <code>curl</code> 发送 JSON 请求注册服务，并配置健康检查。</li>
+<li><strong>Go SDK 方式</strong>：引入 <code>github.com/hashicorp/consul/api</code> 包，在代码中自动完成服务注册与健康上报。</li>
+</ul>
+</li>
+<li><p><strong>演示 Consul 的服务健康监测能力</strong><br>当服务正常运行时，Consul 显示其状态为 <code>passing</code>；当服务被 kill 掉后，Consul 检测到异常并将状态变为 <code>critical</code>，实现了对服务状态的动态感知。</p>
+</li>
+</ul>
+<p>本章通过一个极简但完整的 Demo，展示了 Consul 在服务注册与发现中的核心作用，也为我们后续深入学习其原理和高级用法打下了良好基础。</p>
+<p>但我们目前还缺少对这个服务的具体应用，<code>Consul</code>是一个功能非常多的微服务管理框架, 不同微服务简可以通过<code>Consul</code>机械能各种类型的通信, 这些将在后续章节中进一步介绍。（如果我不鸽。。。。。。）</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Consul-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1. Consul 简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84-Demo"><span class="toc-number">2.</span> <span class="toc-text">2. 基于虚拟机的 Demo</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 环境准备</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-1-VMWare%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E4%B8%8B%E8%BD%BD%E4%B8%8E%E5%AE%89%E8%A3%85"><span class="toc-number">2.1.1.</span> <span class="toc-text">2.1.1 VMWare虚拟机的下载与安装**</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-2-%E5%88%9B%E5%BB%BA4%E4%BB%BD-Ubuntu-22-04-Server-%E5%AE%9E%E4%BE%8B-%E5%AE%89%E8%A3%85"><span class="toc-number">2.1.2.</span> <span class="toc-text">2.1.2 创建4份 Ubuntu 22.04 Server 实例 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-3-%E5%AE%89%E8%A3%85%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%93%BE%EF%BC%88Go%E3%80%81jq-%E7%AD%89%EF%BC%89"><span class="toc-number">2.1.3.</span> <span class="toc-text">2.1.3 安装开发工具链（Go、jq 等）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-4-%E8%8E%B7%E5%8F%96-Consul-%E5%8F%AF%E6%89%A7%E8%A1%8C%E6%96%87%E4%BB%B6"><span class="toc-number">2.1.4.</span> <span class="toc-text">2.1.4 获取 Consul 可执行文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%90%AF%E5%8A%A8-agent"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 启动 agent</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-agent-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 agent 的基本概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-server-agent-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 server agent 配置文件</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-3-client-agent-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="toc-number">2.3.</span> <span class="toc-text">2.2.3 client agent 配置文件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E5%90%AF%E5%8A%A8%E9%9B%86%E7%BE%A4%E5%90%8E%E7%9A%84%E7%8A%B6%E6%80%81"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.2.4 启动集群后的状态</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E4%B8%8E%E5%8F%91%E7%8E%B0"><span class="toc-number">2.4.</span> <span class="toc-text">2.3 服务注册与发现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-Go-%E6%9C%8D%E5%8A%A1%E4%BB%A3%E7%A0%81"><span class="toc-number">2.4.1.</span> <span class="toc-text">2.3.1 Go 服务代码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%96%B9%E5%BC%8F%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="toc-number">2.5.</span> <span class="toc-text">3.2 命令行方式注册服务</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Go-%E4%BB%A3%E7%A0%81%E5%BC%95%E5%85%A5%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E6%B3%A8%E5%86%8C%E6%9C%8D%E5%8A%A1"><span class="toc-number">2.6.</span> <span class="toc-text">3.3 Go 代码引入第三方库注册服务</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B0%8F%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">3 小结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&text=Consul学习笔记1-简介与Demo"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&is_video=false&description=Consul学习笔记1-简介与Demo"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Consul学习笔记1-简介与Demo&body=Check out this article: http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&title=Consul学习笔记1-简介与Demo"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&name=Consul学习笔记1-简介与Demo&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/&t=Consul学习笔记1-简介与Demo"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

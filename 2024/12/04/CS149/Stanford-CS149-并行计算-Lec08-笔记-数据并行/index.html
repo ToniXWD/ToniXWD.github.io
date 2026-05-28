@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一章的内容是数据并行, 实际上就是讨论很多常用的算子的数据的并行手段, 例如numpy的filter, fold算子等等，操作的数据都是数组或者序列，例如numpy的np数组、torch的tensor等等。难度不大，主要是增长见识。 课程主页：https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 Map Map的每个元素不存在依赖关系，直接分组SIMD即可">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec08-笔记-数据并行">
+<meta property="og:url" content="http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一章的内容是数据并行, 实际上就是讨论很多常用的算子的数据的并行手段, 例如numpy的filter, fold算子等等，操作的数据都是数组或者序列，例如numpy的np数组、torch的tensor等等。难度不大，主要是增长见识。 课程主页：https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 Map Map的每个元素不存在依赖关系，直接分组SIMD即可">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/map.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/fold.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/fold_example.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/scan.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/inclusive_scan.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/exclusive_scan.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/multi_core.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/cuda_exclusive_scan_2.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/segmented_scan_1.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/sparse_matrix.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/sparse_matrix_multiplication.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec08/gather_scatter.png">
+<meta property="article:published_time" content="2024-12-04T08:19:04.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.663Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec08/map.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec08-笔记-数据并行</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&&%20CUDA/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&text=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&is_video=false&description=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec08-笔记-数据并行&body=Check out this article: http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&name=Stanford-CS149-并行计算-Lec08-笔记-数据并行&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&t=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Map"><span class="toc-number">1.</span> <span class="toc-text">1 Map</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Fold"><span class="toc-number">2.</span> <span class="toc-text">2 Fold</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Scan"><span class="toc-number">3.</span> <span class="toc-text">3 Scan</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-Inclusive-Scan%E7%9A%84%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%B3%95"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Inclusive Scan的并行方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-Exclusive-Scan%E7%9A%84%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%B3%95"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Exclusive Scan的并行方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Segmented-scan"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 Segmented scan</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%A8%80%E7%96%8F%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">4 稀疏矩阵乘法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%A8%80%E7%96%8F%E7%9F%A9%E9%98%B5%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 稀疏矩阵的表示</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Gather-Scatter"><span class="toc-number">5.</span> <span class="toc-text">4 Gather&#x2F;Scatter</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec08-笔记-数据并行
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-04T08:19:04.000Z" class="dt-published" itemprop="datePublished">2024-12-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/CUDA/" rel="tag">CUDA</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一章的内容是数据并行, 实际上就是讨论很多常用的算子的数据的并行手段, 例如<code>numpy</code>的<code>filter</code>, <code>fold</code>算子等等，操作的数据都是数组或者序列，例如<code>numpy</code>的<code>np</code>数组、<code>torch</code>的<code>tensor</code>等等。难度不大，主要是增长见识。</p>
+<p>课程主页：<a target="_blank" rel="noopener" href="https://gfxcourses.stanford.edu/cs149/fall24">https://gfxcourses.stanford.edu/cs149/fall24</a></p>
+<h1 id="1-Map"><a href="#1-Map" class="headerlink" title="1 Map"></a>1 Map</h1><p><img src="/../../images/CS149/Lec08/map.png" alt="map"></p>
+<p><code>Map</code>的每个元素不存在依赖关系，直接分组<code>SIMD</code>即可, 略。</p>
+<h1 id="2-Fold"><a href="#2-Fold" class="headerlink" title="2 Fold"></a>2 Fold</h1><p><img src="/../../images/CS149/Lec08/fold.png" alt="fold"></p>
+<p><code>Fold</code>的含义是折叠，即把一个序列折叠成一个值，例如<code>numpy</code>的<code>np.sum</code>，<code>torch</code>的<code>torch.sum</code>，<code>torch.prod</code>等等。通常存在一个初始值，遍历序列时进行指定的操作， 最终生成一个值。 因此<code>Fold</code>的每个元素的计算存在依赖关系，需要分组<code>SIMD</code>。</p>
+<p><img src="/../../images/CS149/Lec08/fold_example.png" alt="fold_example"></p>
+<p>以求和为例, 这里由于每组的元素只需要记录最后的<code>sum</code>值, 因此不同组只需要输出一个值即可, 可以先计算初始值为0的情况下每组的<code>sum</code>值, 然后将各组的<code>sum</code>值及初始值相加, 得到最终的<code>sum</code>值。也很简单不多说了。</p>
+<h1 id="3-Scan"><a href="#3-Scan" class="headerlink" title="3 Scan"></a>3 Scan</h1><p><img src="/../../images/CS149/Lec08/scan.png" alt="scan"></p>
+<p><code>Scan</code>的含义是扫描，即把一个序列扫描成一个序列，例如<code>numpy</code>的<code>np.cumsum</code>，<code>torch</code>的<code>torch.cumsum</code>等等。通常存在一个初始值，遍历序列时进行指定的操作， 最终生成一个序列。因此<code>Scan</code>的每个元素的计算存在依赖关系。</p>
+<p>这里对<code>Scan</code>进行以下分类, 仍然以求和为例:</p>
+<ul>
+<li><p>包含扫描 (Inclusive Scan):</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">input</span>:  [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]</span><br><span class="line">output: [<span class="number">1</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">10</span>, <span class="number">15</span>]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>排除扫描 (Exclusive Scan):</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">input</span>:  [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]</span><br><span class="line">output: [<span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">10</span>]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><code>Exclusive</code>会多输出一个元素, 通常是初始值，且最后一个元素会被排除。</p>
+<h2 id="3-1-Inclusive-Scan的并行方法"><a href="#3-1-Inclusive-Scan的并行方法" class="headerlink" title="3.1 Inclusive Scan的并行方法"></a>3.1 Inclusive Scan的并行方法</h2><p><img src="/../../images/CS149/Lec08/inclusive_scan.png" alt="inclusive_scan"></p>
+<p>包含扫描算法的目标是计算一个数组的前缀和，即每个元素是该位置之前所有元素的和。在并行计算中，这个过程可以通过多轮迭代来实现，每轮迭代中元素之间的计算是并行进行的。</p>
+<p>这里假设序列长度是2的幂次，记录迭代次数为<code>n</code>, 初始化<code>n=1</code>, 每次迭代<code>n</code>增加1, 直到<code>n=log2(N)</code>。</p>
+<ol>
+<li>第一次迭代: 将所有以<code>2^n</code>&#x3D;2分组的组内最后一个元素的值更新为组内所有元素的和。第一个计算的元素索引为<code>2^(n-1)=1</code>, 可以当做前一个数组长度为1, 1是索引0的下一位, 更新过程:<ol>
+<li>a1&#x3D;a0+a1</li>
+<li>a2&#x3D;a1+a2</li>
+<li>a3&#x3D;a2+a3</li>
+<li>…</li>
+<li>an&#x3D;an-1+an</li>
+<li>自增<code>n</code></li>
+</ol>
+</li>
+<li>第二次迭代: 将所有以<code>2^n</code>&#x3D;4分组的组内最后一个元素的值更新为组内所有元素的和。第一个计算的元素索引为<code>2^(n-1)=2</code>, 因为上一次操作后，前两个元素的值已经更新为正确的值, 此时2 为下一个索引，更新过程:<ol>
+<li>a2&#x3D;a0+a2</li>
+<li>a3&#x3D;a1+a3</li>
+<li>a4&#x3D;a2+a4</li>
+<li>…</li>
+<li>an&#x3D;an-2+an</li>
+<li>自增<code>n</code></li>
+</ol>
+</li>
+<li>…</li>
+<li>最后一次迭代: 将所有以<code>2^n</code>&#x3D;N分组的组内最后一个元素的值更新为组内所有元素的和。第一个计算的元素索引为<code>2^(n-1)=N/2</code>, 因为上一次操作后，前N&#x2F;2个元素的值已经更新为正确的值, 此时N&#x2F;2 为下一个索引，更新过程:<ol>
+<li>an&#x3D;an-N&#x2F;2+an</li>
+<li>跳出迭代</li>
+</ol>
+</li>
+</ol>
+<p><strong>算法总结</strong>:</p>
+<ul>
+<li><strong>复杂度</strong>: (O(N \log N))，其中 (N) 是数组中的元素数量。</li>
+<li><strong>跨度（Span）</strong>：这里的意思是 (O(\log N))，这是并行计算的深度。</li>
+<li><strong>低效性</strong>：虽然并行算法可以显著减少计算时间，但相比顺序算法，它涉及更多的操作和同步开销，因为同样位置的元素需要多次计算。</li>
+</ul>
+<p>通过这种方式，包含扫描算法能够在并行架构中高效地计算前缀和。</p>
+<h2 id="3-2-Exclusive-Scan的并行方法"><a href="#3-2-Exclusive-Scan的并行方法" class="headerlink" title="3.2 Exclusive Scan的并行方法"></a>3.2 Exclusive Scan的并行方法</h2><p><img src="/../../images/CS149/Lec08/exclusive_scan.png" alt="exclusive_scan"></p>
+<p>这个并行方案就更复杂了, 这里就不介绍其详细的流程, 这个看图更直观。但可以梳理其思路:</p>
+<ol>
+<li>向上扫描阶段<ol>
+<li>还是以2的幂次分组, 每组内最后一个元素的值更新为组内所有元素的和, 每次迭代后自增2的幂次的指数</li>
+<li>但这个过程以2的幂次分组的各个组之间是没有交叉的, 例如<code>a0, a1</code>一组计算, <code>a2, a3</code>一组计算, 但<code>a1, a2</code>不会划到一组计算, 这和上一个并行方案不同</li>
+<li>由于之间的分组没有交叉, 每次计算的元素只需要将自身的旧值与当前组中间的元素相加即可</li>
+<li>这个阶段的最后, 中间的元素是前半部分元素的和, 最后一个元素是后半部分元素的和</li>
+</ol>
+</li>
+<li>向下扫描阶段<ol>
+<li>这时反向扫描, 由于最后一个元素在<code>exclusive_scan</code>本身会被排除, 将其值更新为0, 与当前组的中间元素交换</li>
+<li>反向扫描, 跨度也是2的幂次, 但是是从最大的幂次开始的, 每次迭代后自减2的幂次的指数</li>
+<li>每次更新的元素也与当前组的中间元素交换</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>这部分需要观察图仔细理解</p>
+</blockquote>
+<p>这个算法的复杂度就是(O(N))了, 同时大部分操作的2个元素彼此的距离都很近, 符合空间局部性的原则。</p>
+<p><strong>多核优化</strong><br>多核可以按照下面的划分进行分组计算:</p>
+<p><img src="/../../images/CS149/Lec08/multi_core.png" alt="multi_core"></p>
+<p>可以看到，基本上不存在跨核的数据通信，符合空间局部性的原则。</p>
+<p><strong>CUDA实现</strong><br>这里介绍第一种复杂度为(O(N \log N))的CUDA实现</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__device__ <span class="type">int</span> <span class="title">scan_warp</span><span class="params">(<span class="type">int</span> *ptr, <span class="type">const</span> <span class="type">unsigned</span> <span class="type">int</span> idx)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">unsigned</span> <span class="type">int</span> lane = idx % <span class="number">32</span>; <span class="comment">// index of thread in warp (0..31)</span></span><br><span class="line">    __syncwarp(); <span class="comment">// Synchronize all threads in the warp</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123; <span class="comment">// 5 steps because 2^5 = 32</span></span><br><span class="line">        <span class="type">int</span> shift = <span class="number">1</span> &lt;&lt; i;</span><br><span class="line">        <span class="keyword">if</span> (lane &gt;= shift) &#123; <span class="comment">// 小于这个shift的元素不需要计算, 因为已经是正确的值</span></span><br><span class="line">            <span class="type">int</span> tmp1 = ptr[idx - shift];</span><br><span class="line">            <span class="type">int</span> tmp2 = ptr[idx];</span><br><span class="line">            __syncwarp(); <span class="comment">// Synchronize all threads in the warp</span></span><br><span class="line">            ptr[idx] = tmp1 + tmp2;</span><br><span class="line">            __syncwarp(); <span class="comment">// Synchronize all threads in the warp</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> (lane &gt; <span class="number">0</span>) ? ptr[idx<span class="number">-1</span>] : <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里返回最后一个元素的值, 因为这些值在别的<code>warp</code>中需要使用。</p>
+<p><img src="/../../images/CS149/Lec08/cuda_exclusive_scan_2.png" alt="cuda_exclusive_scan_2"></p>
+<p>上图就展现了一个<code>block</code>的计算过程:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__device__ <span class="type">void</span> <span class="title">scan_block</span><span class="params">(<span class="type">int</span>* ptr, <span class="type">const</span> <span class="type">unsigned</span> <span class="type">int</span> idx)</span> </span></span><br><span class="line"><span class="function"></span>&#123; </span><br><span class="line">   <span class="type">const</span> <span class="type">unsigned</span> <span class="type">int</span> lane = idx % <span class="number">32</span>;         <span class="comment">// index of thread in warp (0..31) </span></span><br><span class="line">   <span class="type">const</span> <span class="type">unsigned</span> <span class="type">int</span> warp_id = idx &gt;&gt; <span class="number">5</span>;      <span class="comment">// warp index in block </span></span><br><span class="line">   <span class="type">int</span> val = <span class="built_in">scan_warp</span>(ptr, idx);              <span class="comment">// Step 1. per-warp partial scan  </span></span><br><span class="line">                                               <span class="comment">// (Performed by all threads in block,  </span></span><br><span class="line">                                               <span class="comment">// with threads in same warp communicating  </span></span><br><span class="line">                                               <span class="comment">// through shared memory buffer ‘ptr’)  </span></span><br><span class="line">   <span class="keyword">if</span> (lane == <span class="number">31</span>) ptr[warp_id] = ptr[idx];    <span class="comment">// Step 2. thread 31 in each warp copies </span></span><br><span class="line">   __syncthreads();                            <span class="comment">// partial-scan result into per-block </span></span><br><span class="line">                                               <span class="comment">// shared mem </span></span><br><span class="line">   <span class="keyword">if</span> (warp_id == <span class="number">0</span>) <span class="built_in">scan_warp</span>(ptr, idx);      <span class="comment">// Step 3. scan to accumulate bases </span></span><br><span class="line">   __syncthreads();                            <span class="comment">// (only performed by warp 0) </span></span><br><span class="line">   <span class="keyword">if</span> (warp_id &gt; <span class="number">0</span>)                            <span class="comment">// Step 4. apply bases to all elements </span></span><br><span class="line">       val = val + ptr[warp_id<span class="number">-1</span>];             <span class="comment">// (performed by all threads in block) </span></span><br><span class="line">   __syncthreads(); </span><br><span class="line">   ptr[idx] = val; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-3-Segmented-scan"><a href="#3-3-Segmented-scan" class="headerlink" title="3.3 Segmented scan"></a>3.3 Segmented scan</h2><p><code>Segmented scan</code>是指序列内部有下一级分组的情况, 例如分组的<code>exclusive sacn</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">input</span>:  [[<span class="number">1</span>,<span class="number">2</span>],[<span class="number">6</span>],[<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>]]</span><br><span class="line">output: [[<span class="number">0</span>,<span class="number">1</span>], [<span class="number">0</span>], [<span class="number">0</span>,<span class="number">1</span>,<span class="number">3</span>,<span class="number">6</span>]]</span><br></pre></td></tr></table></figure>
+<p>对于这种情况如何利用我们之前的并行方法呢?</p>
+<p>可以先给每组开始的索引做一个标记:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">input</span>:  [[<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>],[<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>]]</span><br><span class="line">flag: [<span class="number">1</span> <span class="number">0</span> <span class="number">0</span> <span class="number">1</span> <span class="number">0</span> <span class="number">0</span> <span class="number">0</span> <span class="number">0</span>]</span><br><span class="line">data: [<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>,<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>,<span class="number">7</span>,<span class="number">8</span>]</span><br></pre></td></tr></table></figure>
+<p>过程如下:</p>
+<p><img src="/../../images/CS149/Lec08/segmented_scan_1.png" alt="segmented_scan_1"></p>
+<p>这个算法的要点包括:</p>
+<ol>
+<li>正向扫描的变化<ol>
+<li>只有<code>flag</code>为0的元素(这里的<code>flag</code>对应的是后一个操作元素)需要参与计算</li>
+<li>只要操作的元素中有<code>flag</code>为1的, 每次运算后将当前元素的<code>flag</code>更新为1</li>
+</ol>
+</li>
+<li>反向扫描的变化<ol>
+<li>考虑<code>flag</code><ol>
+<li>中间元素的下一个元素对应的原始<code>flag</code>(不考虑正向扫描过程中的调整)为1:<ol>
+<li>交换后, 将后面的元素置为0</li>
+</ol>
+</li>
+<li>中间元素的<code>flag</code>为1(考虑正向扫描过程中的调整)<ol>
+<li>仅仅交换</li>
+</ol>
+</li>
+<li>其他情况<ol>
+<li>交换后, 后面的元素设置为二者之和</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<blockquote>
+<p>这里的过程非常绕, 结合图仔细看, 也可以看<code>PPT</code>中的伪代码</p>
+</blockquote>
+<h1 id="4-稀疏矩阵乘法"><a href="#4-稀疏矩阵乘法" class="headerlink" title="4 稀疏矩阵乘法"></a>4 稀疏矩阵乘法</h1><h2 id="4-1-稀疏矩阵的表示"><a href="#4-1-稀疏矩阵的表示" class="headerlink" title="4.1 稀疏矩阵的表示"></a>4.1 稀疏矩阵的表示</h2><p><img src="/../../images/CS149/Lec08/sparse_matrix.png" alt="sparse_matrix"></p>
+<p>这里使用分组表示, 每行记录非0元素的列索引, 同时记录拉平成一维数组后每行起始非0元素的索引。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">values = [ [<span class="number">3</span>,<span class="number">1</span>], [<span class="number">2</span>], [<span class="number">4</span>], ..., [<span class="number">2</span>,<span class="number">6</span>,<span class="number">8</span>] ] </span><br><span class="line">cols = [ [<span class="number">0</span>,<span class="number">2</span>], [<span class="number">1</span>], [<span class="number">2</span>], ...., ] </span><br><span class="line">row_starts = [<span class="number">0</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, ... ]</span><br></pre></td></tr></table></figure>
+<p>直接运用之前实现的<code>map</code>和<code>inclusive_scan</code>即可完成计算:</p>
+<p><img src="/../../images/CS149/Lec08/sparse_matrix_multiplication.png" alt="sparse_matrix_multiplication"></p>
+<h1 id="4-Gather-Scatter"><a href="#4-Gather-Scatter" class="headerlink" title="4 Gather&#x2F;Scatter"></a>4 Gather&#x2F;Scatter</h1><p><code>gather</code>和<code>scatter</code>是两个非常常用的操作, 分别对应<code>index</code>和<code>input</code>的映射关系, 也就是根据索引选择元素进行输出:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># gather(index, input, output) </span></span><br><span class="line">output[i] = <span class="built_in">input</span>[index[i]] </span><br><span class="line"><span class="comment"># scatter(index, input, output) </span></span><br><span class="line">output[index[i]] = <span class="built_in">input</span>[i]</span><br></pre></td></tr></table></figure>
+<p><img src="/../../images/CS149/Lec08/gather_scatter.png" alt="gather_scatter"></p>
+<blockquote>
+<p>GPU通常直接在硬件层面支持<code>gather</code>操作, 因此效率很高</p>
+</blockquote>
+<p>课程后面直接是一个具体的<code>N-body</code>问题的案例, 有些复杂不方便梳理, 建议直接去看视频或者<code>PPT</code>。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Map"><span class="toc-number">1.</span> <span class="toc-text">1 Map</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Fold"><span class="toc-number">2.</span> <span class="toc-text">2 Fold</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Scan"><span class="toc-number">3.</span> <span class="toc-text">3 Scan</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-Inclusive-Scan%E7%9A%84%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%B3%95"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 Inclusive Scan的并行方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-Exclusive-Scan%E7%9A%84%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%B3%95"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Exclusive Scan的并行方法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Segmented-scan"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 Segmented scan</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%A8%80%E7%96%8F%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">4 稀疏矩阵乘法</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%A8%80%E7%96%8F%E7%9F%A9%E9%98%B5%E7%9A%84%E8%A1%A8%E7%A4%BA"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 稀疏矩阵的表示</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Gather-Scatter"><span class="toc-number">5.</span> <span class="toc-text">4 Gather&#x2F;Scatter</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&text=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&is_video=false&description=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec08-笔记-数据并行&body=Check out this article: http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&title=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&name=Stanford-CS149-并行计算-Lec08-笔记-数据并行&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/&t=Stanford-CS149-并行计算-Lec08-笔记-数据并行"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文是本人学习CUDA整理的笔记, 该内容基本上是基于CUDA官方文档以及Youtube博主的CUDA Programming Course – High-Performance Computing with GPUs的视频教程。我这里只记录的CUDA的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。 本文是CUDA工具链的使用方法, 建议先阅读上一篇介绍CUDA基础概念的文章再阅读">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CUDA快速入门-02-工具链使用方法">
+<meta property="og:url" content="http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本文是本人学习CUDA整理的笔记, 该内容基本上是基于CUDA官方文档以及Youtube博主的CUDA Programming Course – High-Performance Computing with GPUs的视频教程。我这里只记录的CUDA的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。 本文是CUDA工具链的使用方法, 建议先阅读上一篇介绍CUDA基础概念的文章再阅读">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/C++/compute-capacity.png">
+<meta property="article:published_time" content="2025-01-12T06:30:27.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.661Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/C++/compute-capacity.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>CUDA快速入门-02-工具链使用方法</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/01/16/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/WSL%E4%BD%BF%E7%94%A8Win-Kex%E6%A1%8C%E9%9D%A2/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/01/11/C++/ucontext%E5%AD%A6%E4%B9%A0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&text=CUDA快速入门-02-工具链使用方法"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&is_video=false&description=CUDA快速入门-02-工具链使用方法"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CUDA快速入门-02-工具链使用方法&body=Check out this article: http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&name=CUDA快速入门-02-工具链使用方法&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&t=CUDA快速入门-02-工具链使用方法"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-nvcc"><span class="toc-number">1.</span> <span class="toc-text">1 nvcc</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%9F%BA%E7%A1%80%E7%BC%96%E8%AF%91%E6%8C%87%E4%BB%A4"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 基础编译指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-CUDA%E7%89%B9%E6%80%A7%E7%9A%84%E7%BC%96%E8%AF%91%E9%80%89%E6%8B%A9"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 CUDA特性的编译选择</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-use-fast-math"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 -use_fast_math</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-arch-code"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 -arch &amp;&amp; -code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E2%80%93fmad"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 –fmad</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-4-ptx"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.2.4 -ptx</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-5-cubin-fatbin"><span class="toc-number">1.2.5.</span> <span class="toc-text">1.2.5 -cubin &amp;&amp; -fatbin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-7-M"><span class="toc-number">1.2.6.</span> <span class="toc-text">1.2.7 -M</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-8-dc-dlink"><span class="toc-number">1.2.7.</span> <span class="toc-text">1.2.8 -dc &amp;&amp; -dlink</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%B0%83%E8%AF%95%E4%B8%8E%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">2 调试与性能分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-CUDA-GDB"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 CUDA-GDB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Nsight-Compute"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Nsight Compute</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E7%BC%96%E8%AF%91%E6%97%B6%E9%93%BE%E6%8E%A5%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 编译时链接性能分析工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E8%BF%90%E8%A1%8C%E6%97%B6%E7%94%9F%E6%88%90%E6%8A%A5%E5%91%8A"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 运行时生成报告</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E5%9B%BE%E5%BD%A2%E7%95%8C%E9%9D%A2%E6%9F%A5%E7%9C%8B%E6%8A%A5%E5%91%8A"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 图形界面查看报告</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CUDA快速入门-02-工具链使用方法
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-01-12T06:30:27.000Z" class="dt-published" itemprop="datePublished">2025-01-12</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/AI/" rel="tag">AI</a>, <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/CUDA/" rel="tag">CUDA</a>, <a class="p-category" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag">深度学习</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文是本人学习CUDA整理的笔记, 该内容基本上是基于<code>CUDA</code>官方文档以及Youtube博主的<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=86FAWCzIe_4&t=11717s">CUDA Programming Course – High-Performance Computing with GPUs</a>的视频教程。我这里只记录的<code>CUDA</code>的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。</p>
+<p>本文是<code>CUDA</code>工具链的使用方法, 建议先阅读上一篇介绍CUDA基础概念的文章再阅读本文</p>
+<h1 id="1-nvcc"><a href="#1-nvcc" class="headerlink" title="1 nvcc"></a>1 nvcc</h1><h2 id="1-1-基础编译指令"><a href="#1-1-基础编译指令" class="headerlink" title="1.1 基础编译指令"></a>1.1 基础编译指令</h2><p><code>nvcc</code>是<code>CUDA</code>的编译器, 其语法与<code>gcc/g++</code>类似, 但是增加了一些<code>CUDA</code>特有的指令。</p>
+<p><strong>基础指令</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -o output_file input_file.cu</span><br></pre></td></tr></table></figure>
+<p><strong>优化级别</strong>:<br>和<code>gcc/g++</code>类似, <code>nvcc</code>也可以指定编译优化级别, 例如:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -o output_file input_file.cu -O2</span><br></pre></td></tr></table></figure>
+<p><strong>调试信息</strong>:<br>也支持生成附带调试信息的可执行文件, 例如:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -G -g -o output_file input_file.cu</span><br></pre></td></tr></table></figure>
+<p>这里需要对<code>-G</code>和<code>-g</code>进行解释, 在CUDA编程中，<code>nvcc</code>编译器的 <code>-G</code> 和 <code>-g</code> 选项都与调试相关，但它们的作用范围和行为有所不同。以下是它们的区别：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th><code>-G</code></th>
+<th><code>-g</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>作用对象</strong></td>
+<td>设备代码（GPU代码）</td>
+<td>主机代码（CPU代码）</td>
+</tr>
+<tr>
+<td><strong>调试范围</strong></td>
+<td>调试CUDA内核和设备函数</td>
+<td>调试主机端的C++代码</td>
+</tr>
+<tr>
+<td><strong>优化行为</strong></td>
+<td>禁用设备代码的优化</td>
+<td>不影响设备代码的优化</td>
+</tr>
+<tr>
+<td><strong>调试工具</strong></td>
+<td>适用于CUDA调试工具（如<code>cuda-gdb</code>、<code>Nsight</code>）</td>
+<td>适用于常规调试工具（如<code>gdb</code>）</td>
+</tr>
+</tbody></table>
+<p><strong>启用与禁用警告</strong>:</p>
+<ul>
+<li>禁用所有警告信息<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -w -o output_file input_file.cu</span><br></pre></td></tr></table></figure></li>
+<li>启用所有警告信息<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -Wall -o output_file input_file.cu</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="1-2-CUDA特性的编译选择"><a href="#1-2-CUDA特性的编译选择" class="headerlink" title="1.2 CUDA特性的编译选择"></a>1.2 CUDA特性的编译选择</h2><h3 id="1-2-1-use-fast-math"><a href="#1-2-1-use-fast-math" class="headerlink" title="1.2.1 -use_fast_math"></a>1.2.1 -use_fast_math</h3><p>在CUDA编程中，<code>-use_fast_math</code> 是 <code>nvcc</code> 编译器的一个优化选项，用于加速数学运算，但可能会牺牲一定的精度。具体行为包括：</p>
+<ul>
+<li><strong>替换数学函数</strong>：将标准数学函数（如 <code>sin</code>、<code>cos</code>、<code>exp</code>、<code>log</code> 等）替换为更快的近似版本。</li>
+<li><strong>启用浮点优化</strong>：允许编译器进行更激进的浮点运算优化，例如忽略某些IEEE浮点规范（如非正规数的处理）。</li>
+<li><strong>减少精度</strong>：快速数学函数通常以牺牲精度为代价来换取性能提升。</li>
+</ul>
+<p>以下面这个正弦函数计算为例:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cmath&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;math.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">fast_math_kernel</span><span class="params">(<span class="type">float</span> *data, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> idx = threadIdx.x + blockIdx.x * blockDim.x;</span><br><span class="line">  <span class="keyword">if</span> (idx &lt; n) &#123;</span><br><span class="line">    data[idx] = <span class="built_in">sin</span>(data[idx]); <span class="comment">// 使用快速数学函数</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> n = <span class="number">1024</span>*<span class="number">1024</span>;</span><br><span class="line">  <span class="type">float</span> *h_data = (<span class="type">float</span> *)<span class="built_in">malloc</span>(n * <span class="built_in">sizeof</span>(<span class="type">float</span>));</span><br><span class="line">  <span class="type">float</span> *d_data;</span><br><span class="line">  <span class="built_in">cudaMalloc</span>(&amp;d_data, n * <span class="built_in">sizeof</span>(<span class="type">float</span>));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">    h_data[i] = (<span class="type">float</span>)i;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">cudaMemcpy</span>(d_data, h_data, n * <span class="built_in">sizeof</span>(<span class="type">float</span>), cudaMemcpyHostToDevice);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 添加程序运算计时</span></span><br><span class="line">  cudaEvent_t start, end;</span><br><span class="line">  <span class="built_in">cudaEventCreate</span>(&amp;start);</span><br><span class="line">  <span class="built_in">cudaEventCreate</span>(&amp;end);</span><br><span class="line">  <span class="built_in">cudaEventRecord</span>(start);</span><br><span class="line"></span><br><span class="line">  fast_math_kernel&lt;&lt;&lt;<span class="number">1</span>, n&gt;&gt;&gt;(d_data, n);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">cudaEventRecord</span>(end);</span><br><span class="line">  <span class="built_in">cudaEventSynchronize</span>(end);</span><br><span class="line">  <span class="type">float</span> milliseconds = <span class="number">0</span>;</span><br><span class="line">  <span class="built_in">cudaEventElapsedTime</span>(&amp;milliseconds, start, end);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Time taken: %f ms\n&quot;</span>, milliseconds);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">cudaMemcpy</span>(h_data, d_data, n * <span class="built_in">sizeof</span>(<span class="type">float</span>), cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%f &quot;</span>, h_data[i]);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">free</span>(h_data);</span><br><span class="line">  <span class="built_in">cudaFree</span>(d_data);</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>按照不同的方式编译运行:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ nvcc -use_fast_math -O3 sinf.cu -o sinf-fast                              </span><br><span class="line">$ nvcc -O3 sinf.cu -o sinf                    </span><br><span class="line">$ ./sinf</span><br><span class="line">Time taken: 298.887756 ms</span><br><span class="line">0.000000 1.000000 2.000000 3.000000 4.000000 5.000000 6.000000 7.000000 8.000000 9.000000                                                                                                                                             </span><br><span class="line">(base) ┌──(toni㉿DESKTOP-59EELP2)-[~/Course/LearningCuda/myExercise]</span><br><span class="line">└─$ ./sinf-fast </span><br><span class="line">Time taken: 15.578432 ms</span><br><span class="line">0.000000 1.000000 2.000000 3.000000 4.000000 5.000000 6.000000 7.000000 8.000000 9.000000  </span><br></pre></td></tr></table></figure>
+<p>可以明显看出, 使用<code>-use_fast_math</code>编译的程序运行速度更快。</p>
+<h3 id="1-2-2-arch-code"><a href="#1-2-2-arch-code" class="headerlink" title="1.2.2 -arch &amp;&amp; -code"></a>1.2.2 -arch &amp;&amp; -code</h3><p><code>-arch</code>用于指定目标GPU的虚拟架构, 而<code>-code</code>用于指定目标GPU的实际架构。</p>
+<blockquote>
+<p>实际测试发现, 通常设不设置貌似区别都不大</p>
+</blockquote>
+<p>可以先在 <a target="_blank" rel="noopener" href="https://developer.nvidia.cn/cuda-gpus#compute">https://developer.nvidia.cn/cuda-gpus#compute</a> 中查询GPU的计算能力:<br><img src="/../../images/C++/compute-capacity.png" alt="compute-capacity"></p>
+<p>以40系显卡为例, 其计算能力为89, 则编译选项为:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ nvcc -<span class="built_in">arch</span>=compute_89 -code=sm_89 -use_fast_math -O3 sinf.cu -o sinf-fast-89</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-2-3-–fmad"><a href="#1-2-3-–fmad" class="headerlink" title="1.2.3 –fmad"></a>1.2.3 –fmad</h3><p><code>--fmad=true</code> 是 <code>nvcc</code> 编译器的一个浮点运算优化选项，用于控制 <strong>浮点乘加运算（Fused Multiply-Add, FMA）</strong> 的行为, 能够在单条指令中完成乘法和加法的组合操作，即<code>a * b + c</code>。</p>
+<ul>
+<li>在大多数情况下，<code>nvcc</code> 默认启用 FMA 优化（即 <code>--fmad=true</code>）。</li>
+<li>如果需要禁用 FMA 优化，可以显式设置 <code>--fmad=false</code>。</li>
+</ul>
+<h3 id="1-2-4-ptx"><a href="#1-2-4-ptx" class="headerlink" title="1.2.4 -ptx"></a>1.2.4 -ptx</h3><blockquote>
+<p>就类似C++生成汇编代码的功能, 大概率用不到, 可以跳过</p>
+</blockquote>
+<p><code>-ptx</code> 是 <code>nvcc</code>用于生成 <strong>PTX（Parallel Thread Execution）</strong> 中间代码。<strong>PTX</strong> 是一种低级的、与GPU架构无关的中间代码。它类似于CPU编程中的汇编代码，但比真正的机器代码（SASS）更抽象。<code>PTX</code> 代码可以在运行时由GPU驱动程序动态编译为特定GPU架构的机器代码（SASS）。</p>
+<ul>
+<li><p><strong>生成 PTX 文件</strong>：</p>
+<ul>
+<li>使用 <code>-ptx</code> 选项时，<code>nvcc</code> 会生成 <code>.ptx</code> 文件，而不是最终的二进制可执行文件。</li>
+<li><code>.ptx</code> 文件包含CUDA内核的中间表示，可以用于进一步分析或跨平台编译。</li>
+</ul>
+</li>
+<li><p><strong>跨平台兼容性</strong>：</p>
+<ul>
+<li>PTX 代码具有较好的兼容性，可以在多种GPU架构上运行。</li>
+<li>运行时，GPU驱动程序会将 PTX 代码动态编译为当前GPU架构的机器代码。</li>
+</ul>
+</li>
+</ul>
+<p><strong>在编译CUDA代码时，可以通过以下方式生成 PTX 文件</strong>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -<span class="built_in">ptx</span> -o my_kernel.ptx my_kernel.cu</span><br></pre></td></tr></table></figure>
+
+<p><strong>使用场景</strong></p>
+<ul>
+<li><p><strong>跨平台编译</strong>：</p>
+<ul>
+<li>当希望生成的代码能够在多种GPU架构上运行时，可以生成 PTX 文件。</li>
+<li>运行时，GPU驱动程序会将 PTX 代码动态编译为当前GPU架构的机器代码。</li>
+</ul>
+</li>
+<li><p><strong>调试和分析</strong>：</p>
+<ul>
+<li>PTX 代码比 SASS 代码更易读，适合用于调试和分析CUDA内核的行为。</li>
+<li>可以通过检查 PTX 代码来了解编译器的优化行为。</li>
+</ul>
+</li>
+<li><p><strong>动态代码生成</strong>：</p>
+<ul>
+<li>在某些高级应用中，PTX 代码可以用于动态生成和加载CUDA内核。</li>
+</ul>
+</li>
+</ul>
+<h3 id="1-2-5-cubin-fatbin"><a href="#1-2-5-cubin-fatbin" class="headerlink" title="1.2.5 -cubin &amp;&amp; -fatbin"></a>1.2.5 -cubin &amp;&amp; -fatbin</h3><blockquote>
+<p>大概率用不到, 可以跳过</p>
+</blockquote>
+<p><code>-cubin</code> 和 <code>-fatbin</code> 是 <code>nvcc</code> 编译器的两个选项，用于生成特定格式的二进制文件。它们的作用和生成的文件类型有所不同，以下是详细说明：</p>
+<p><strong><code>-cubin</code> 选项</strong></p>
+<ul>
+<li><strong>作用</strong>：生成 <strong>CUBIN（CUDA Binary）</strong> 文件。</li>
+<li><strong>CUBIN 文件</strong>：<ul>
+<li>包含针对特定GPU架构的 <strong>SASS（Streaming ASSembly）</strong> 机器代码。</li>
+<li>SASS 是GPU的本地机器代码，直接运行在特定架构的GPU上。</li>
+<li>CUBIN 文件是二进制格式，不可跨平台运行。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>当你需要直接生成特定GPU架构的机器代码时使用。</li>
+<li>适用于对性能要求极高的场景，或者需要直接分析机器代码的场景。</li>
+</ul>
+</li>
+<li><strong>示例</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -cubin -<span class="built_in">arch</span>=sm_75 -o my_kernel.cubin my_kernel.cu</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这会生成计算能力 7.5（Turing）的 CUBIN 文件。</li>
+</ul>
+</li>
+</ul>
+<p><strong><code>-fatbin</code> 选项</strong></p>
+<ul>
+<li><strong>作用</strong>：生成 <strong>FATBIN（Fat Binary）</strong> 文件。</li>
+<li><strong>FATBIN 文件</strong>：<ul>
+<li>包含多种格式的代码，例如 PTX 代码和 SASS 代码。</li>
+<li>FATBIN 文件可以在运行时由GPU驱动程序选择最适合当前GPU的代码版本。</li>
+<li>支持跨平台运行，因为包含了 PTX 中间代码。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>当你希望生成的代码能够在多种GPU架构上运行时使用。</li>
+<li>适用于需要兼容多种GPU架构的场景。</li>
+</ul>
+</li>
+<li><strong>示例</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -fatbin -<span class="built_in">arch</span>=compute_75 -code=sm_75 -o my_kernel.fatbin my_kernel.cu</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这会生成计算能力 7.5（Turing）的 FATBIN 文件。</li>
+</ul>
+</li>
+</ul>
+<p><strong><code>-cubin</code> 和 <code>-fatbin</code> 的区别</strong></p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th><code>-cubin</code></th>
+<th><code>-fatbin</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>文件内容</strong></td>
+<td>仅包含 SASS 机器代码</td>
+<td>包含 PTX 代码和 SASS 代码</td>
+</tr>
+<tr>
+<td><strong>兼容性</strong></td>
+<td>仅兼容指定的 GPU 架构</td>
+<td>兼容多种 GPU 架构</td>
+</tr>
+<tr>
+<td><strong>文件大小</strong></td>
+<td>较小</td>
+<td>较大（因为包含多种代码格式）</td>
+</tr>
+<tr>
+<td><strong>使用场景</strong></td>
+<td>针对特定 GPU 架构优化</td>
+<td>跨平台运行，兼容多种 GPU 架构</td>
+</tr>
+</tbody></table>
+<h3 id="1-2-7-M"><a href="#1-2-7-M" class="headerlink" title="1.2.7 -M"></a>1.2.7 -M</h3><p><code>-M</code>用于生成 <strong>依赖文件</strong>。依赖文件通常用于构建系统（如 <code>make</code>）中，以跟踪源文件所依赖的头文件和其他文件。</p>
+<ul>
+<li><p><code>-M</code> 选项会分析CUDA源文件（<code>.cu</code>），并生成一个依赖文件（<code>.d</code>），列出该源文件所依赖的所有头文件和其他文件。</p>
+</li>
+<li><p>依赖文件通常用于构建系统（如 <code>make</code>），以确保在头文件或其他依赖文件发生变化时，重新编译受影响的源文件。</p>
+</li>
+<li><p><strong>依赖文件的格式</strong>：</p>
+<ul>
+<li>依赖文件的格式与 <code>make</code> 工具的规则兼容，通常是一个目标文件及其依赖文件的列表。</li>
+<li>例如：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">my_program.o: my_program.cu my_header.h</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ul>
+<p><strong>使用方式</strong><br>在编译CUDA代码时，可以通过以下方式生成依赖文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -M -o my_program.d my_program.cu</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>-M</code>：指定生成依赖文件。</li>
+<li><code>-o my_program.d</code>：指定输出的依赖文件名。</li>
+</ul>
+<p><strong>依赖文件的内容</strong><br>生成的依赖文件（如 <code>my_program.d</code>）会列出源文件所依赖的所有头文件和其他文件。例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">my_program.o: my_program.cu my_header.h /usr/local/cuda/include/cuda_runtime.h</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这表示 <code>my_program.o</code> 依赖于 <code>my_program.cu</code>、<code>my_header.h</code> 和 <code>cuda_runtime.h</code>。</li>
+</ul>
+<p><strong>在 <code>make</code> 中使用依赖文件</strong><br>依赖文件通常与 <code>make</code> 工具一起使用。例如，假设 <code>Makefile</code> 内容如下：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">SRC = my_program.cu</span><br><span class="line">OBJ = $(SRC:.cu=.o)</span><br><span class="line">DEP = $(SRC:.cu=.d)</span><br><span class="line"></span><br><span class="line"><span class="section">my_program: <span class="variable">$(OBJ)</span></span></span><br><span class="line">    nvcc -o <span class="variable">$@</span> <span class="variable">$&lt;</span></span><br><span class="line"></span><br><span class="line"><span class="section">%.o: %.cu</span></span><br><span class="line">    nvcc -M -MF <span class="variable">$*</span>.d <span class="variable">$&lt;</span></span><br><span class="line">    nvcc -c -o <span class="variable">$@</span> <span class="variable">$&lt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">-include</span> <span class="variable">$(DEP)</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><p><code>-M -MF $*.d</code>：生成依赖文件。</p>
+</li>
+<li><p><code>-include $(DEP)</code>：包含依赖文件，确保在头文件变化时重新编译。</p>
+<ul>
+<li>例如：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -M -MF my_dependencies.d my_program.cu</span><br></pre></td></tr></table></figure>
+这会将依赖文件输出到 <code>my_dependencies.d</code>。</li>
+</ul>
+</li>
+<li><p>**<code>-MT</code>**：指定依赖文件中的目标文件名称。</p>
+<ul>
+<li>例如：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -M -MT my_program.o my_program.cu</span><br></pre></td></tr></table></figure>
+这会将依赖文件中的目标文件名称设置为 <code>my_program.o</code>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>示例</strong><br>假设 CUDA 源文件是 <code>my_program.cu</code>，内容如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;my_header.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cuda_runtime.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">my_kernel</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Kernel code</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    my_kernel&lt;&lt;&lt;<span class="number">1</span>, <span class="number">1</span>&gt;&gt;&gt;();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用以下命令生成依赖文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -M -o my_program.d my_program.cu</span><br></pre></td></tr></table></figure>
+<p>生成的 <code>my_program.d</code> 文件内容可能如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">my_program.o: my_program.cu my_header.h /usr/local/cuda/include/cuda_runtime.h</span><br></pre></td></tr></table></figure>
+
+
+<p><strong>在 <code>make</code> 中使用依赖文件</strong><br>依赖文件通常与 <code>make</code> 工具一起使用。例如，假设 <code>Makefile</code> 内容如下：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">SRC = my_program.cu</span><br><span class="line">OBJ = $(SRC:.cu=.o)</span><br><span class="line">DEP = $(SRC:.cu=.d)</span><br><span class="line"></span><br><span class="line"><span class="section">my_program: <span class="variable">$(OBJ)</span></span></span><br><span class="line">    nvcc -o <span class="variable">$@</span> <span class="variable">$&lt;</span></span><br><span class="line"></span><br><span class="line"><span class="section">%.o: %.cu</span></span><br><span class="line">    nvcc -M -MF <span class="variable">$*</span>.d <span class="variable">$&lt;</span></span><br><span class="line">    nvcc -c -o <span class="variable">$@</span> <span class="variable">$&lt;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">-include</span> <span class="variable">$(DEP)</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>-M -MF $*.d</code>：生成依赖文件。</li>
+<li><code>-include $(DEP)</code>：包含依赖文件，确保在头文件变化时重新编译。</li>
+</ul>
+<h3 id="1-2-8-dc-dlink"><a href="#1-2-8-dc-dlink" class="headerlink" title="1.2.8 -dc &amp;&amp; -dlink"></a>1.2.8 -dc &amp;&amp; -dlink</h3><p><code>-dc</code> 和 <code>-dlink</code> 是 <code>nvcc</code> 用于处理 <strong>设备代码的分离编译和链接</strong>。它们通常用于将多个CUDA源文件分别编译为设备代码对象文件，然后再将这些对象文件链接在一起。<br><strong>1. <code>-dc</code> 选项</strong></p>
+<ul>
+<li><strong>作用</strong>：将CUDA源文件编译为 <strong>设备代码对象文件</strong>（Device Code Object File）。</li>
+<li><strong>设备代码对象文件</strong>：<ul>
+<li>包含设备代码（如 <code>__global__</code> 和 <code>__device__</code> 函数）的机器代码（SASS）或PTX代码。</li>
+<li>设备代码对象文件通常以 <code>.o</code> 或 <code>.obj</code> 为扩展名。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>当项目包含多个CUDA源文件时，可以使用 <code>-dc</code> 分别编译每个源文件，生成对应的设备代码对象文件。</li>
+<li>这种方式支持分离编译（Separate Compilation），可以提高编译效率。</li>
+</ul>
+</li>
+<li><strong>示例</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -dc -o my_kernel.o my_kernel.cu</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这会生成 <code>my_kernel.o</code>，其中包含 <code>my_kernel.cu</code> 中的设备代码。</li>
+</ul>
+</li>
+</ul>
+<p><strong>2. <code>-dlink</code> 选项</strong></p>
+<ul>
+<li><strong>作用</strong>：将多个设备代码对象文件链接为 <strong>设备代码可执行文件</strong>（Device Code Executable）。</li>
+<li><strong>设备代码可执行文件</strong>：<ul>
+<li>包含所有设备代码的最终二进制表示。</li>
+<li>通常与主机代码（Host Code）一起链接，生成完整的可执行文件。</li>
+</ul>
+</li>
+<li><strong>使用场景</strong>：<ul>
+<li>在使用 <code>-dc</code> 分别编译多个CUDA源文件后，使用 <code>-dlink</code> 将这些设备代码对象文件链接在一起。</li>
+<li>这种方式支持分离链接（Separate Linking），适用于大型项目。</li>
+</ul>
+</li>
+<li><strong>示例</strong>：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -dlink -o my_program_device.o my_kernel1.o my_kernel2.o</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这会生成 <code>my_program_device.o</code>，其中包含 <code>my_kernel1.o</code> 和 <code>my_kernel2.o</code> 中的设备代码。</li>
+</ul>
+</li>
+</ul>
+<p><strong><code>-dc</code> 和 <code>-dlink</code> 的工作流程</strong></p>
+<ol>
+<li><p><strong>分离编译</strong>：</p>
+<ul>
+<li>使用 <code>-dc</code> 将每个CUDA源文件编译为设备代码对象文件。</li>
+<li>例如：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">nvcc -dc -o my_kernel1.o my_kernel1.cu</span><br><span class="line">nvcc -dc -o my_kernel2.o my_kernel2.cu</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>分离链接</strong>：</p>
+<ul>
+<li>使用 <code>-dlink</code> 将所有设备代码对象文件链接为设备代码可执行文件。</li>
+<li>例如：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -dlink -o my_program_device.o my_kernel1.o my_kernel2.o</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><p><strong>最终链接</strong>：</p>
+<ul>
+<li>将设备代码可执行文件与主机代码链接，生成完整的可执行文件。</li>
+<li>例如：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -o my_program my_program_device.o my_host_code.o</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ol>
+<h1 id="2-调试与性能分析"><a href="#2-调试与性能分析" class="headerlink" title="2 调试与性能分析"></a>2 调试与性能分析</h1><h2 id="2-1-CUDA-GDB"><a href="#2-1-CUDA-GDB" class="headerlink" title="2.1 CUDA-GDB"></a>2.1 CUDA-GDB</h2><ul>
+<li><strong>CUDA-GDB</strong> 是 NVIDIA 提供的基于命令行的调试工具，类似于 GNU GDB，但专门用于调试 CUDA 程序。</li>
+<li><strong>功能</strong>：<ul>
+<li>支持调试主机代码（CPU 代码）和设备代码（GPU 代码）。</li>
+<li>可以设置断点、单步执行、查看变量、检查内存等。</li>
+<li>支持多 GPU 调试。</li>
+</ul>
+</li>
+<li><strong>使用方式</strong>：<ul>
+<li>编译 CUDA 程序时，需要使用 <code>-G</code> 选项生成调试信息：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc -G -g -o my_program my_program.cu</span><br></pre></td></tr></table></figure></li>
+<li>使用 CUDA-GDB 启动调试：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cuda-gdb ./my_program</span><br></pre></td></tr></table></figure></li>
+<li>常用命令：<ul>
+<li><code>break</code>：设置断点。</li>
+<li><code>run</code>：运行程序。</li>
+<li><code>next</code>：单步执行（跳过函数调用）。</li>
+<li><code>step</code>：单步执行（进入函数调用）。</li>
+<li><code>print</code>：打印变量值。</li>
+<li><code>info cuda threads</code>：查看当前 CUDA 线程状态。</li>
+<li><code>info cuda kernels</code>：查看当前运行的 CUDA 内核。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="2-2-Nsight-Compute"><a href="#2-2-Nsight-Compute" class="headerlink" title="2.2 Nsight Compute"></a>2.2 Nsight Compute</h2><p><code>Nsight Compute</code> 是 NVIDIA 提供的一款性能分析工具，用于分析和优化 CUDA、OpenCL、Vulkan 等程序的性能。<code>Nsight Compute</code>提供命令行工具<code>nsys</code>和图形界面工具<code>Nsight Compute</code>。如果你是正常安装了<code>CUDA</code>，那么<code>nsys</code>和<code>Nsight Compute</code>是默认安装的。</p>
+<h3 id="2-2-1-编译时链接性能分析工具"><a href="#2-2-1-编译时链接性能分析工具" class="headerlink" title="2.2.1 编译时链接性能分析工具"></a>2.2.1 编译时链接性能分析工具</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nvcc mat.cu -o mat -lnvToolsExt</span><br></pre></td></tr></table></figure>
+<h3 id="2-2-2-运行时生成报告"><a href="#2-2-2-运行时生成报告" class="headerlink" title="2.2.2 运行时生成报告"></a>2.2.2 运行时生成报告</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nsys profile --stats=<span class="literal">true</span> ./ma</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-3-图形界面查看报告"><a href="#2-2-3-图形界面查看报告" class="headerlink" title="2.2.3 图形界面查看报告"></a>2.2.3 图形界面查看报告</h3><p>将上一步生成的<code>report.nsys-rep</code>文件拖入<code>Nsight Compute</code>中即可查看报告。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-nvcc"><span class="toc-number">1.</span> <span class="toc-text">1 nvcc</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%9F%BA%E7%A1%80%E7%BC%96%E8%AF%91%E6%8C%87%E4%BB%A4"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 基础编译指令</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-CUDA%E7%89%B9%E6%80%A7%E7%9A%84%E7%BC%96%E8%AF%91%E9%80%89%E6%8B%A9"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 CUDA特性的编译选择</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-use-fast-math"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 -use_fast_math</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-arch-code"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 -arch &amp;&amp; -code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-3-%E2%80%93fmad"><span class="toc-number">1.2.3.</span> <span class="toc-text">1.2.3 –fmad</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-4-ptx"><span class="toc-number">1.2.4.</span> <span class="toc-text">1.2.4 -ptx</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-5-cubin-fatbin"><span class="toc-number">1.2.5.</span> <span class="toc-text">1.2.5 -cubin &amp;&amp; -fatbin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-7-M"><span class="toc-number">1.2.6.</span> <span class="toc-text">1.2.7 -M</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-8-dc-dlink"><span class="toc-number">1.2.7.</span> <span class="toc-text">1.2.8 -dc &amp;&amp; -dlink</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%B0%83%E8%AF%95%E4%B8%8E%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">2 调试与性能分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-CUDA-GDB"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 CUDA-GDB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Nsight-Compute"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Nsight Compute</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E7%BC%96%E8%AF%91%E6%97%B6%E9%93%BE%E6%8E%A5%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 编译时链接性能分析工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E8%BF%90%E8%A1%8C%E6%97%B6%E7%94%9F%E6%88%90%E6%8A%A5%E5%91%8A"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 运行时生成报告</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E5%9B%BE%E5%BD%A2%E7%95%8C%E9%9D%A2%E6%9F%A5%E7%9C%8B%E6%8A%A5%E5%91%8A"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 图形界面查看报告</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&text=CUDA快速入门-02-工具链使用方法"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&is_video=false&description=CUDA快速入门-02-工具链使用方法"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CUDA快速入门-02-工具链使用方法&body=Check out this article: http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&title=CUDA快速入门-02-工具链使用方法"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&name=CUDA快速入门-02-工具链使用方法&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/12/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-02-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/&t=CUDA快速入门-02-工具链使用方法"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

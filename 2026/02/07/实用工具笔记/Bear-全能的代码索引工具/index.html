@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="0 序言: LSP现代 C&#x2F;C++ 开发中，代码补全、跳转定义等功能是提升开发效率的关键, 今年来的IDE 都支持 LSP 来实现这些功能，而 clangd 是目前最流行的 C&#x2F;C++ 语言服务器。 如果你使用过像 clangd、ccls 或 cquery 这样的语言服务器（LSP），你一定对compile_commands.json这个文件不陌生——它记录了每个源文件是如何被">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Bear-全能的代码索引工具">
+<meta property="og:url" content="http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="0 序言: LSP现代 C&#x2F;C++ 开发中，代码补全、跳转定义等功能是提升开发效率的关键, 今年来的IDE 都支持 LSP 来实现这些功能，而 clangd 是目前最流行的 C&#x2F;C++ 语言服务器。 如果你使用过像 clangd、ccls 或 cquery 这样的语言服务器（LSP），你一定对compile_commands.json这个文件不陌生——它记录了每个源文件是如何被">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-02-07T14:43:28.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.665Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="clangd">
+<meta property="article:tag" content="cpp">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Bear-全能的代码索引工具</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&text=Bear-全能的代码索引工具"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&is_video=false&description=Bear-全能的代码索引工具"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Bear-全能的代码索引工具&body=Check out this article: http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&name=Bear-全能的代码索引工具&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&t=Bear-全能的代码索引工具"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%BA%8F%E8%A8%80-LSP"><span class="toc-number">1.</span> <span class="toc-text">0 序言: LSP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Bear%E7%AE%80%E4%BB%8B"><span class="toc-number">2.</span> <span class="toc-text">1 Bear简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Bear-%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">2 Bear 的使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E7%A1%80%E4%BD%BF%E7%94%A8"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 基础使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%AB%98%E7%BA%A7%E9%80%89%E9%A1%B9"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 高级选项</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Bear-全能的代码索引工具
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2026-02-07T14:43:28.000Z" class="dt-published" itemprop="datePublished">2026-02-07</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/clangd/" rel="tag">clangd</a>, <a class="p-category" href="/tags/cpp/" rel="tag">cpp</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="0-序言-LSP"><a href="#0-序言-LSP" class="headerlink" title="0 序言: LSP"></a>0 序言: LSP</h1><p>现代 C&#x2F;C++ 开发中，代码补全、跳转定义等功能是提升开发效率的关键, 今年来的IDE 都支持 LSP 来实现这些功能，而 clangd 是目前最流行的 C&#x2F;C++ 语言服务器。</p>
+<p>如果你使用过像 clangd、ccls 或 cquery 这样的语言服务器（LSP），你一定对<code>compile_commands.json</code>这个文件不陌生——它记录了每个源文件是如何被编译的（包括头文件路径、宏定义、编译选项等）, 例如：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;directory&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/home/user/myproject&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;gcc -I./include -DDEBUG -c src/main.c -o src/main.o&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;file&quot;</span><span class="punctuation">:</span> <span class="string">&quot;src/main.c&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+<p>通常, 现代化项目的编译脚本都会支持 <code>compile_commands.json</code> 文件的生成，但对于那些没有原生生成 <code>compile_commands.json</code> 能力的构建系统（比如 Makefile、CMake 未启用特定选项、或者手写的构建脚本），我们该怎么办?</p>
+<p>这时，Bear 就派上用场了。</p>
+<h1 id="1-Bear简介"><a href="#1-Bear简介" class="headerlink" title="1 Bear简介"></a>1 Bear简介</h1><p><code>Bear</code>（Build EAR）是一个命令行工具，通过拦截构建过程中对编译器（如 <code>gcc</code>、<code>clang</code>）的调用，记录完整的编译命令，并将其转换为标准的 <code>compile_commands.json</code> 文件。</p>
+<p>具体来说, <code>Bear</code> 并不解析你的 <code>Makefile</code> 或构建脚本，而是利用 动态链接库预加载（<code>LD_PRELOAD</code>，在 Linux&#x2F;macOS 上）或 进程监控 技术，在你运行构建命令（如 make）时：</p>
+<ol>
+<li>劫持（intercept）所有子进程中对编译器（如 gcc、g++、clang 等）的调用；</li>
+<li>记录每个源文件对应的完整命令行、工作目录和环境；</li>
+<li>构建完成后，将这些信息整理成符合 <code>Clang Compilation Database</code> 格式的 <code>JSON</code> 文件——即 <code>compile_commands.json</code>。</li>
+</ol>
+<p>后面我们会结合具体的例子来说明他的原理。</p>
+<p>Bear的安装参考仓库主页： <a target="_blank" rel="noopener" href="https://github.com/rizsotto/Bear">https://github.com/rizsotto/Bear</a></p>
+<h1 id="2-Bear-的使用"><a href="#2-Bear-的使用" class="headerlink" title="2 Bear 的使用"></a>2 Bear 的使用</h1><h2 id="2-1-基础使用"><a href="#2-1-基础使用" class="headerlink" title="2.1 基础使用"></a>2.1 基础使用</h2><p><code>Bear</code> 的使用非常简单, 只需要在你正常构建的脚本前加上<code>bear --</code>即可。例如, 对于一个使用 <code>Makefile</code> 的项目：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bear -- make</span><br></pre></td></tr></table></figure>
+<p>对这个命令来说, <code>Bear</code> 实际做了：</p>
+<ul>
+<li>启动 <code>make</code>；</li>
+<li>在 <code>make</code> 调用命令时拦截并记录</li>
+</ul>
+<p>假设你的<code>make</code>执行时有<code>gcc -I./include -DDEBUG -c src/main.c -o src/main.o</code> 这个命令，<code>Bear</code> 会捕获到这个调用，并记录下来, 其对应<code>compile_commands.json</code> 中的条目如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;directory&quot;</span><span class="punctuation">:</span> <span class="string">&quot;/path/to/project&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;command&quot;</span><span class="punctuation">:</span> <span class="string">&quot;gcc -I./include -DDEBUG -c foo.c -o foo.o&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;file&quot;</span><span class="punctuation">:</span> <span class="string">&quot;foo.c&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>需要说明的是, <code>Bear</code> 并非仅仅用于<code>make</code>, 它基本上支持所有的构建系统:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">bear -- ninja</span><br><span class="line">bear -- cmake --build .</span><br><span class="line">bear -- ./build.sh</span><br><span class="line">bear -- ./build.py</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-高级选项"><a href="#2-2-高级选项" class="headerlink" title="2.2 高级选项"></a>2.2 高级选项</h2><ul>
+<li>–output FILE：指定输出文件名（默认为 <code>compile_commands.json</code>）</li>
+<li>–append：追加到已有的 <code>compile_commands.json</code></li>
+<li>–verbose：显示详细日志</li>
+</ul>
+<p>实际效果：配合 clangd 使用</p>
+<p>一旦生成了 <code>compile_commands.json</code>，只需将其放在项目根目录，<code>clangd</code> 就会自动读取。此时，在 <code>VS Code</code>（安装 <code>clangd</code> 插件）、Neovim（配置较为复杂…）等编辑器中，你将获得：</p>
+<ul>
+<li>精准的代码跳转（Go to Definition）</li>
+<li>智能补全（包括宏和模板）</li>
+<li>实时错误诊断</li>
+<li>查找所有引用（Find References）</li>
+</ul>
+<p>这大大提升了阅读大型 C&#x2F;C++ 项目（如 Linux 内核、Postgresql 等）的体验。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%BA%8F%E8%A8%80-LSP"><span class="toc-number">1.</span> <span class="toc-text">0 序言: LSP</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Bear%E7%AE%80%E4%BB%8B"><span class="toc-number">2.</span> <span class="toc-text">1 Bear简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Bear-%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">2 Bear 的使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E7%A1%80%E4%BD%BF%E7%94%A8"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 基础使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%AB%98%E7%BA%A7%E9%80%89%E9%A1%B9"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 高级选项</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&text=Bear-全能的代码索引工具"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&is_video=false&description=Bear-全能的代码索引工具"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Bear-全能的代码索引工具&body=Check out this article: http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&title=Bear-全能的代码索引工具"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&name=Bear-全能的代码索引工具&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/&t=Bear-全能的代码索引工具"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

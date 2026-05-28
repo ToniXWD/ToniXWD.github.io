@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 静态调度的问题 上面这张图对完成了Assignment 1的朋友们应该非常熟悉, 静态分可能导致不同的worker或线程分配到的计算任务不均匀, 从而导致计算资源浪费。最终并行计算的效果受限于最慢的线程, 导致整体计算时间增加。 我们在Assignment 1中的方案是, 依靠我们对计算任务的理解, 手动调整静态分配的策略, 使得不同线程分配到的任务尽可能均匀, 从而提高并行计算的效率。 2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度">
+<meta property="og:url" content="http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 静态调度的问题 上面这张图对完成了Assignment 1的朋友们应该非常熟悉, 静态分可能导致不同的worker或线程分配到的计算任务不均匀, 从而导致计算资源浪费。最终并行计算的效果受限于最慢的线程, 导致整体计算时间增加。 我们在Assignment 1中的方案是, 依靠我们对计算任务的理解, 手动调整静态分配的策略, 使得不同线程分配到的任务尽可能均匀, 从而提高并行计算的效率。 2">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/static-scheduling-problem.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/dynamic-scheduling.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/increase-pull-granularity.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/dynamic-scheduling-problem.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/steal-task.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-child-con.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-child-steal.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-child-steal-example.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-child-steal-example-2.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-child-steal-example-3.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-quick-sort.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec05/cilk-scheduling-sync-implementation.png">
+<meta property="article:published_time" content="2024-11-24T05:55:30.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec05/static-scheduling-problem.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&text=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&is_video=false&description=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度&body=Check out this article: http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&name=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&t=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%9D%99%E6%80%81%E8%B0%83%E5%BA%A6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">1 静态调度的问题</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6"><span class="toc-number">2.</span> <span class="toc-text">2 动态调度</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6-%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97%E6%8B%89%E5%8F%96"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 动态调度-任务队列拉取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6-Steal-Task"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 动态调度-Steal Task</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Cilk-%E6%8B%93%E5%B1%95%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.</span> <span class="toc-text">3 Cilk 拓展并行编程模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%92%8C%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 和线程模型的区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%BB%E8%A6%81%E5%8C%BA%E5%88%AB"><span class="toc-number">3.2.1.</span> <span class="toc-text">2. 主要区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-cilk%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 cilk并行模型的调度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%AA%83%E5%8F%96%E8%B0%83%E5%BA%A6%E8%BF%9B%E9%98%B6%E2%80%94%E2%80%94quick-sort"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 窃取调度进阶——quick-sort</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E7%AA%83%E5%8F%96%E8%B0%83%E5%BA%A6%E8%BF%9B%E9%98%B6%E2%80%94%E2%80%94sync%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 窃取调度进阶——sync的实现</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-11-24T05:55:30.000Z" class="dt-published" itemprop="datePublished">2024-11-24</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-静态调度的问题"><a href="#1-静态调度的问题" class="headerlink" title="1 静态调度的问题"></a>1 静态调度的问题</h1><p><img src="/../../images/CS149/Lec05/static-scheduling-problem.png" alt="static-scheduling-problem"></p>
+<p>上面这张图对完成了<code>Assignment 1</code>的朋友们应该非常熟悉, 静态分可能导致不同的<code>worker</code>或线程分配到的计算任务不均匀, 从而导致计算资源浪费。最终并行计算的效果受限于最慢的线程, 导致整体计算时间增加。</p>
+<p>我们在<code>Assignment 1</code>中的方案是, 依靠我们对计算任务的理解, 手动调整静态分配的策略, 使得不同线程分配到的任务尽可能均匀, 从而提高并行计算的效率。</p>
+<h1 id="2-动态调度"><a href="#2-动态调度" class="headerlink" title="2 动态调度"></a>2 动态调度</h1><h2 id="2-1-动态调度-任务队列拉取"><a href="#2-1-动态调度-任务队列拉取" class="headerlink" title="2.1 动态调度-任务队列拉取"></a>2.1 动态调度-任务队列拉取</h2><p><img src="/../../images/CS149/Lec05/dynamic-scheduling.png" alt="dynamic-scheduling"></p>
+<p>动态调度的一个经典思想就是将任务维护在一个队列中, 每个线程完成计算后从队列中取出任务进行计算。这样的好处是, 每个线程主动拉取任务这一行为就是自身计算资源空闲的表征, 因此使得计算资源在同一时间被充分利用。</p>
+<p>其中这个队列是一个抽象的概念, 可以有多种实现方式。例如下面的函数实现了计算质数的任务:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">const</span> <span class="type">int</span> N = <span class="number">1024</span>; </span><br><span class="line"><span class="comment">// assume allocations are only executed by 1 thread </span></span><br><span class="line"><span class="type">float</span>* x = <span class="keyword">new</span> <span class="type">float</span>[N]; </span><br><span class="line"><span class="type">bool</span>* prime = <span class="keyword">new</span> <span class="type">bool</span>[N]; </span><br><span class="line"><span class="comment">// assume elements of x are initialized here </span></span><br><span class="line">LOCK counter_lock; </span><br><span class="line"><span class="type">int</span> counter = <span class="number">0</span>; </span><br><span class="line"><span class="keyword">while</span> (<span class="number">1</span>) &#123; </span><br><span class="line">  <span class="type">int</span> i; </span><br><span class="line">  <span class="built_in">lock</span>(counter_lock); </span><br><span class="line">  i = counter++; </span><br><span class="line">  <span class="built_in">unlock</span>(counter_lock); </span><br><span class="line">  <span class="keyword">if</span> (i &gt;= N) </span><br><span class="line">     <span class="keyword">break</span>; </span><br><span class="line">  is_prime[i] = <span class="built_in">test_primality</span>(x[i]); </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其队列就是一个整型数<code>counter</code>, 每个线程在完成计算后, 将<code>counter</code>的值加一, <code>counter</code>的值就是抽象的队列元素。</p>
+<p><strong>性能问题</strong>:<br>上面这个思路的新问题就在于, 从队列中拉取任务一定涉及相关同步原语的开销, 这些开销与调度的收益之间的权衡是考虑的重点:</p>
+<p><strong>解决方案: 增加拉取任务的粒度</strong><br>在上面的计算质数的案例中, 每次拉取<code>counter</code>的值加一个粒度<code>granularity</code>的值, 而不是每次加一, 并计算<code>[counter, counter + granularity]</code>范围内的数。这样就可以减少锁的开销。</p>
+<p><img src="/../../images/CS149/Lec05/increase-pull-granularity.png" alt="increase-pull-granularity"></p>
+<p><strong>仍然存在的问题</strong>:<br>尽管<code>worker</code>主动拉取任务在大部分时间可以使得计算资源被充分利用, 但是在计算的最后阶段, 仍然可能存在计算资源空闲的情况, 下面的图示充分说明了这一点:<br><img src="/../../images/CS149/Lec05/dynamic-scheduling-problem.png" alt="dynamic-scheduling-problem"></p>
+<p>要解决这样的问题, 就需要程序员事先知道各个<code>task</code>的计算规模, 实现合理的调度策略。</p>
+<h2 id="2-2-动态调度-Steal-Task"><a href="#2-2-动态调度-Steal-Task" class="headerlink" title="2.2 动态调度-Steal Task"></a>2.2 动态调度-<code>Steal Task</code></h2><p><img src="/../../images/CS149/Lec05/steal-task.png" alt="steal-task"></p>
+<p>上面的PPT展示了<code>Steal Task</code>的思想, 每个<code>worker</code>或线程拥有自己的任务队列, 而不再是所有的<code>worker</code>或线程共享一个任务队列, 当一个<code>worker</code>或线程完成自己的队列的所有任务后, 可以从其他<code>worker</code>或线程的任务队列中窃取任务。</p>
+<p><strong>问题: 如果task有依赖关系呢?</strong><br>解决方法: 当依赖关系全部满足前, 不能将<code>task</code>加入到<code>worker</code>或线程的任务队列中, 且一个<code>task</code>被完成后, 需要向调度器发送消息, 调度器将更新依赖关系进行xinde<code>task</code>的分配。</p>
+<h1 id="3-Cilk-拓展并行编程模型"><a href="#3-Cilk-拓展并行编程模型" class="headerlink" title="3 Cilk 拓展并行编程模型"></a>3 <code>Cilk </code>拓展并行编程模型</h1><h2 id="3-1-基础概念"><a href="#3-1-基础概念" class="headerlink" title="3.1 基础概念"></a>3.1 基础概念</h2><p><code>Cilk</code> 是一种并行编程语言的扩展，最初是为 C 语言设计的。它旨在简化多核处理器上的并行程序开发。<code>Cilk</code> 提供了几个关键字来支持并行编程，其中 <code>cilk_spawn</code> 和 <code>cilk_sync</code> 是两个核心概念。</p>
+<p><strong>cilk_spawn</strong></p>
+<p><code>cilk_spawn</code> 关键字用于指示编译器一个函数调用可以异步执行。这意味着当调用带有 <code>cilk_spawn</code> 的函数时，主调函数不会等待被调函数完成，而是继续执行后续代码。这允许程序在多个核心上并行执行任务，从而可能提高性能。</p>
+<p>例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">foo</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">// 函数体</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">bar</span><span class="params">()</span> &#123;</span><br><span class="line">    cilk_spawn <span class="title function_">foo</span><span class="params">()</span>; <span class="comment">// 异步调用foo</span></span><br><span class="line">    <span class="comment">// 主调函数继续执行</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，<code>bar()</code> 函数中的 <code>foo()</code> 调用会被立即返回，而 <code>foo()</code> 的实际执行则可能在另一个核心上进行。</p>
+<p><strong>cilk_sync</strong></p>
+<p><code>cilk_sync</code> 关键字用于确保所有由 <code>cilk_spawn</code> 派生的任务都已完成。它使得程序可以在继续执行之后的代码之前等待所有子任务的完成。这在需要收集并处理所有并行任务的结果时非常有用。</p>
+<p>例如：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">task1</span><span class="params">()</span>, <span class="title function_">task2</span><span class="params">()</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">int</span> result1, result2;</span><br><span class="line">    </span><br><span class="line">    cilk_spawn result1 = task1();</span><br><span class="line">    cilk_spawn result2 = task2();</span><br><span class="line">    </span><br><span class="line">    cilk_sync; <span class="comment">// 等待task1和task2完成</span></span><br><span class="line">    </span><br><span class="line">    <span class="type">int</span> final_result = result1 + result2; <span class="comment">// 此时result1和result2均已计算完毕</span></span><br><span class="line">    <span class="keyword">return</span> final_result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，<code>main()</code> 函数会启动两个异步任务 <code>task1()</code> 和 <code>task2()</code>，然后使用 <code>cilk_sync</code> 确保这两个任务都已经完成。只有当这两个任务都完成后，<code>final_result</code> 才会被正确计算出来。</p>
+<h2 id="3-2-和线程模型的区别"><a href="#3-2-和线程模型的区别" class="headerlink" title="3.2 和线程模型的区别"></a>3.2 和线程模型的区别</h2><p><code>cilk_spawn</code> 和 <code>cilk_sync</code> 是 <code>Cilk</code> 并行编程模型中的关键机制，它们与传统的线程创建（如 POSIX 线程 <code>pthread_create</code>）和线程同步（如 <code>pthread_join</code>）在使用方法上非常相似, 但他们有如下区别:</p>
+<h3 id="2-主要区别"><a href="#2-主要区别" class="headerlink" title="2. 主要区别"></a>2. <strong>主要区别</strong></h3><table>
+<thead>
+<tr>
+<th><strong>方面</strong></th>
+<th><strong>pthread</strong></th>
+<th><strong>cilk（Cilk Plus）</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>抽象层次</strong></td>
+<td>低级（线程级别）</td>
+<td>高级（任务级别）</td>
+</tr>
+<tr>
+<td><strong>开发难度</strong></td>
+<td>需要手动管理线程创建、同步等，难度较高</td>
+<td>自动管理并行任务，使用简单</td>
+</tr>
+<tr>
+<td><strong>性能优化</strong></td>
+<td>由开发者控制线程分配和负载平衡，优化空间大但需经验</td>
+<td>底层由运行时自动优化线程和任务调度，用户无需关心细节</td>
+</tr>
+<tr>
+<td><strong>任务分解方式</strong></td>
+<td>开发者需手动分解任务</td>
+<td>通过 <code>cilk_spawn</code> 等简单标记分解任务</td>
+</tr>
+<tr>
+<td><strong>硬件利用率</strong></td>
+<td>开发者负责显式分配线程</td>
+<td>自动分配资源和负载均衡，充分利用多核 CPU</td>
+</tr>
+<tr>
+<td><strong>应用场景</strong></td>
+<td>高性能计算中需要精细控制的并行场景</td>
+<td>面向数据并行或计算密集型的任务，例如科学计算</td>
+</tr>
+</tbody></table>
+<p>换句话说, <code>cilk_spawn</code>创建的任务与线程不一定是1:1的关系, 当<code>cilk_spawn</code>创建的任务数量远大于线程时, 编译器会负责将其分配到数量更少的线程上执行, 并实现调度。</p>
+<h2 id="3-3-cilk并行模型的调度"><a href="#3-3-cilk并行模型的调度" class="headerlink" title="3.3 cilk并行模型的调度"></a>3.3 <code>cilk</code>并行模型的调度</h2><p><img src="/../../images/CS149/Lec05/cilk-scheduling-child-con.png" alt="cilk-scheduling-child-con"></p>
+<p>这里统一术语:</p>
+<ul>
+<li><code>cilk_spawn</code>创建的任务称为<code>child</code></li>
+<li><code>cilk_spawn</code>的调用者继续执行的任务称为<code>continuation</code></li>
+</ul>
+<p>有如下的调度策略选择:</p>
+<p><strong>先执行<code>child</code>, <code>continuation</code>被其他线程窃取</strong><br><img src="/../../images/CS149/Lec05/cilk-scheduling-child-steal.png" alt="cilk-scheduling-child-steal"></p>
+<p><strong>先执行<code>continuation</code>, <code>child</code>被其他线程窃取</strong><br>与上一个情况相反, 不截图阐释了</p>
+<p><strong>共同特征</strong>:<br>无论先执行哪一个任务, 都需要将另一个任务放到自己的任务队列中, 这个任务也许会被其他线程窃取, 也许会在稍后被自己继续执行。</p>
+<p>考虑下面的场景:</p>
+<p><img src="/../../images/CS149/Lec05/cilk-scheduling-child-steal-example.png" alt="cilk-scheduling-child-steal-example"></p>
+<p>主线程在<code>for</code>循环中不断创建<code>child</code>任务, 并在循环后执行<code>cilk_sync</code>等待其完成。<br>如果采用先执行<code>continuation</code>的调度策略, 则所有的任务会先被放在自己的任务队列中, 直到<code>for</code>循环结束。</p>
+<p>如果只有一个线程, 不会发生窃取, 则执行的顺序与移除了<code>cilk_xxx</code>的串行执行是不同的。</p>
+<p>如果采用先执行<code>child</code>, <code>continuation</code>被其他线程窃取的调度策略, 则<code>cilk_spawn</code>创建的<code>child</code>任务会立即执行, 而<code>continuation</code>会放在自己的任务队列中等待其他线程窃取:</p>
+<p><img src="/../../images/CS149/Lec05/cilk-scheduling-child-steal-example-2.png" alt="cilk-scheduling-child-steal-example-2"></p>
+<p>这种情况下, 执行的顺序与移除了<code>cilk_xxx</code>的串行执行是相同的。</p>
+<p>另一方面, 让我看一下<code>task</code>被窃取的情况, 被窃取的<code>task</code>所属的线程像迭代器一样将下一个要执行的<code>task</code>放在自己的任务队列中以供其他线程窃取:</p>
+<p><img src="/../../images/CS149/Lec05/cilk-scheduling-child-steal-example-3.png" alt="cilk-scheduling-child-steal-example-3"></p>
+<h2 id="3-4-窃取调度进阶——quick-sort"><a href="#3-4-窃取调度进阶——quick-sort" class="headerlink" title="3.4 窃取调度进阶——quick-sort"></a>3.4 窃取调度进阶——quick-sort</h2><p><img src="/../../images/CS149/Lec05/cilk-scheduling-quick-sort.png" alt="cilk-scheduling-quick-sort"></p>
+<p>上图是采用窃取调度策略的<code>quick-sort</code>的并行执行过程, 随着任务的执行, 每个<code>task</code>的计算量越来越小, 因此其他线程窃取任务时面临如下的选择:</p>
+<ul>
+<li>窃取队列头部的大计算量的<code>task</code></li>
+<li>窃取队列尾部的小计算量的<code>task</code></li>
+</ul>
+<p><strong>最佳方案:</strong><br>其他线程窃取<code>task</code>时从顶部窃取大计算量的<code>task</code>, 而被窃取线程从尾部不断插入新的小计算量的<code>task</code>。这样的目的是符号整个计算流程的趋势, <code>task</code>的计算量越来越小, 选择大计算量的<code>task</code>更接近被窃取线程当前的计算量, 从而平衡不同线程的计算量。</p>
+<h2 id="3-5-窃取调度进阶——sync的实现"><a href="#3-5-窃取调度进阶——sync的实现" class="headerlink" title="3.5 窃取调度进阶——sync的实现"></a>3.5 窃取调度进阶——<code>sync</code>的实现</h2><p><code>sync</code>的实现在之前的窃取思想上添加了一个修改<code>描述符(descriptor)</code>的步骤, 从而使得调度器可以知道哪些<code>task</code>被窃取, 哪些<code>task</code>被窃取线程执行。每次窃取任务意味着当前任务完成, 同时这次窃取任务也会拿到一个新的窃取任务, 因此可以不断更新描述符中<code>被窃取的task总数量</code>和<code>被窃取的task中已完成的数量</code>, 直到二者相等, 则意味着<code>sync</code>不必等待, 可以继续执行。</p>
+<p><img src="/../../images/CS149/Lec05/cilk-scheduling-sync-implementation.png" alt="cilk-scheduling-sync-implementation"></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%9D%99%E6%80%81%E8%B0%83%E5%BA%A6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.</span> <span class="toc-text">1 静态调度的问题</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6"><span class="toc-number">2.</span> <span class="toc-text">2 动态调度</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6-%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97%E6%8B%89%E5%8F%96"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 动态调度-任务队列拉取</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A8%E6%80%81%E8%B0%83%E5%BA%A6-Steal-Task"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 动态调度-Steal Task</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Cilk-%E6%8B%93%E5%B1%95%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.</span> <span class="toc-text">3 Cilk 拓展并行编程模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%92%8C%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 和线程模型的区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%BB%E8%A6%81%E5%8C%BA%E5%88%AB"><span class="toc-number">3.2.1.</span> <span class="toc-text">2. 主要区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-cilk%E5%B9%B6%E8%A1%8C%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 cilk并行模型的调度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%AA%83%E5%8F%96%E8%B0%83%E5%BA%A6%E8%BF%9B%E9%98%B6%E2%80%94%E2%80%94quick-sort"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 窃取调度进阶——quick-sort</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E7%AA%83%E5%8F%96%E8%B0%83%E5%BA%A6%E8%BF%9B%E9%98%B6%E2%80%94%E2%80%94sync%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 窃取调度进阶——sync的实现</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&text=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&is_video=false&description=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度&body=Check out this article: http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&title=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&name=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/&t=Stanford-CS149-并行计算-Lec05-笔记-任务分配与调度"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

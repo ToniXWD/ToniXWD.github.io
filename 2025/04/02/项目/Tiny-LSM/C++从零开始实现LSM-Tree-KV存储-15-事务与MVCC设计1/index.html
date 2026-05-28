@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="目前我们已经得到了一个能跑的引擎, 但目前只有最基本的API, 现在我们来实现事务特性。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 欢迎点个Star 1 KV存储中的事务1.1 事务介绍在数据库系统中，事务（Transaction）是指一组原子性操作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1">
+<meta property="og:url" content="http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="目前我们已经得到了一个能跑的引擎, 但目前只有最基本的API, 现在我们来实现事务特性。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 欢迎点个Star 1 KV存储中的事务1.1 事务介绍在数据库系统中，事务（Transaction）是指一组原子性操作">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/Block.drawio.png">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/SST2.drawio.png">
+<meta property="article:published_time" content="2025-04-02T10:55:48.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.669Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/Block.drawio.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/13/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-16-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A12/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&text=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1&body=Check out this article: http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&name=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&t=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-KV%E5%AD%98%E5%82%A8%E4%B8%AD%E7%9A%84%E4%BA%8B%E5%8A%A1"><span class="toc-number">1.</span> <span class="toc-text">1 KV存储中的事务</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%BA%8B%E5%8A%A1%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 事务介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 隔离级别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9A%E4%B9%89%E4%B8%8E%E5%88%86%E7%B1%BB"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 隔离级别的定义与分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-KV%E5%AD%98%E5%82%A8%E4%B8%AD%E4%BA%8B%E5%8A%A1%E5%86%B2%E7%AA%81%E5%92%8C%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 KV存储中事务冲突和隔离级别的案例</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E8%AF%BB%E6%9C%AA%E6%8F%90%E4%BA%A4%EF%BC%88Read-Uncommitted%EF%BC%89"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">1. 读未提交（Read Uncommitted）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E8%AF%BB%E5%B7%B2%E6%8F%90%E4%BA%A4%EF%BC%88Read-Committed%EF%BC%89"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">2. 读已提交（Read Committed）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%EF%BC%88Repeatable-Read%EF%BC%89"><span class="toc-number">1.2.2.3.</span> <span class="toc-text">3. 可重复读（Repeatable Read）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96%EF%BC%88Serializable%EF%BC%89"><span class="toc-number">1.2.2.4.</span> <span class="toc-text">5. 可串行化（Serializable）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9C%ACKV%E5%BC%95%E6%93%8E%E7%9A%84MVCC%E5%92%8C%E4%BA%8B%E5%8A%A1%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">3 本KV引擎的MVCC和事务设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%B7%BB%E5%8A%A0%E7%9A%84%E5%85%83%E6%95%B0%E6%8D%AE"><span class="toc-number">2.1.</span> <span class="toc-text">3.1 添加的元数据</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.1.</span> <span class="toc-text">3.1.2 架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E4%BB%A3%E7%A0%81%E4%BF%AE%E6%94%B9"><span class="toc-number">2.1.2.</span> <span class="toc-text">3.1.2 代码修改</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%8F%98%E5%8C%96"><span class="toc-number">2.2.</span> <span class="toc-text">3.2 接口的变化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%9F%A5%E8%AF%A2%E7%9A%84%E5%8F%98%E5%8C%96"><span class="toc-number">2.3.</span> <span class="toc-text">3.3 查询的变化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B0%8F%E8%8A%82"><span class="toc-number">3.</span> <span class="toc-text">4 小节</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-02T10:55:48.000Z" class="dt-published" itemprop="datePublished">2025-04-02</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>目前我们已经得到了一个能跑的引擎, 但目前只有最基本的<code>API</code>, 现在我们来实现事务特性。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a></p>
+<p>欢迎点个Star</p>
+<h1 id="1-KV存储中的事务"><a href="#1-KV存储中的事务" class="headerlink" title="1 KV存储中的事务"></a>1 KV存储中的事务</h1><h2 id="1-1-事务介绍"><a href="#1-1-事务介绍" class="headerlink" title="1.1 事务介绍"></a>1.1 事务介绍</h2><p>在数据库系统中，事务（Transaction）是指一组原子性操作的执行单元，需要满足ACID特性。这里简单介绍下<code>ACID</code>的基本性质:</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>定义</th>
+<th>技术实现</th>
+<th>KV存储中的特殊表现</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>原子性</strong><br>(Atomicity)</td>
+<td>事务内的操作要么全部成功，要么全部失败，不存在中间状态。</td>
+<td>- WAL（Write-Ahead Logging）<br>- 两阶段提交（2PC）<br>- 操作回滚日志</td>
+<td>- 单键操作天然原子<br>- 跨键原子性需显式事务（如批量提交）<br>- LSM-Tree依赖WAL保证崩溃恢复</td>
+</tr>
+<tr>
+<td><strong>一致性</strong><br>(Consistency)</td>
+<td>事务执行后数据库必须保持预设的业务规则（如唯一性、完整性约束）。</td>
+<td>- 关系型：外键、触发器<br>- 声明式约束（DDL）<br>- 事务回滚机制</td>
+<td>- 业务逻辑一致性需应用层实现</td>
+</tr>
+<tr>
+<td><strong>隔离性</strong><br>(Isolation)</td>
+<td>并发事务相互隔离，避免脏读、不可重复读、幻读。</td>
+<td>- 锁机制（悲观锁）<br>- MVCC（多版本并发控制）<br>- 快照隔离（Snapshot Isolation）</td>
+<td>- 通常采用乐观锁（版本号校验）<br>- 全局时间戳实现快照隔离<br>- 弱隔离级别常见（如Read Committed）</td>
+</tr>
+<tr>
+<td><strong>持久性</strong><br>(Durability)</td>
+<td>事务提交后，数据永久存储，即使系统崩溃也不丢失。</td>
+<td>- 同步刷盘（<code>fsync</code>）<br>- 副本复制（Replication）<br>- 冗余存储（如RAID）</td>
+<td>- LSM-Tree依赖SSTable落盘<br>- 内存数据需通过WAL持久化<br>- 异步刷盘可能牺牲部分持久性（如Redis AOF）</td>
+</tr>
+</tbody></table>
+<p>在这四个基本性质中, KV存储由于数据较为简单, 不存在类似关系型数据库中的外键、触发器、声明式约束等复杂业务规则, 因此一致性是比较容易实现的，基本上你实现了一致性、隔离性，一致性就自然满足了，这里我们探讨下其他几个形状在<code>KV存储</code>中的实现逻辑:</p>
+<ol>
+<li><strong>原子性</strong>：通过批量化操作即可, 可以将一个事务的操作先暂存起来, 在提交时统一应用到存储引擎的状态机中。</li>
+<li><strong>隔离性</strong>：这里涉及到隔离级别， 会在后面统一介绍。</li>
+<li><strong>持久性</strong>：<code>LSM-Tree</code>的持久化依赖<code>SSTable</code>落盘，但我们插入一些数据后, 这些数据肯定优先存在于内存中, 在内存容量达到阈值后才会刷盘, 为保证持久性, 可以用以下两个方案<ol>
+<li>事务提交后强制刷盘到<code>SST</code>, 但这样可能导致刷入的<code>L0 SST</code>大小过小, 加大了<code>L0 SST</code>合并时的计算量(后续章节介绍<code>compact</code>)</li>
+<li>事务提交时先将操作写入<code>WAL</code>(<code>Write-Ahead Logging</code>), 同时存储引擎维护刷入<code>SST</code>的最大事务序号, 在重启或崩溃恢复时根据<code>WAL</code>重放操作(后续会介绍)</li>
+</ol>
+</li>
+</ol>
+<h2 id="1-2-隔离级别"><a href="#1-2-隔离级别" class="headerlink" title="1.2 隔离级别"></a>1.2 隔离级别</h2><h3 id="1-2-1-隔离级别的定义与分类"><a href="#1-2-1-隔离级别的定义与分类" class="headerlink" title="1.2.1 隔离级别的定义与分类"></a>1.2.1 隔离级别的定义与分类</h3><p>在并发事务场景下，隔离性通过不同的隔离级别实现不同程度的可见性控制。我们先回顾下关系型数据库中的隔离级别:</p>
+<blockquote>
+<p>这里如果对这些隔离级别不熟悉, 建议先学下数据库的课程</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th>脏读(Dirty Read)</th>
+<th>不可重复读(Non-Repeatable Read)</th>
+<th>幻读(Phantom Read)</th>
+<th>典型实现方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>读未提交</strong></td>
+<td>允许</td>
+<td>允许</td>
+<td>允许</td>
+<td>- 无版本控制<br>- 直接读取内存最新值</td>
+</tr>
+<tr>
+<td><strong>读已提交</strong></td>
+<td>禁止</td>
+<td>允许</td>
+<td>允许</td>
+<td>- 单版本快照<br>- 每次读获取最新提交版本</td>
+</tr>
+<tr>
+<td><strong>可重复读</strong></td>
+<td>禁止</td>
+<td>禁止</td>
+<td>允许</td>
+<td>- 多版本快照<br>- 事务级版本锚定（如MySQL InnoDB的MVCC）</td>
+</tr>
+<tr>
+<td><strong>可串行化</strong></td>
+<td>禁止</td>
+<td>禁止</td>
+<td>禁止</td>
+<td>- 严格锁机制<br>- 冲突范围检测（如FoundationDB）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注：快照隔离下幻读仍可能发生，但可通过追加范围锁避免</p>
+</blockquote>
+<h3 id="1-2-2-KV存储中事务冲突和隔离级别的案例"><a href="#1-2-2-KV存储中事务冲突和隔离级别的案例" class="headerlink" title="1.2.2 KV存储中事务冲突和隔离级别的案例"></a>1.2.2 KV存储中事务冲突和隔离级别的案例</h3><p>在LSM-Tree结构的KV存储中，我们举一个例子说明隔离级别和实物冲突的联系:</p>
+<p>在下面的场景时序图, 事务按照创建的时间从小大大分配<code>ID</code>, 在这个</p>
+<table>
+<thead>
+<tr>
+<th>Timeline</th>
+<th>事务A (ID&#x3D;100)</th>
+<th>事务B (ID&#x3D;101)</th>
+<th>Key1状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T0</td>
+<td>Begin</td>
+<td></td>
+<td>Version&#x3D;0 (初始值)</td>
+</tr>
+<tr>
+<td>T1</td>
+<td>Read Key1 (Version&#x3D;0)</td>
+<td>Begin</td>
+<td></td>
+</tr>
+<tr>
+<td>T2</td>
+<td>Modify Key1→ValueA</td>
+<td>Read Key1 (Version&#x3D;0)</td>
+<td></td>
+</tr>
+<tr>
+<td>T3</td>
+<td></td>
+<td>Modify Key1→ValueB</td>
+<td></td>
+</tr>
+<tr>
+<td>T4</td>
+<td></td>
+<td>Commit ✅ (Version&#x3D;1)</td>
+<td>Version&#x3D;1 (ValueB)</td>
+</tr>
+<tr>
+<td>T5</td>
+<td>Attempt Commit ❌</td>
+<td></td>
+<td>检测到Key1已更新</td>
+</tr>
+</tbody></table>
+<p>在这个例子中, 更早创建的事务A和和更晚创建的事务B在读写了同一个<code>Key1</code>, 事务B先提交, 并且更新了<code>Key1</code>的值为<code>ValueB</code>, 事务A在提交后, 数据库中面临这样的问题: 以哪一个版本的修改为准?</p>
+<p>以上问题就是一种事务冲突，在<code>KV存储</code>中，事务冲突的解决方式直接取决于<strong>隔离级别</strong>的设计。以下是不同隔离级别的处理差异：</p>
+<table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th>事务A提交结果</th>
+<th>原因</th>
+<th>最终Key1值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>读未提交</strong></td>
+<td>✅ 成功</td>
+<td>允许覆盖未提交数据，但导致事务B的修改丢失（违反原子性）</td>
+<td>ValueA</td>
+</tr>
+<tr>
+<td><strong>读已提交</strong></td>
+<td>❌ 中止</td>
+<td>检测到Key1已提交新版本（Version&#x3D;1 &gt; 事务A的起始版本）</td>
+<td>ValueB</td>
+</tr>
+<tr>
+<td><strong>可重复读</strong></td>
+<td>❌ 中止</td>
+<td>事务A的读快照锁定Version&#x3D;0，但写冲突仍存在</td>
+<td>ValueB</td>
+</tr>
+<tr>
+<td><strong>可串行化</strong></td>
+<td>❌ 中止</td>
+<td>通过范围锁阻止事务B写入，或强制事务串行执行</td>
+<td>ValueB</td>
+</tr>
+</tbody></table>
+<p>以上是<code>put</code>时是事务冲突, 基于这个案例, 同时有2个事务再去读取<code>key1</code>:</p>
+<blockquote>
+<p>假设初始时刻 <code>Key1 = Value0</code></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Timeline</th>
+<th>事务A (ID&#x3D;100)</th>
+<th>事务B (ID&#x3D;101)</th>
+<th>事务C (ID&#x3D;102)</th>
+<th>事务D (ID&#x3D;103)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T0</td>
+<td>Begin</td>
+<td></td>
+<td>Key1 &#x3D; Value0 (初始值)</td>
+<td>Key1 &#x3D; Value0 (初始值)</td>
+</tr>
+<tr>
+<td>T1</td>
+<td>Read Key1</td>
+<td>Begin</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>T2</td>
+<td>Modify Key1→ValueA</td>
+<td></td>
+<td>Begin</td>
+<td></td>
+</tr>
+<tr>
+<td>T3</td>
+<td></td>
+<td></td>
+<td>Read Key1 (Version&#x3D;❓)</td>
+<td></td>
+</tr>
+<tr>
+<td>T4</td>
+<td></td>
+<td>Read Key1</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>T5</td>
+<td></td>
+<td>Modify Key1→ValueB</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>T6</td>
+<td></td>
+<td>Attempt Commit ❓</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>T7</td>
+<td></td>
+<td></td>
+<td></td>
+<td>Begin</td>
+</tr>
+<tr>
+<td>T8</td>
+<td></td>
+<td></td>
+<td>Read Key1 (Key1&#x3D;❓)</td>
+<td>Read Key1 (Key1&#x3D;❓)</td>
+</tr>
+<tr>
+<td>T9</td>
+<td>Attempt Commit ❓</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>T10</td>
+<td></td>
+<td></td>
+<td>Read Key1 (Key1&#x3D;❓)</td>
+<td>Read Key1 (Key1&#x3D;❓)</td>
+</tr>
+</tbody></table>
+<p>这个场景下, 在事务A和B操作时, 另外还存在2个事务C和D在读取<code>key1</code>的值, 事务C和D的读取结果是仍然取决于隔离级别:</p>
+<h4 id="1-读未提交（Read-Uncommitted）"><a href="#1-读未提交（Read-Uncommitted）" class="headerlink" title="1. 读未提交（Read Uncommitted）"></a><strong>1. 读未提交（Read Uncommitted）</strong></h4><p>允许读取未提交的中间值（包括可能回滚的脏数据）。</p>
+<table>
+<thead>
+<tr>
+<th>事务</th>
+<th>T3（C读取）</th>
+<th>T8（C&#x2F;D读取）</th>
+<th>T10（C&#x2F;D读取）</th>
+<th>事务提交结果</th>
+<th>结果解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功</td>
+<td>不检测写冲突，直接覆盖事务B的提交（Key1&#x3D;ValueA）</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功</td>
+<td>事务B先提交（Key1&#x3D;ValueB），但被事务A覆盖</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>ValueA</td>
+<td>ValueB</td>
+<td>ValueA</td>
+<td>-</td>
+<td>T3读取事务A未提交的ValueA；T8时事务B已经提交，读ValueB；T10事务A提交后读ValueA</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>-</td>
+<td>ValueB</td>
+<td>ValueA</td>
+<td>-</td>
+<td>T8时事务A未提交，读ValueB；T10事务A提交后读ValueA</td>
+</tr>
+</tbody></table>
+<p><strong>最终Key1值</strong>：ValueA（事务A覆盖事务B）<br><strong>风险</strong>：事务B的合法提交被覆盖，数据一致性被破坏。</p>
+<hr>
+<h4 id="2-读已提交（Read-Committed）"><a href="#2-读已提交（Read-Committed）" class="headerlink" title="2. 读已提交（Read Committed）"></a><strong>2. 读已提交（Read Committed）</strong></h4><p>仅读取已提交的数据，但同一事务内多次读取结果可能不同。</p>
+<table>
+<thead>
+<tr>
+<th>事务</th>
+<th>T3（C读取）</th>
+<th>T8（C&#x2F;D读取）</th>
+<th>T10（C&#x2F;D读取）</th>
+<th>事务提交结果</th>
+<th>结果解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功 <br>or <br>❌中止</td>
+<td>只确保读取时的数据是提交的, 但不确保提交时没有冲突, 取决于具体的实现</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功</td>
+<td>事务B提交成功（Key1&#x3D;ValueB）</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Value0</td>
+<td>ValueB</td>
+<td>ValueA</td>
+<td>-</td>
+<td>T3时事务A&#x2F;B均未提交，读Value0；T8时事务B已提交，读ValueB, 最后T10时事务A提交，读ValueA</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>-</td>
+<td>ValueB</td>
+<td>ValueA</td>
+<td>-</td>
+<td>T8时事务B已提交，读ValueB, 最后T10时事务A提交，读ValueA</td>
+</tr>
+</tbody></table>
+<p><strong>最终Key1值</strong>：ValueA（事务A覆盖事务B）<br><strong>风险</strong>：事务B的合法提交被覆盖，数据一致性被破坏。<br><strong>相较于前者的优化</strong>: 读取的数据一定是已经提交的数据</p>
+<hr>
+<h4 id="3-可重复读（Repeatable-Read）"><a href="#3-可重复读（Repeatable-Read）" class="headerlink" title="3. 可重复读（Repeatable Read）"></a><strong>3. 可重复读（Repeatable Read）</strong></h4><p>基于首次读取时的值锚定，保证多次读取结果一致。</p>
+<table>
+<thead>
+<tr>
+<th>事务</th>
+<th>T3（C读取）</th>
+<th>T8（C&#x2F;D读取）</th>
+<th>T10（C&#x2F;D读取）</th>
+<th>事务提交结果</th>
+<th>结果解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>❌ 中止</td>
+<td>提交时检测到Key1已被事务B修改</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功</td>
+<td>事务B提交成功（Key1&#x3D;ValueB）</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Value0</td>
+<td>Value0</td>
+<td>Value0</td>
+<td>-</td>
+<td>事务C首次读取锚定Value0，后续读取强制复用</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>-</td>
+<td>ValueB</td>
+<td>ValueB</td>
+<td>-</td>
+<td>事务D首次读取时事务B已提交，锚定ValueB</td>
+</tr>
+</tbody></table>
+<p><strong>最终Key1值</strong>：ValueB<br><strong>实现难点</strong>：需在内存中维护事务首次读取的键值锚定表，防止Compaction清理旧版本。</p>
+<hr>
+<h4 id="5-可串行化（Serializable）"><a href="#5-可串行化（Serializable）" class="headerlink" title="5. 可串行化（Serializable）"></a><strong>5. 可串行化（Serializable）</strong></h4><p>通过锁机制强制事务串行执行，完全禁止并发冲突。</p>
+<table>
+<thead>
+<tr>
+<th>事务</th>
+<th>T3（C读取）</th>
+<th>T8（C&#x2F;D读取）</th>
+<th>T10（C&#x2F;D读取）</th>
+<th>事务提交结果</th>
+<th>结果解释</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>❌ 中止</td>
+<td>事务C持有Key1的共享锁，事务A尝试获取排他锁时被阻塞，最终超时中止</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>✅ 成功</td>
+<td>事务B在事务C释放锁后获取排他锁并提交</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Value0</td>
+<td>Value0</td>
+<td>Value0</td>
+<td>-</td>
+<td>事务C持有共享锁，保证读取一致性</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>-</td>
+<td>ValueB</td>
+<td>ValueB</td>
+<td>-</td>
+<td>事务D在事务B提交后读取ValueB</td>
+</tr>
+</tbody></table>
+<p><strong>最终Key1值</strong>：ValueB<br><strong>锁竞争时序</strong>：事务C的共享锁阻塞事务A&#x2F;B，事务B在事务C释放锁后提交。</p>
+<hr>
+<p>通过这个案例, 我们可以复习下MVCC在读已提交和可重复读的区别:</p>
+<ol>
+<li>读已提交: 读取时，快照基于当前这一次操作的时间</li>
+<li>可重复读: 读取时，快照基于事务创建的时间</li>
+</ol>
+<h1 id="3-本KV引擎的MVCC和事务设计"><a href="#3-本KV引擎的MVCC和事务设计" class="headerlink" title="3 本KV引擎的MVCC和事务设计"></a>3 本KV引擎的MVCC和事务设计</h1><h2 id="3-1-添加的元数据"><a href="#3-1-添加的元数据" class="headerlink" title="3.1 添加的元数据"></a>3.1 添加的元数据</h2><h3 id="3-1-2-架构设计"><a href="#3-1-2-架构设计" class="headerlink" title="3.1.2 架构设计"></a>3.1.2 架构设计</h3><p>通过事前的<code>MVCC</code>运行机制的分析可知, 在可重复读级别下, 我们需要记录这个事务开始的时间, 其实只需要记录这个事务的<code>id</code>就可以了, 因为我们可以设计一个事务管理器, 使得事务开始的时间严格按照事务<code>id</code>排序.</p>
+<p>另一方面, 如果是读已提交, 我们需要按理说需要记录每个读操作的时间, 但是实际上, 我们的<code>KV</code>存储引擎是追加写入的, 我们本身读取的相同<code>key</code>就是按照最近时间读取的, 不需要额外记录本次操作的时间戳。换句话说，假设你遍历整个存储引擎的键值对， 其都是按照插入时间从近到久排序的。</p>
+<p>故我们首先需要再键值对中记录事务<code>id</code>:</p>
+<p><img src="/../../../images/Proj/LSM/Block.drawio.png" alt="trac_id"></p>
+<p>同时, 我们需要在每个<code>SST</code>中记录事务<code>id</code>的范围:</p>
+<p><img src="/../../../images/Proj/LSM/SST2.drawio.png" alt="MemTable-SST"></p>
+<h3 id="3-1-2-代码修改"><a href="#3-1-2-代码修改" class="headerlink" title="3.1.2 代码修改"></a>3.1.2 代码修改</h3><p><strong>编码代码修改</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/block/block.cpp</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Block::add_entry</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value,</span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">uint64_t</span> tranc_id, <span class="type">bool</span> force_write)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!force_write &amp;&amp;</span><br><span class="line">      (<span class="built_in">cur_size</span>() + key.<span class="built_in">size</span>() + value.<span class="built_in">size</span>() + <span class="number">3</span> * <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) +</span><br><span class="line">           <span class="built_in">sizeof</span>(<span class="type">uint64_t</span>) &gt;</span><br><span class="line">       capacity) &amp;&amp;</span><br><span class="line">      !offsets.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 计算entry大小：key长度(2B) + key + value长度(2B) + value</span></span><br><span class="line">  <span class="type">size_t</span> entry_size = <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) + key.<span class="built_in">size</span>() + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) +</span><br><span class="line">                      value.<span class="built_in">size</span>() + <span class="built_in">sizeof</span>(<span class="type">uint64_t</span>);</span><br><span class="line">  <span class="type">size_t</span> old_size = data.<span class="built_in">size</span>();</span><br><span class="line">  data.<span class="built_in">resize</span>(old_size + entry_size);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 写入key长度</span></span><br><span class="line">  <span class="type">uint16_t</span> key_len = key.<span class="built_in">size</span>();</span><br><span class="line">  <span class="built_in">memcpy</span>(data.<span class="built_in">data</span>() + old_size, &amp;key_len, <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 写入key</span></span><br><span class="line">  <span class="built_in">memcpy</span>(data.<span class="built_in">data</span>() + old_size + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>), key.<span class="built_in">data</span>(), key_len);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 写入value长度</span></span><br><span class="line">  <span class="type">uint16_t</span> value_len = value.<span class="built_in">size</span>();</span><br><span class="line">  <span class="built_in">memcpy</span>(data.<span class="built_in">data</span>() + old_size + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) + key_len, &amp;value_len,</span><br><span class="line">         <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 写入value</span></span><br><span class="line">  <span class="built_in">memcpy</span>(data.<span class="built_in">data</span>() + old_size + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) + key_len + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>),</span><br><span class="line">         value.<span class="built_in">data</span>(), value_len);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 写入事务id</span></span><br><span class="line">  <span class="built_in">memcpy</span>(data.<span class="built_in">data</span>() + old_size + <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) + key_len +</span><br><span class="line">             <span class="built_in">sizeof</span>(<span class="type">uint16_t</span>) + value_len,</span><br><span class="line">         &amp;tranc_id, <span class="built_in">sizeof</span>(<span class="type">uint64_t</span>));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 记录偏移</span></span><br><span class="line">  offsets.<span class="built_in">push_back</span>(old_size);</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们每次添加一个键值对时, 都需要记录事务<code>id</code>。</p>
+<p>迭代器增加事务<code>id</code>的记录, 并且比较逻辑是, 事务<code>id</code>越大, 读到的值就是最新的, 排序优先级更高:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/skiplist/skiplist.h</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">SkipListNode</span> &#123;</span><br><span class="line">  std::string key_;   <span class="comment">// 节点存储的键</span></span><br><span class="line">  std::string value_; <span class="comment">// 节点存储的值</span></span><br><span class="line">  <span class="type">uint64_t</span> tranc_id_; <span class="comment">// 事务 id</span></span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SkipListNode&gt;&gt;</span><br><span class="line">      forward_; <span class="comment">// 指向不同层级的下一个节点的指针数组</span></span><br><span class="line">  std::vector&lt;std::weak_ptr&lt;SkipListNode&gt;&gt;</span><br><span class="line">      backward_; <span class="comment">// 指向不同层级的下一个节点的指针数组</span></span><br><span class="line">  <span class="built_in">SkipListNode</span>(<span class="type">const</span> std::string &amp;k, <span class="type">const</span> std::string &amp;v, <span class="type">int</span> level,</span><br><span class="line">               <span class="type">uint64_t</span> tranc_id)</span><br><span class="line">      : <span class="built_in">key_</span>(k), <span class="built_in">value_</span>(v), forward_(level, <span class="literal">nullptr</span>),</span><br><span class="line">        <span class="built_in">backward_</span>(level, std::<span class="built_in">weak_ptr</span>&lt;SkipListNode&gt;()), <span class="built_in">tranc_id_</span>(tranc_id) &#123;&#125;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">set_backward</span><span class="params">(<span class="type">int</span> level, std::shared_ptr&lt;SkipListNode&gt; node)</span> </span>&#123;</span><br><span class="line">    backward_[level] = std::<span class="built_in">weak_ptr</span>&lt;SkipListNode&gt;(node);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> SkipListNode &amp;other) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> key_ == other.key_ &amp;&amp; value_ == other.value_ &amp;&amp;</span><br><span class="line">           tranc_id_ == other.tranc_id_;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> SkipListNode &amp;other) <span class="type">const</span> &#123; <span class="keyword">return</span> !(*<span class="keyword">this</span> == other); &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>&lt;(<span class="type">const</span> SkipListNode &amp;other) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (key_ == other.key_) &#123;</span><br><span class="line">      <span class="comment">// key 相等时，trans_id 更大的优先级更高</span></span><br><span class="line">      <span class="keyword">return</span> tranc_id_ &gt; other.tranc_id_;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> key_ &lt; other.key_;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>&gt;(<span class="type">const</span> SkipListNode &amp;other) <span class="type">const</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (key_ == other.key_) &#123;</span><br><span class="line">      <span class="comment">// key 相等时，trans_id 更大的优先级更高</span></span><br><span class="line">      <span class="keyword">return</span> tranc_id_ &lt; other.tranc_id_;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> key_ &gt; other.key_;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><code>skiplist</code>在<code>put</code>时, 需要先定位到插入位置, 由于此时<code>skiplist</code>可能存储多个相同的<code>key</code>(事务<code>id</code>不同), 故查询的逻辑发生了变化, 需要同时整个<code>key</code>和<code>tranc_id</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/skiplist/skipList.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SkipList::put</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value,</span></span></span><br><span class="line"><span class="params"><span class="function">                   <span class="type">uint64_t</span> tranc_id)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 从最高层开始查找插入位置</span></span><br><span class="line">  <span class="comment">// 这里需要解引用, 用之前重载的`SkiplistNode`的比较函数进行排序, 而不是仅仅比较`key`</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = current_level - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) &#123;</span><br><span class="line">    <span class="keyword">while</span> (current-&gt;forward_[i] &amp;&amp; *current-&gt;forward_[i] &lt; *new_node) &#123;</span><br><span class="line">      current = current-&gt;forward_[i];</span><br><span class="line">    &#125;</span><br><span class="line">    update[i] = current;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>查询时的逻辑也会发生变化, 和<code>put</code>是类似的, 这里不进一步展示了</p>
+<h2 id="3-2-接口的变化"><a href="#3-2-接口的变化" class="headerlink" title="3.2 接口的变化"></a>3.2 接口的变化</h2><p>现在我们存储的数据从二元组<code>(key, value)</code>变成了<code>(key, value, tranc_id)</code>, 我们需要修改接口, 使得<code>put</code>和<code>get</code>等接口的数据类型也发生变化:</p>
+<p>迭代器定义更新, 使其包含事务<code>id</code>, 这里我们定义一个虚基类, 包含<code>get_tranc_id()</code>返回事务<code>id</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BaseIterator</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">using</span> value_type = std::pair&lt;std::string, std::string&gt;;</span><br><span class="line">  <span class="keyword">using</span> pointer = value_type *;</span><br><span class="line">  <span class="keyword">using</span> reference = value_type &amp;;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">virtual</span> BaseIterator &amp;<span class="keyword">operator</span>++() = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">virtual</span> <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> BaseIterator &amp;other) <span class="type">const</span> = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">virtual</span> <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> BaseIterator &amp;other) <span class="type">const</span> = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">virtual</span> value_type <span class="keyword">operator</span>*() <span class="type">const</span> = <span class="number">0</span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> IteratorType <span class="title">get_type</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">uint64_t</span> <span class="title">get_tranc_id</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">is_end</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">is_valid</span><span class="params">()</span> <span class="type">const</span> </span>= <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>其余<code>get</code>等<code>api</code>返回的都是这个基类迭代器的继承类, 例如<code>Skiplist</code>的<code>get</code>定义变成了:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">SkipListIterator <span class="title">SkipList::get</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">uint64_t</span> tranc_id)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>而不是之前的返回一个<code>std::pair&lt;std::string, std::string&gt;</code></p>
+<h2 id="3-3-查询的变化"><a href="#3-3-查询的变化" class="headerlink" title="3.3 查询的变化"></a>3.3 查询的变化</h2><p>查询时, 我们需要指定一个事务<code>id</code>, 通过<code>id</code>判断如何启用<code>mvcc</code>机制, 目前我们实现的隔离级别只有(<code>读未提交</code>, <code>读已提交</code>, <code>可重复读</code>)</p>
+<ol>
+<li>若为0表示我们的事务隔离级别是<code>读未提交</code>或<code>读已提交</code>(因为直接查询最新的记录即可, 不需要判断失误<code>id</code>是否合法)</li>
+<li>若指定的事务<code>id</code>, 并指定了事务的隔离级别为<code>可重复读</code>, 则需要判断<code>id</code>是否合法, 若不合法, 则返回<code>nullptr</code></li>
+</ol>
+<blockquote>
+<p>本项目只在<code>commit</code>后才将事务更改的键值对加入数据库, 否则只会暂存, 因此<code>读已提交</code>不需要判断事务<code>id</code></p>
+</blockquote>
+<p><strong>skiplist::get</strong><br>这里我们先展示体层组件<code>Skiplist::get</code>的变化:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">SkipListIterator <span class="title">SkipList::get</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">uint64_t</span> tranc_id)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// std::shared_lock&lt;std::shared_mutex&gt; slock(rw_mutex);</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> current = head;</span><br><span class="line">  <span class="comment">// 从最高层开始查找</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = current_level - <span class="number">1</span>; i &gt;= <span class="number">0</span>; --i) &#123;</span><br><span class="line">    <span class="keyword">while</span> (current-&gt;forward_[i] &amp;&amp; current-&gt;forward_[i]-&gt;key_ &lt; key) &#123;</span><br><span class="line">      current = current-&gt;forward_[i];</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 移动到最底层</span></span><br><span class="line">  current = current-&gt;forward_[<span class="number">0</span>];</span><br><span class="line">  <span class="keyword">if</span> (tranc_id == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// 如果没有开启可重复读，直接比较key即可</span></span><br><span class="line">    <span class="comment">// 如果找到匹配的key，返回value</span></span><br><span class="line">    <span class="keyword">if</span> (current &amp;&amp; current-&gt;key_ == key) &#123;</span><br><span class="line">      <span class="keyword">return</span> SkipListIterator&#123;current&#125;;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">while</span> (current &amp;&amp; current-&gt;key_ == key) &#123;</span><br><span class="line">      <span class="comment">// 如果开启了可重复读事务，只返回小于等于事务id的值</span></span><br><span class="line">      <span class="keyword">if</span> (tranc_id != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (current-&gt;tranc_id_ &lt;= tranc_id) &#123;</span><br><span class="line">          <span class="comment">// 满足事务可见性</span></span><br><span class="line">          <span class="keyword">return</span> SkipListIterator&#123;current&#125;;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">          <span class="comment">// 否则跳过</span></span><br><span class="line">          current = current-&gt;forward_[<span class="number">0</span>];</span><br><span class="line">        &#125;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 没有开启事务</span></span><br><span class="line">        <span class="keyword">return</span> SkipListIterator&#123;current&#125;;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 未找到返回空</span></span><br><span class="line">  <span class="keyword">return</span> SkipListIterator&#123;&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>变化只有一个, 如果开启了可重复读, 则需要判断<code>tranc_id</code>是否小于等于当前节点的<code>tranc_id</code>, 若是, 则返回当前节点, 否则跳过, 直到找到满足条件的节点或遍历完链表节点</p>
+<p><code>memtable</code>组件的<code>get</code>是对<code>skiplist</code>的<code>get</code>的封装, 改动类似, 这里就不展示了, 有兴趣去看仓库源码</p>
+<p><strong>sst::get</strong><br><code>sst</code>查询时返回的是迭代器<code>SStIterator</code>, 其会根据<code>key</code>进行定位, 现在其定位的依据需要额外添加事务<code>id</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/sst/sst_iterator.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SstIterator::seek</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!m_sst) &#123;</span><br><span class="line">    m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    m_block_idx = m_sst-&gt;<span class="built_in">find_block_idx</span>(key);</span><br><span class="line">    <span class="keyword">if</span> (m_block_idx == <span class="number">-1</span> || m_block_idx &gt;= m_sst-&gt;<span class="built_in">num_blocks</span>()) &#123;</span><br><span class="line">      <span class="comment">// 置为 end</span></span><br><span class="line">      <span class="comment">// <span class="doctag">TODO:</span> 这个边界情况需要添加单元测试</span></span><br><span class="line">      m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">      m_block_idx = m_sst-&gt;<span class="built_in">num_blocks</span>();</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">auto</span> block = m_sst-&gt;<span class="built_in">read_block</span>(m_block_idx);</span><br><span class="line">    <span class="keyword">if</span> (!block) &#123;</span><br><span class="line">      m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    m_block_it = std::<span class="built_in">make_shared</span>&lt;BlockIterator&gt;(block, key, max_tranc_id_);</span><br><span class="line">    <span class="keyword">if</span> (m_block_it-&gt;<span class="built_in">is_end</span>()) &#123;</span><br><span class="line">      <span class="comment">// block 中找不到</span></span><br><span class="line">      m_block_idx = m_sst-&gt;<span class="built_in">num_blocks</span>();</span><br><span class="line">      m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="built_in">catch</span> (<span class="type">const</span> std::exception &amp;) &#123;</span><br><span class="line">    m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其返回的迭代器是对<code>BlockIterator</code>的封装, 因此需要递归地修改:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line">BlockIterator::<span class="built_in">BlockIterator</span>(std::shared_ptr&lt;Block&gt; b, <span class="type">const</span> std::string &amp;key,</span><br><span class="line">                             <span class="type">uint64_t</span> tranc_id)</span><br><span class="line">    : <span class="built_in">block</span>(b), <span class="built_in">tranc_id_</span>(tranc_id), <span class="built_in">cached_value</span>(std::<span class="literal">nullopt</span>) &#123;</span><br><span class="line">  <span class="keyword">auto</span> key_idx_ops = block-&gt;<span class="built_in">get_idx_binary</span>(key, tranc_id);</span><br><span class="line">  <span class="keyword">if</span> (key_idx_ops.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    current_index = key_idx_ops.<span class="built_in">value</span>();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    current_index = block-&gt;offsets.<span class="built_in">size</span>();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">std::optional&lt;<span class="type">size_t</span>&gt; <span class="title">Block::get_idx_binary</span><span class="params">(<span class="type">const</span> std::string &amp;key,</span></span></span><br><span class="line"><span class="params"><span class="function">                                            <span class="type">uint64_t</span> tranc_id)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (offsets.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 二分查找</span></span><br><span class="line">  <span class="type">int</span> left = <span class="number">0</span>;</span><br><span class="line">  <span class="type">int</span> right = offsets.<span class="built_in">size</span>() - <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (left &lt;= right) &#123;</span><br><span class="line">    <span class="type">int</span> mid = left + (right - left) / <span class="number">2</span>;</span><br><span class="line">    <span class="type">size_t</span> mid_offset = offsets[mid];</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> cmp = <span class="built_in">compare_key_at</span>(mid_offset, key);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cmp == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">// 找到key，返回对应的value</span></span><br><span class="line">      <span class="comment">// 还需要判断事务id可见性</span></span><br><span class="line">      <span class="keyword">auto</span> new_mid = <span class="built_in">adjust_idx_by_tranc_id</span>(mid, tranc_id);</span><br><span class="line">      <span class="keyword">if</span> (new_mid == <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> new_mid;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (cmp &lt; <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">// 中间的key小于目标key，查找右半部分</span></span><br><span class="line">      left = mid + <span class="number">1</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 中间的key大于目标key，查找左半部分</span></span><br><span class="line">      right = mid - <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>get_idx_binary</code>就是核心的查询逻辑了, 这里在找到<code>key</code>相同时, 还通过<code>adjust_idx_by_tranc_id</code>调教位置, 保证<code>key</code>对应的事务<code>id</code>是满足当前查询的隔离性的:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 相同的key连续分布, 且相同的key的事务id从大到小排布</span></span><br><span class="line"><span class="comment">// 这里的逻辑是找到最接近 tranc_id 的键值对的索引位置</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">Block::adjust_idx_by_tranc_id</span><span class="params">(<span class="type">size_t</span> idx, <span class="type">uint64_t</span> tranc_id)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (idx &gt;= offsets.<span class="built_in">size</span>()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">// 索引超出范围</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> target_key = <span class="built_in">get_key_at</span>(offsets[idx]);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (tranc_id != <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">auto</span> cur_tranc_id = <span class="built_in">get_tranc_id_at</span>(offsets[idx]);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cur_tranc_id &lt;= tranc_id) &#123;</span><br><span class="line">      <span class="comment">// 当前记录可见，向前查找更接近的目标</span></span><br><span class="line">      <span class="type">size_t</span> prev_idx = idx;</span><br><span class="line">      <span class="keyword">while</span> (prev_idx &gt; <span class="number">0</span> &amp;&amp; <span class="built_in">is_same_key</span>(prev_idx - <span class="number">1</span>, target_key)) &#123;</span><br><span class="line">        prev_idx--;</span><br><span class="line">        <span class="keyword">auto</span> new_tranc_id = <span class="built_in">get_tranc_id_at</span>(offsets[prev_idx]);</span><br><span class="line">        <span class="keyword">if</span> (new_tranc_id &gt; tranc_id) &#123;</span><br><span class="line">          <span class="keyword">return</span> prev_idx + <span class="number">1</span>; <span class="comment">// 更新的记录不可见</span></span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> prev_idx;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 当前记录不可见，向后查找</span></span><br><span class="line">      <span class="type">size_t</span> next_idx = idx + <span class="number">1</span>;</span><br><span class="line">      <span class="keyword">while</span> (next_idx &lt; offsets.<span class="built_in">size</span>() &amp;&amp; <span class="built_in">is_same_key</span>(next_idx, target_key)) &#123;</span><br><span class="line">        <span class="keyword">auto</span> new_tranc_id = <span class="built_in">get_tranc_id_at</span>(offsets[next_idx]);</span><br><span class="line">        <span class="keyword">if</span> (new_tranc_id &lt;= tranc_id) &#123;</span><br><span class="line">          <span class="keyword">return</span> next_idx; <span class="comment">// 找到可见记录</span></span><br><span class="line">        &#125;</span><br><span class="line">        next_idx++;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">return</span> <span class="number">-1</span>; <span class="comment">// 没有找到满足条件的记录</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 没有开启事务的话, 直接选择最大的事务id的记录返回</span></span><br><span class="line">    <span class="type">size_t</span> prev_idx = idx;</span><br><span class="line">    <span class="keyword">while</span> (prev_idx &gt; <span class="number">0</span> &amp;&amp; <span class="built_in">is_same_key</span>(prev_idx - <span class="number">1</span>, target_key)) &#123;</span><br><span class="line">      prev_idx--;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> prev_idx;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-小节"><a href="#4-小节" class="headerlink" title="4 小节"></a>4 小节</h1><p>本章我们在数据编码时引入了事务<code>id</code>, 并且在<code>skiplist</code>、<code>memtable</code>和<code>sst</code>等组件的查询中中添加了事务<code>id</code>的判断, 使得查询可以满足事务隔离性, 但目前我们还不知道这些事务<code>id</code>是从哪里生成的, 我们在下一章中会引入事务管理器, 来管理事务<code>id</code>的生成。同时处理单词不开启事务查询时逻辑的兼容性。</p>
+<p>需要注意的是，在添加事务<code>id</code>后, 我们之前的封装迭代器, 例如<code>HeapIterator</code>也需要包含事务的隔离性判断, 这将在下一章中实现。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-KV%E5%AD%98%E5%82%A8%E4%B8%AD%E7%9A%84%E4%BA%8B%E5%8A%A1"><span class="toc-number">1.</span> <span class="toc-text">1 KV存储中的事务</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%BA%8B%E5%8A%A1%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 事务介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 隔离级别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-1-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E5%AE%9A%E4%B9%89%E4%B8%8E%E5%88%86%E7%B1%BB"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.2.1 隔离级别的定义与分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-2-KV%E5%AD%98%E5%82%A8%E4%B8%AD%E4%BA%8B%E5%8A%A1%E5%86%B2%E7%AA%81%E5%92%8C%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.2.2 KV存储中事务冲突和隔离级别的案例</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E8%AF%BB%E6%9C%AA%E6%8F%90%E4%BA%A4%EF%BC%88Read-Uncommitted%EF%BC%89"><span class="toc-number">1.2.2.1.</span> <span class="toc-text">1. 读未提交（Read Uncommitted）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E8%AF%BB%E5%B7%B2%E6%8F%90%E4%BA%A4%EF%BC%88Read-Committed%EF%BC%89"><span class="toc-number">1.2.2.2.</span> <span class="toc-text">2. 读已提交（Read Committed）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%EF%BC%88Repeatable-Read%EF%BC%89"><span class="toc-number">1.2.2.3.</span> <span class="toc-text">3. 可重复读（Repeatable Read）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E5%8F%AF%E4%B8%B2%E8%A1%8C%E5%8C%96%EF%BC%88Serializable%EF%BC%89"><span class="toc-number">1.2.2.4.</span> <span class="toc-text">5. 可串行化（Serializable）</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9C%ACKV%E5%BC%95%E6%93%8E%E7%9A%84MVCC%E5%92%8C%E4%BA%8B%E5%8A%A1%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">3 本KV引擎的MVCC和事务设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E6%B7%BB%E5%8A%A0%E7%9A%84%E5%85%83%E6%95%B0%E6%8D%AE"><span class="toc-number">2.1.</span> <span class="toc-text">3.1 添加的元数据</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.1.</span> <span class="toc-text">3.1.2 架构设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E4%BB%A3%E7%A0%81%E4%BF%AE%E6%94%B9"><span class="toc-number">2.1.2.</span> <span class="toc-text">3.1.2 代码修改</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8E%A5%E5%8F%A3%E7%9A%84%E5%8F%98%E5%8C%96"><span class="toc-number">2.2.</span> <span class="toc-text">3.2 接口的变化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%9F%A5%E8%AF%A2%E7%9A%84%E5%8F%98%E5%8C%96"><span class="toc-number">2.3.</span> <span class="toc-text">3.3 查询的变化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B0%8F%E8%8A%82"><span class="toc-number">3.</span> <span class="toc-text">4 小节</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&text=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1&body=Check out this article: http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&title=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&name=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/&t=C++从零开始实现LSM-Tree-KV存储-15-事务与MVCC设计1"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

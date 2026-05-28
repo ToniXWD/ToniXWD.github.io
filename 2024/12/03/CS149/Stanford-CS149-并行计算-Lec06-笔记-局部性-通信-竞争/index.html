@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一节课也相对简单，新的难点不多，简单梳理一下。 1 地址共享模型(续) 这张图展示了共享地址空间硬件架构的概念。根据图中的解释:  任何处理器都可以直接引用任何内存位置。这说明这种架构支持处理器对内存的直接访问。 以Intel Core i7处理器(Kaby Lake)为例, CPU核心和集成GPU通过一个环形互联(Ring&#x2F;Interconnect)连接在一起,这样它们可以共享内存。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争">
+<meta property="og:url" content="http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一节课也相对简单，新的难点不多，简单梳理一下。 1 地址共享模型(续) 这张图展示了共享地址空间硬件架构的概念。根据图中的解释:  任何处理器都可以直接引用任何内存位置。这说明这种架构支持处理器对内存的直接访问。 以Intel Core i7处理器(Kaby Lake)为例, CPU核心和集成GPU通过一个环形互联(Ring&#x2F;Interconnect)连接在一起,这样它们可以共享内存。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/cpu-architecture.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/ring-interconnect.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/crossbar.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/async-message-passing.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/arithmetic-intensity.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/sober-matrix.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/sober-matrix-grid.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/flat-communication.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec06/distributed-queue.png">
+<meta property="article:published_time" content="2024-12-03T07:17:42.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec06/cpu-architecture.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&&%20CUDA/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&text=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&is_video=false&description=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争&body=Check out this article: http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&name=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&t=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9C%B0%E5%9D%80%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B-%E7%BB%AD"><span class="toc-number">1.</span> <span class="toc-text">1 地址共享模型(续)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%A8%A1%E5%9E%8B"><span class="toc-number">2.</span> <span class="toc-text">2 消息传递模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%A8%A1%E5%9E%8B%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 消息传递模型基础概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 消息传递的优化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%AE%97%E6%9C%AF%E5%BC%BA%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">3 算术强度</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E9%80%9A%E4%BF%A1%E7%B1%BB%E5%9E%8B"><span class="toc-number">4.</span> <span class="toc-text">4 通信类型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%AB%9E%E4%BA%89"><span class="toc-number">5.</span> <span class="toc-text">5 竞争</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-03T07:17:42.000Z" class="dt-published" itemprop="datePublished">2024-12-03</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一节课也相对简单，新的难点不多，简单梳理一下。</p>
+<h1 id="1-地址共享模型-续"><a href="#1-地址共享模型-续" class="headerlink" title="1 地址共享模型(续)"></a>1 地址共享模型(续)</h1><p><img src="/../../images/CS149/Lec06/cpu-architecture.png" alt="cpu-architecture"></p>
+<p>这张图展示了共享地址空间硬件架构的概念。根据图中的解释:</p>
+<ol>
+<li>任何处理器都可以直接引用任何内存位置。这说明这种架构支持处理器对内存的直接访问。</li>
+<li>以Intel Core i7处理器(Kaby Lake)为例, CPU核心和集成GPU通过一个环形互联(Ring&#x2F;Interconnect)连接在一起,这样它们可以共享内存。</li>
+<li>内存控制器连接到系统内存,负责管理内存访问。</li>
+</ol>
+<p>总之,这种共享地址空间硬件架构允许任何处理器直接访问内存,而无需复杂的地址转换机制。这样可以提高整个系统的性能和并行处理能力。</p>
+<p><strong>环形互联</strong></p>
+<p><img src="/../../images/CS149/Lec06/ring-interconnect.png" alt="ring-interconnect"></p>
+<p>英特尔在”Sandy Bridge”微架构中引入环形互联(<code>Ring Interconnect</code>)概念。</p>
+<ol>
+<li><p>具体实现</p>
+<ul>
+<li>在这个架构中，每个CPU核心都有一个L3缓存”slice”(2MB)，并通过环形总线连接。</li>
+<li>系统代理(System Agent)和图形处理单元(Graphics)也通过相同的环形总线连接。</li>
+<li>每个L3缓存”slice”都连接到环形总线上两次。</li>
+</ul>
+</li>
+<li><p>通信机制</p>
+<ul>
+<li>环形总线支持4种不同类型的消息传输:请求、snoop、应答和数据传输。</li>
+<li>这样可以更好地支持处理器间的缓存一致性协议和数据共享。</li>
+</ul>
+</li>
+<li><p>性能优势</p>
+<ul>
+<li>理论峰值带宽可达435GB&#x2F;s,当每个核心访问其本地L3缓存slice时实现。</li>
+<li>这种架构提高了内部总线的利用率和并行处理能力。</li>
+</ul>
+</li>
+</ol>
+<p><strong>CrossBar &amp;&amp; NUMA</strong><br><img src="/../../images/CS149/Lec06/crossbar.png" alt="crossbar"></p>
+<p><code>Crossbar</code>:</p>
+<ul>
+<li>Crossbar 指的是一种互连架构,它采用十字交叉的方式将各个核心连接在一起。</li>
+<li>这种架构可以让任何一个核心都能直接访问其他所有核心,提高了处理器的并行处理能力。</li>
+<li>在 SUN Niagara 2 处理器中,Crossbar 互连负责连接8个CPU核心,使它们可以相互通信和共享资源。</li>
+</ul>
+<p>同时这里引出了<code>CCX (Core Complex)</code>的概念, 上面的<code>Crossbar</code>连接在一起的8个核心可以看做一个<code>CCX (Core Complex)</code>:</p>
+<p><strong>CCX (Core Complex):</strong></p>
+<ul>
+<li>CCX 代表 Core Complex,是一个包含多个CPU核心的集成单元。</li>
+<li>CCX 体现了处理器内部存在 <code>NUMA</code> (Non-Uniform Memory Access) 特性,不同CCX区域之间的内存访问延迟和带宽可能会有差异。</li>
+<li>软件优化需要考虑这种 <code>NUMA</code> 特性,合理调度线程和分配数据,才能发挥处理器的最佳性能。</li>
+</ul>
+<h1 id="2-消息传递模型"><a href="#2-消息传递模型" class="headerlink" title="2 消息传递模型"></a>2 消息传递模型</h1><h2 id="2-1-消息传递模型基础概念"><a href="#2-1-消息传递模型基础概念" class="headerlink" title="2.1 消息传递模型基础概念"></a>2.1 消息传递模型基础概念</h2><p>另一种并行计算模型是消息传递模型(Message Passing Model), 这种模型中, 每个处理器都有自己的地址空间, 处理器之间通过消息传递来进行通信。</p>
+<p>这里就不过多介绍了, 都是非常简单基础的概念, 观看课程视频或PPT即可。</p>
+<h2 id="2-2-消息传递的优化"><a href="#2-2-消息传递的优化" class="headerlink" title="2.2 消息传递的优化"></a>2.2 消息传递的优化</h2><p>消息传递一个常见的问题也是同步问题, 很多操作需要在<code>recv</code>之后才能进行, 这样就会导致性能问题。通常的解决方案是采用异步消息传递, 这样就可以在<code>recv</code>之前进行其他操作:</p>
+<p><img src="/../../images/CS149/Lec06/async-message-passing.png" alt="async-message-passing"></p>
+<ol>
+<li><strong>发送操作 send()</strong></li>
+</ol>
+<ul>
+<li>调用立即返回，不会阻塞</li>
+<li>发送缓冲区的数据在消息处理期间不能被调用线程修改</li>
+<li>调用线程可以在等待消息发送时执行其他工作</li>
+</ul>
+<ol start="2">
+<li><strong>接收操作 recv()</strong></li>
+</ol>
+<ul>
+<li>仅表明将来接收的意图，立即返回</li>
+<li>使用 checksend() 和 checkrecv() 来检查实际的发送&#x2F;接收状态</li>
+<li>调用线程可以在等待接收消息时执行其他工作</li>
+</ul>
+<h1 id="3-算术强度"><a href="#3-算术强度" class="headerlink" title="3 算术强度"></a>3 算术强度</h1><p><img src="/../../images/CS149/Lec06/arithmetic-intensity.png" alt="arithmetic-intensity"></p>
+<p>之前的课程中学习过, CPU运算是需要从内存中以<code>caceh line</code>为单位加载数据, 然后进行运算, 因此, 如果完成一次运算所需的数据越少, 那么运算的效率就越高。因此提出了<code>算术强度</code>(Arithmetic Intensity)的概念: <strong>算术强度 &#x3D; 计算量（如指令数）&#x2F; 通信量（如字节数）</strong></p>
+<p><strong>受算术强度启发的优化方案</strong></p>
+<p>这里以之前的<code>sober</code>矩阵运算为例, 原来的计算思路是, 以行为单位进行计算, 这样每次计算需要从另2个计算的线程中各自<code>recv</code>一行数据, 然后进行计算, 这样计算的通信量很大, 因此计算强度很低:</p>
+<p><img src="/../../images/CS149/Lec06/sober-matrix.png" alt="sober-matrix"></p>
+<p>因此可以将任务分配替换为正方形的网格划分, 从而减少通信量, 这在数学上就是将<code>算术强度</code>从转化为这个问题: <strong>周长相同的情况下, 什么形状的封闭图形的面积最大?</strong></p>
+<p><img src="/../../images/CS149/Lec06/sober-matrix-grid.png" alt="sober-matrix-grid"></p>
+<blockquote>
+<p>虽然圆才是周长相同的情况下面积最大的形状, 但是正方形明细更适合矩阵运算的网格划分</p>
+</blockquote>
+<h1 id="4-通信类型"><a href="#4-通信类型" class="headerlink" title="4 通信类型"></a>4 通信类型</h1><p>这里将通信的类型进行了划分:</p>
+<ol>
+<li>固有通信<code>Inherent communication</code></li>
+</ol>
+<ul>
+<li>这是在执行算法过程中<strong>必须</strong>在处理器之间传输的信息</li>
+<li>这种通信是算法本身所要求的，无法避免的</li>
+<li>假设条件：<ul>
+<li>无限容量的缓存</li>
+<li>最小粒度的数据传输</li>
+<li>其他理想条件</li>
+</ul>
+</li>
+</ul>
+<ol start="2">
+<li>人为通信<code>Artifactual communication</code></li>
+</ol>
+<ul>
+<li>指除了固有通信之外的所有其他通信</li>
+<li>这种通信源于系统实现的实际细节，比如：<ul>
+<li>缓存大小限制</li>
+<li>数据对齐要求</li>
+<li>系统架构限制</li>
+<li>实现方式的选择</li>
+</ul>
+</li>
+</ul>
+<h1 id="5-竞争"><a href="#5-竞争" class="headerlink" title="5 竞争"></a>5 竞争</h1><p>和共享地址空间一样, 消息传递模型也存在不少竞争问题, 这里直接看PPT吧。</p>
+<p>这里梳理下优化方案：</p>
+<p><strong>扁平通信的优化</strong><br>在消息传递模型中, <code>Contention</code>主要是因为资源在短时间内接受大量请求的情况, 会导致性能下降。通过合理的架构设计可以减少这种<code>Contention</code>的发生。这里典型的方案是彩玉类似租约的概念, 派生出自己的代理人, 从而减少<code>Contention</code>的发生。</p>
+<p><img src="/../../images/CS149/Lec06/flat-communication.png" alt="flat-communication"></p>
+<p><strong>分布式队列的优化</strong><br>这个优化方案之前已经介绍过了, 不同的队列可以相互窃取任务。</p>
+<p><img src="/../../images/CS149/Lec06/distributed-queue.png" alt="distributed-queue"></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9C%B0%E5%9D%80%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B-%E7%BB%AD"><span class="toc-number">1.</span> <span class="toc-text">1 地址共享模型(续)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%A8%A1%E5%9E%8B"><span class="toc-number">2.</span> <span class="toc-text">2 消息传递模型</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E6%A8%A1%E5%9E%8B%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 消息传递模型基础概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%B6%88%E6%81%AF%E4%BC%A0%E9%80%92%E7%9A%84%E4%BC%98%E5%8C%96"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 消息传递的优化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%AE%97%E6%9C%AF%E5%BC%BA%E5%BA%A6"><span class="toc-number">3.</span> <span class="toc-text">3 算术强度</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E9%80%9A%E4%BF%A1%E7%B1%BB%E5%9E%8B"><span class="toc-number">4.</span> <span class="toc-text">4 通信类型</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E7%AB%9E%E4%BA%89"><span class="toc-number">5.</span> <span class="toc-text">5 竞争</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&text=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&is_video=false&description=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争&body=Check out this article: http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&title=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&name=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/&t=Stanford-CS149-并行计算-Lec06-笔记-局部性-通信-竞争"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="基于 tiny-distributed-kv 现有 Raft 实现扩展为 CURP。这一节介绍整体的实现计划。 1 现有代码分析1.1 已实现组件   组件 文件 状态 说明    RaftNode src&#x2F;raft&#x2F;raft.cpp ✓ 完成 Raft 核心状态机   RaftServiceImpl src&#x2F;raft&#x2F;raft_rpc.cpp ✓ 完成 Raft RPC 服务   LogVec">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CURP共识算法详解-01-实现计划">
+<meta property="og:url" content="http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="基于 tiny-distributed-kv 现有 Raft 实现扩展为 CURP。这一节介绍整体的实现计划。 1 现有代码分析1.1 已实现组件   组件 文件 状态 说明    RaftNode src&#x2F;raft&#x2F;raft.cpp ✓ 完成 Raft 核心状态机   RaftServiceImpl src&#x2F;raft&#x2F;raft_rpc.cpp ✓ 完成 Raft RPC 服务   LogVec">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-28T07:46:00.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:42:45.257Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="共识协议">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>CURP共识算法详解-01-实现计划</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&text=CURP共识算法详解-01-实现计划"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&is_video=false&description=CURP共识算法详解-01-实现计划"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-01-实现计划&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&name=CURP共识算法详解-01-实现计划&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&t=CURP共识算法详解-01-实现计划"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%8E%B0%E6%9C%89%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">1 现有代码分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%B7%B2%E5%AE%9E%E7%8E%B0%E7%BB%84%E4%BB%B6"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 已实现组件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-Raft-%E5%AE%9E%E7%8E%B0%E7%89%B9%E7%82%B9"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 Raft 实现特点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Raft-vs-CURP-%E5%AF%B9%E6%AF%94"><span class="toc-number">2.</span> <span class="toc-text">2 Raft vs CURP 对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9E%B6%E6%9E%84%E5%B7%AE%E5%BC%82"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 架构差异</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%A3%E7%A0%81%E5%B1%82%E9%9D%A2%E7%9A%84%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 代码层面的关键差异</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92"><span class="toc-number">3.</span> <span class="toc-text">3 实现计划</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-1-Witness-%E5%AE%9E%E7%8E%B0%EF%BC%88%E4%BC%98%E5%85%88%E7%BA%A7%E6%9C%80%E9%AB%98%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">Phase 1: Witness 实现（优先级最高）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-Witness-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 Witness 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 可交换性检查实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-2-CurpMaster-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">Phase 2: CurpMaster 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-CurpMaster-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 CurpMaster 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%86%99%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 写操作流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-3-CurpClient-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.3.</span> <span class="toc-text">Phase 3: CurpClient 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-Client-%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 Client 接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E5%B9%B6%E8%A1%8C%E5%86%99%E6%B5%81%E7%A8%8B"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 并行写流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-4-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">3.4.</span> <span class="toc-text">Phase 4: 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">3.4.1.</span> <span class="toc-text">3.4.1 恢复流程</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E8%A7%84%E5%88%92"><span class="toc-number">4.</span> <span class="toc-text">4 文件结构规划</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%AE%9E%E7%8E%B0%E9%A1%BA%E5%BA%8F"><span class="toc-number">5.</span> <span class="toc-text">5 实现顺序</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%95%99%E5%AD%A6%E7%89%88%E7%AE%80%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-number">6.</span> <span class="toc-text">6 教学版简化策略</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">7 下一步</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CURP共识算法详解-01-实现计划
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2026-05-28T07:46:00.000Z" class="dt-published" itemprop="datePublished">2026-05-28</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/">tiny-distributed-kv</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%85%B1%E8%AF%86%E5%8D%8F%E8%AE%AE/" rel="tag">共识协议</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>基于 tiny-distributed-kv 现有 Raft 实现扩展为 CURP。这一节介绍整体的实现计划。</p>
+<h1 id="1-现有代码分析"><a href="#1-现有代码分析" class="headerlink" title="1 现有代码分析"></a>1 现有代码分析</h1><h2 id="1-1-已实现组件"><a href="#1-1-已实现组件" class="headerlink" title="1.1 已实现组件"></a>1.1 已实现组件</h2><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>文件</th>
+<th>状态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RaftNode</td>
+<td><code>src/raft/raft.cpp</code></td>
+<td>✓ 完成</td>
+<td>Raft 核心状态机</td>
+</tr>
+<tr>
+<td>RaftServiceImpl</td>
+<td><code>src/raft/raft_rpc.cpp</code></td>
+<td>✓ 完成</td>
+<td>Raft RPC 服务</td>
+</tr>
+<tr>
+<td>LogVec</td>
+<td><code>src/storage/log_vec.cpp</code></td>
+<td>✓ 完成</td>
+<td>持久化日志</td>
+</tr>
+<tr>
+<td>Timer</td>
+<td><code>src/utils/timer.cpp</code></td>
+<td>✓ 完成</td>
+<td>定时器</td>
+</tr>
+<tr>
+<td>gRPC Server</td>
+<td><code>src/grpc/grpc_server.cpp</code></td>
+<td>✓ 完成</td>
+<td>RPC 服务框架</td>
+</tr>
+</tbody></table>
+<h2 id="1-2-Raft-实现特点"><a href="#1-2-Raft-实现特点" class="headerlink" title="1.2 Raft 实现特点"></a>1.2 Raft 实现特点</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 现有 Raft 状态机</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RaftNode</span> &#123;</span><br><span class="line">    RaftState role;           <span class="comment">// LEADER/FOLLOWER/CANDIDATE</span></span><br><span class="line">    <span class="type">int</span> currentTerm;</span><br><span class="line">    <span class="type">int</span> votedFor;</span><br><span class="line">    LogVec log;               <span class="comment">// 持久化日志</span></span><br><span class="line">    vector&lt;<span class="type">uint64_t</span>&gt; nextIndex;</span><br><span class="line">    vector&lt;<span class="type">uint64_t</span>&gt; matchIndex;</span><br><span class="line">    <span class="type">uint64_t</span> commitIndex;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 关键流程</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">Elect</span><span class="params">()</span></span>;             <span class="comment">// 选举</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">SendHeartBeats</span><span class="params">()</span></span>;    <span class="comment">// 心跳/日志复制</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">handleAppendEntries</span><span class="params">()</span></span>;<span class="comment">// 处理日志复制响应</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="2-Raft-vs-CURP-对比"><a href="#2-Raft-vs-CURP-对比" class="headerlink" title="2 Raft vs CURP 对比"></a>2 Raft vs CURP 对比</h1><h2 id="2-1-架构差异"><a href="#2-1-架构差异" class="headerlink" title="2.1 架构差异"></a>2.1 架构差异</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">Raft 架构:</span><br><span class="line">┌────────┐     ┌────────┐</span><br><span class="line">│ Client │────→│ Leader │────→ Majority</span><br><span class="line">└────────┘     └────────┘     (同步复制)</span><br><span class="line">                   ↓</span><br><span class="line">               2 RTT</span><br><span class="line"></span><br><span class="line">CURP 架构:</span><br><span class="line">┌────────┐     ┌────────┐</span><br><span class="line">│ Client │────→│ Master │────→ Backup (异步)</span><br><span class="line">└────────┘     └────────┘</span><br><span class="line">     │              ↑</span><br><span class="line">     └─────→ Witness × f</span><br><span class="line">              (并行)</span><br><span class="line">                   </span><br><span class="line">               1 RTT</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-代码层面的关键差异"><a href="#2-2-代码层面的关键差异" class="headerlink" title="2.2 代码层面的关键差异"></a>2.2 代码层面的关键差异</h2><table>
+<thead>
+<tr>
+<th>方面</th>
+<th>Raft</th>
+<th>CURP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>角色</strong></td>
+<td>Leader&#x2F;Follower&#x2F;Candidate</td>
+<td>Master&#x2F;Backup&#x2F;Witness</td>
+</tr>
+<tr>
+<td><strong>选举</strong></td>
+<td>复杂的多轮选举</td>
+<td>简化的 leader 选举（可复用 Raft）</td>
+</tr>
+<tr>
+<td><strong>写路径</strong></td>
+<td>同步复制到 majority</td>
+<td>异步复制 + Witness 记录</td>
+</tr>
+<tr>
+<td><strong>可交换性检查</strong></td>
+<td>无</td>
+<td>核心机制</td>
+</tr>
+<tr>
+<td><strong>推测执行</strong></td>
+<td>无</td>
+<td>执行后立即响应</td>
+</tr>
+<tr>
+<td><strong>恢复</strong></td>
+<td>从最新日志恢复</td>
+<td>Backup + Witness 重放</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="3-实现计划"><a href="#3-实现计划" class="headerlink" title="3 实现计划"></a>3 实现计划</h1><h2 id="Phase-1-Witness-实现（优先级最高）"><a href="#Phase-1-Witness-实现（优先级最高）" class="headerlink" title="Phase 1: Witness 实现（优先级最高）"></a>Phase 1: Witness 实现（优先级最高）</h2><p>Witness 是 CURP 的核心新组件。</p>
+<h3 id="3-1-1-Witness-数据结构"><a href="#3-1-1-Witness-数据结构" class="headerlink" title="3.1.1 Witness 数据结构"></a>3.1.1 Witness 数据结构</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/curp/witness.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> once</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unordered_map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Witness 存储的请求记录</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">WitnessRecord</span> &#123;</span><br><span class="line">    <span class="type">uint64_t</span> rpc_id;        <span class="comment">// RIFL 唯一标识</span></span><br><span class="line">    std::string key;        <span class="comment">// 操作的 key（用于可交换性检查）</span></span><br><span class="line">    std::vector&lt;<span class="type">uint8_t</span>&gt; request_data;  <span class="comment">// 序列化的请求</span></span><br><span class="line">    <span class="type">uint64_t</span> timestamp;     <span class="comment">// 用于 GC</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Witness</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Witness</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// RPC 接口</span></span><br><span class="line">    <span class="keyword">enum class</span> <span class="title class_">RecordResult</span> &#123;</span><br><span class="line">        ACCEPTED,</span><br><span class="line">        REJECTED_NOT_COMMUTATIVE,</span><br><span class="line">        REJECTED_NO_SPACE</span><br><span class="line">    &#125;;</span><br><span class="line">    </span><br><span class="line">    <span class="function">RecordResult <span class="title">record</span><span class="params">(<span class="type">const</span> std::string&amp; key, <span class="type">uint64_t</span> rpc_id, </span></span></span><br><span class="line"><span class="params"><span class="function">                        <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; request_data)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">garbage_collect</span><span class="params">(<span class="type">const</span> std::vector&lt;std::pair&lt;std::string, <span class="type">uint64_t</span>&gt;&gt;&amp; to_drop)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function">std::vector&lt;WitnessRecord&gt; <span class="title">get_recovery_data</span><span class="params">()</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">stop_accepting</span><span class="params">()</span></span>;  <span class="comment">// 进入恢复模式</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">reset</span><span class="params">()</span></span>;           <span class="comment">// 重置为新 Master</span></span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::mutex mtx_;</span><br><span class="line">    <span class="type">bool</span> accepting_ = <span class="literal">true</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 按 key hash 分组的 slots</span></span><br><span class="line">    std::unordered_map&lt;std::string, WitnessRecord&gt; records_;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 可交换性检查</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">isCommutative</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span> <span class="type">const</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-1-2-可交换性检查实现"><a href="#3-1-2-可交换性检查实现" class="headerlink" title="3.1.2 可交换性检查实现"></a>3.1.2 可交换性检查实现</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/curp/witness.cpp</span></span><br><span class="line"><span class="function">Witness::RecordResult <span class="title">Witness::record</span><span class="params">(<span class="type">const</span> std::string&amp; key, <span class="type">uint64_t</span> rpc_id,</span></span></span><br><span class="line"><span class="params"><span class="function">                                       <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; request_data)</span> </span>&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (!accepting_) &#123;</span><br><span class="line">        <span class="keyword">return</span> RecordResult::REJECTED_NOT_COMMUTATIVE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 检查是否与已存储的请求冲突</span></span><br><span class="line">    <span class="keyword">if</span> (records_.<span class="built_in">find</span>(key) != records_.<span class="built_in">end</span>()) &#123;</span><br><span class="line">        <span class="keyword">return</span> RecordResult::REJECTED_NOT_COMMUTATIVE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 检查空间</span></span><br><span class="line">    <span class="keyword">if</span> (records_.<span class="built_in">size</span>() &gt;= kMaxRecords) &#123;</span><br><span class="line">        <span class="keyword">return</span> RecordResult::REJECTED_NO_SPACE;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 存储记录</span></span><br><span class="line">    records_[key] = WitnessRecord&#123;</span><br><span class="line">        .rpc_id = rpc_id,</span><br><span class="line">        .key = key,</span><br><span class="line">        .request_data = request_data,</span><br><span class="line">        .timestamp = <span class="built_in">getCurrentTime</span>()</span><br><span class="line">    &#125;;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> RecordResult::ACCEPTED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Phase-2-CurpMaster-实现"><a href="#Phase-2-CurpMaster-实现" class="headerlink" title="Phase 2: CurpMaster 实现"></a>Phase 2: CurpMaster 实现</h2><h3 id="3-2-1-CurpMaster-数据结构"><a href="#3-2-1-CurpMaster-数据结构" class="headerlink" title="3.2.1 CurpMaster 数据结构"></a>3.2.1 CurpMaster 数据结构</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/curp/curp_master.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> once</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../raft/raft.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;witness.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unordered_set&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;atomic&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">enum class</span> <span class="title class_">CurpState</span> &#123;</span><br><span class="line">    NORMAL,</span><br><span class="line">    RECOVERING</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CurpMaster</span> : <span class="keyword">public</span> RaftNode &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">static</span> std::shared_ptr&lt;CurpMaster&gt; <span class="title">Create</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">        std::vector&lt;NodeConfig&gt; cluster_configs,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::vector&lt;NodeConfig&gt; witness_configs,</span></span></span><br><span class="line"><span class="params"><span class="function">        std::string log_dir,</span></span></span><br><span class="line"><span class="params"><span class="function">        <span class="type">uint64_t</span> cur_node_id)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Curp 特有的接口</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">proposeUpdate</span><span class="params">(<span class="type">const</span> std::string&amp; key, <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value)</span></span>;</span><br><span class="line">    <span class="function">std::string <span class="title">read</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span></span>;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// Witness 配置</span></span><br><span class="line">    std::vector&lt;NodeConfig&gt; witness_configs_;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;Witness&gt;&gt; witnesses_;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 未同步的 keys（用于可交换性检查）</span></span><br><span class="line">    std::unordered_set&lt;std::string&gt; unsynced_keys_;</span><br><span class="line">    std::mutex unsynced_mtx_;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 状态</span></span><br><span class="line">    std::atomic&lt;CurpState&gt; state_&#123;CurpState::NORMAL&#125;;</span><br><span class="line">    <span class="type">uint64_t</span> last_sync_index_&#123;<span class="number">0</span>&#125;;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 核心方法</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">canSpeculativeExecute</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">markUnsynced</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">asyncSyncToBackup</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">garbageCollectWitnesses</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-2-写操作流程"><a href="#3-2-2-写操作流程" class="headerlink" title="3.2.2 写操作流程"></a>3.2.2 写操作流程</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/curp/curp_master.cpp</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">CurpMaster::proposeUpdate</span><span class="params">(<span class="type">const</span> std::string&amp; key, </span></span></span><br><span class="line"><span class="params"><span class="function">                                 <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 1. 检查是否可以推测执行</span></span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">canSpeculativeExecute</span>(key)) &#123;</span><br><span class="line">        <span class="comment">// 慢路径：先 sync，再执行</span></span><br><span class="line">        <span class="built_in">syncToBackup</span>();</span><br><span class="line">        <span class="built_in">executeAndRespond</span>(key, value);</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 推测执行（快速路径）</span></span><br><span class="line">    <span class="built_in">markUnsynced</span>(key);</span><br><span class="line">    <span class="built_in">speculativeExecute</span>(key, value);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">CurpMaster::canSpeculativeExecute</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span> </span>&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(unsynced_mtx_)</span></span>;</span><br><span class="line">    <span class="comment">// 如果 key 在未同步集合中，不能推测执行</span></span><br><span class="line">    <span class="keyword">return</span> unsynced_keys_.<span class="built_in">find</span>(key) == unsynced_keys_.<span class="built_in">end</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CurpMaster::markUnsynced</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span> </span>&#123;</span><br><span class="line">    <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(unsynced_mtx_)</span></span>;</span><br><span class="line">    unsynced_keys_.<span class="built_in">insert</span>(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Phase-3-CurpClient-实现"><a href="#Phase-3-CurpClient-实现" class="headerlink" title="Phase 3: CurpClient 实现"></a>Phase 3: CurpClient 实现</h2><h3 id="3-3-1-Client-接口"><a href="#3-3-1-Client-接口" class="headerlink" title="3.3.1 Client 接口"></a>3.3.1 Client 接口</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/curp/curp_client.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> once</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;memory&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">WitnessConfig</span> &#123;</span><br><span class="line">    std::string addr;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">CurpConfig</span> &#123;</span><br><span class="line">    std::string master_addr;</span><br><span class="line">    std::vector&lt;WitnessConfig&gt; witness_configs;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CurpClient</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">CurpClient</span>(CurpConfig config);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 1 RTT 写操作</span></span><br><span class="line">    <span class="keyword">enum class</span> <span class="title class_">WriteResult</span> &#123;</span><br><span class="line">        SUCCESS,        <span class="comment">// 1 RTT 完成</span></span><br><span class="line">        SLOW_SUCCESS,   <span class="comment">// 2 RTT 完成（需要 sync）</span></span><br><span class="line">        FAILED</span><br><span class="line">    &#125;;</span><br><span class="line">    </span><br><span class="line">    <span class="function">WriteResult <span class="title">write</span><span class="params">(<span class="type">const</span> std::string&amp; key, <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value)</span></span>;</span><br><span class="line">    <span class="function">std::vector&lt;<span class="type">uint8_t</span>&gt; <span class="title">read</span><span class="params">(<span class="type">const</span> std::string&amp; key)</span></span>;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    CurpConfig config_;</span><br><span class="line">    <span class="type">uint64_t</span> next_rpc_id_&#123;<span class="number">1</span>&#125;;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 并行发送到 Master 和 Witness</span></span><br><span class="line">    <span class="function">WriteResult <span class="title">parallelWrite</span><span class="params">(<span class="type">const</span> std::string&amp; key, </span></span></span><br><span class="line"><span class="params"><span class="function">                               <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">recordToWitnesses</span><span class="params">(<span class="type">const</span> std::string&amp; key, <span class="type">uint64_t</span> rpc_id,</span></span></span><br><span class="line"><span class="params"><span class="function">                           <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; request_data)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-2-并行写流程"><a href="#3-3-2-并行写流程" class="headerlink" title="3.3.2 并行写流程"></a>3.3.2 并行写流程</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/curp/curp_client.cpp</span></span><br><span class="line"><span class="function">CurpClient::WriteResult <span class="title">CurpClient::write</span><span class="params">(<span class="type">const</span> std::string&amp; key,</span></span></span><br><span class="line"><span class="params"><span class="function">                                          <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value)</span> </span>&#123;</span><br><span class="line">    <span class="type">uint64_t</span> rpc_id = next_rpc_id_++;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 并行发送</span></span><br><span class="line">    <span class="keyword">auto</span> master_future = std::<span class="built_in">async</span>([&amp;]() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">sendToMaster</span>(key, value, rpc_id);</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">auto</span> witness_future = std::<span class="built_in">async</span>([&amp;]() &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">recordToWitnesses</span>(key, rpc_id, <span class="built_in">serializeRequest</span>(key, value));</span><br><span class="line">    &#125;);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 等待 Master 响应</span></span><br><span class="line">    <span class="keyword">auto</span> master_reply = master_future.<span class="built_in">get</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 等待 Witness 记录</span></span><br><span class="line">    <span class="type">bool</span> all_witness_accepted = witness_future.<span class="built_in">get</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (master_reply.success) &#123;</span><br><span class="line">        <span class="keyword">if</span> (all_witness_accepted) &#123;</span><br><span class="line">            <span class="keyword">return</span> WriteResult::SUCCESS;  <span class="comment">// 1 RTT</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (master_reply.synced) &#123;</span><br><span class="line">            <span class="keyword">return</span> WriteResult::SLOW_SUCCESS;  <span class="comment">// 2 RTT</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> WriteResult::FAILED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="Phase-4-恢复机制"><a href="#Phase-4-恢复机制" class="headerlink" title="Phase 4: 恢复机制"></a>Phase 4: 恢复机制</h2><h3 id="3-4-1-恢复流程"><a href="#3-4-1-恢复流程" class="headerlink" title="3.4.1 恢复流程"></a>3.4.1 恢复流程</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/curp/curp_recovery.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CurpMaster::recover</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    state_ = CurpState::RECOVERING;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Phase 1: 从 Backup 恢复有序数据（复用 Raft 恢复）</span></span><br><span class="line">    <span class="built_in">recoverFromBackup</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Phase 2: 从 Witness 重放无序请求</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; witness : witnesses_) &#123;</span><br><span class="line">        <span class="keyword">if</span> (witness-&gt;<span class="built_in">isAlive</span>()) &#123;</span><br><span class="line">            <span class="built_in">replayFromWitness</span>(witness);</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Phase 3: 同步到 Backup，完成恢复</span></span><br><span class="line">    <span class="built_in">syncToBackup</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// Phase 4: 重置 Witness</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span>&amp; witness : witnesses_) &#123;</span><br><span class="line">        witness-&gt;<span class="built_in">reset</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    state_ = CurpState::NORMAL;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CurpMaster::replayFromWitness</span><span class="params">(std::shared_ptr&lt;Witness&gt; witness)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 停止接受新请求</span></span><br><span class="line">    witness-&gt;<span class="built_in">stop_accepting</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 获取所有记录的请求</span></span><br><span class="line">    <span class="keyword">auto</span> records = witness-&gt;<span class="built_in">get_recovery_data</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 重放（顺序不重要，因为可交换）</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; record : records) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">alreadyExecuted</span>(record.rpc_id)) &#123;</span><br><span class="line">            <span class="built_in">replayRequest</span>(record);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="4-文件结构规划"><a href="#4-文件结构规划" class="headerlink" title="4 文件结构规划"></a>4 文件结构规划</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">tiny-distributed-kv/</span><br><span class="line">├── proto/</span><br><span class="line">│   ├── raft.proto          # 已有</span><br><span class="line">│   ├── node.proto          # 已有</span><br><span class="line">│   └── witness.proto       # 新增：Witness RPC</span><br><span class="line">│</span><br><span class="line">├── include/</span><br><span class="line">│   ├── raft/               # 已有，保持不变</span><br><span class="line">│   ├── curp/</span><br><span class="line">│   │   ├── witness.h       # 新增</span><br><span class="line">│   │   ├── curp_master.h   # 新增</span><br><span class="line">│   │   └── curp_client.h   # 新增</span><br><span class="line">│   └── grpc/</span><br><span class="line">│       └── witness_service_impl.h  # 新增</span><br><span class="line">│</span><br><span class="line">├── src/</span><br><span class="line">│   ├── raft/               # 已有</span><br><span class="line">│   ├── curp/</span><br><span class="line">│   │   ├── witness.cpp     # 新增</span><br><span class="line">│   │   ├── curp_master.cpp # 新增</span><br><span class="line">│   │   └── curp_client.cpp # 新增</span><br><span class="line">│   └── grpc/</span><br><span class="line">│       └── witness_service_impl.cpp  # 新增</span><br><span class="line">│</span><br><span class="line">└── test/</span><br><span class="line">    ├── dtest_curp.cpp      # 新增</span><br><span class="line">    └── dtest_witness.cpp   # 新增</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="5-实现顺序"><a href="#5-实现顺序" class="headerlink" title="5 实现顺序"></a>5 实现顺序</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">Phase 1: Witness（基础）</span><br><span class="line">├── [1] proto/witness.proto          # Witness RPC 定义</span><br><span class="line">├── [2] include/curp/witness.h       # Witness 数据结构</span><br><span class="line">├── [3] src/curp/witness.cpp         # Witness 实现</span><br><span class="line">├── [4] grpc/witness_service_impl    # Witness RPC 服务</span><br><span class="line">└── [5] test/dtest_witness.cpp       # Witness 单元测试</span><br><span class="line"></span><br><span class="line">Phase 2: CurpMaster（核心）</span><br><span class="line">├── [6] include/curp/curp_master.h   # CurpMaster 定义</span><br><span class="line">├── [7] src/curp/curp_master.cpp     # CurpMaster 实现</span><br><span class="line">└── [8] 扩展 Raft -&gt; CurpMaster 继承</span><br><span class="line"></span><br><span class="line">Phase 3: CurpClient（接口）</span><br><span class="line">├── [9] include/curp/curp_client.h   # Client 定义</span><br><span class="line">└── [10] src/curp/curp_client.cpp    # 并行写实现</span><br><span class="line"></span><br><span class="line">Phase 4: 恢复与完善</span><br><span class="line">├── [11] 恢复机制</span><br><span class="line">├── [12] GC 机制</span><br><span class="line">├── [13] 集成测试</span><br><span class="line">└── [14] 性能测试</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="6-教学版简化策略"><a href="#6-教学版简化策略" class="headerlink" title="6 教学版简化策略"></a>6 教学版简化策略</h1><p>作为教学版实现，可以做以下简化：</p>
+<table>
+<thead>
+<tr>
+<th>方面</th>
+<th>完整实现</th>
+<th>教学简化</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>RIFL</strong></td>
+<td>完整的去重机制</td>
+<td>简化的 RPC ID 检查</td>
+</tr>
+<tr>
+<td><strong>Witness 数量</strong></td>
+<td>f 个独立</td>
+<td>单个 Witness 即可演示</td>
+</tr>
+<tr>
+<td><strong>批量同步</strong></td>
+<td>自适应批大小</td>
+<td>固定周期同步</td>
+</tr>
+<tr>
+<td><strong>GC</strong></td>
+<td>复杂的 GC 策略</td>
+<td>简单的超时清理</td>
+</tr>
+<tr>
+<td><strong>配置管理</strong></td>
+<td>动态配置变更</td>
+<td>静态配置</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="7-下一步"><a href="#7-下一步" class="headerlink" title="7 下一步"></a>7 下一步</h1><p>下一节开始实现 <strong>Phase 1: Witness</strong>：</p>
+<ol>
+<li>创建 <code>proto/witness.proto</code></li>
+<li>实现 <code>Witness</code> 类和可交换性检查</li>
+<li>实现 <code>WitnessServiceImpl</code></li>
+<li>编写单元测试验证</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%8E%B0%E6%9C%89%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">1 现有代码分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%B7%B2%E5%AE%9E%E7%8E%B0%E7%BB%84%E4%BB%B6"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 已实现组件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-Raft-%E5%AE%9E%E7%8E%B0%E7%89%B9%E7%82%B9"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 Raft 实现特点</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Raft-vs-CURP-%E5%AF%B9%E6%AF%94"><span class="toc-number">2.</span> <span class="toc-text">2 Raft vs CURP 对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%9E%B6%E6%9E%84%E5%B7%AE%E5%BC%82"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 架构差异</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%A3%E7%A0%81%E5%B1%82%E9%9D%A2%E7%9A%84%E5%85%B3%E9%94%AE%E5%B7%AE%E5%BC%82"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 代码层面的关键差异</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92"><span class="toc-number">3.</span> <span class="toc-text">3 实现计划</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-1-Witness-%E5%AE%9E%E7%8E%B0%EF%BC%88%E4%BC%98%E5%85%88%E7%BA%A7%E6%9C%80%E9%AB%98%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">Phase 1: Witness 实现（优先级最高）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-1-Witness-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 Witness 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 可交换性检查实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-2-CurpMaster-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">Phase 2: CurpMaster 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-CurpMaster-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 CurpMaster 数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E5%86%99%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 写操作流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-3-CurpClient-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.3.</span> <span class="toc-text">Phase 3: CurpClient 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-Client-%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 Client 接口</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E5%B9%B6%E8%A1%8C%E5%86%99%E6%B5%81%E7%A8%8B"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 并行写流程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Phase-4-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">3.4.</span> <span class="toc-text">Phase 4: 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">3.4.1.</span> <span class="toc-text">3.4.1 恢复流程</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%96%87%E4%BB%B6%E7%BB%93%E6%9E%84%E8%A7%84%E5%88%92"><span class="toc-number">4.</span> <span class="toc-text">4 文件结构规划</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%AE%9E%E7%8E%B0%E9%A1%BA%E5%BA%8F"><span class="toc-number">5.</span> <span class="toc-text">5 实现顺序</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%95%99%E5%AD%A6%E7%89%88%E7%AE%80%E5%8C%96%E7%AD%96%E7%95%A5"><span class="toc-number">6.</span> <span class="toc-text">6 教学版简化策略</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E4%B8%8B%E4%B8%80%E6%AD%A5"><span class="toc-number">7.</span> <span class="toc-text">7 下一步</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&text=CURP共识算法详解-01-实现计划"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&is_video=false&description=CURP共识算法详解-01-实现计划"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-01-实现计划&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&title=CURP共识算法详解-01-实现计划"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&name=CURP共识算法详解-01-实现计划&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/&t=CURP共识算法详解-01-实现计划"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

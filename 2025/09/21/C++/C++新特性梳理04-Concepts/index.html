@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 Concepts 简介C++20 引入了 Concepts，这是一个革命性的特性，旨在解决模板编程中长期存在的问题，特别是编译错误信息晦涩难懂和对模板参数缺乏明确约束的问题。Concepts 提供了一种直接、清晰的方式来定义模板参数必须满足的接口要求。 在 C++20 之前，模板是“隐式契约”： 1234template&lt;typename T&gt;T add(T a, T b) &amp;#1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++新特性梳理-Concepts">
+<meta property="og:url" content="http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 Concepts 简介C++20 引入了 Concepts，这是一个革命性的特性，旨在解决模板编程中长期存在的问题，特别是编译错误信息晦涩难懂和对模板参数缺乏明确约束的问题。Concepts 提供了一种直接、清晰的方式来定义模板参数必须满足的接口要求。 在 C++20 之前，模板是“隐式契约”： 1234template&lt;typename T&gt;T add(T a, T b) &amp;#1">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-09-21T09:20:57.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.659Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta property="article:tag" content="C++20">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++新特性梳理-Concepts</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&text=C++新特性梳理-Concepts"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&is_video=false&description=C++新特性梳理-Concepts"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理-Concepts&body=Check out this article: http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&name=C++新特性梳理-Concepts&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&t=C++新特性梳理-Concepts"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Concepts-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Concepts 简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A6%82%E4%BD%95%E5%AE%9A%E4%B9%89Concept"><span class="toc-number">2.</span> <span class="toc-text">2 如何定义Concept</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%80%E4%BA%9B%E5%AE%9A%E4%B9%89-Concept-%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 一些定义 Concept 的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%9C%80%E6%B1%82%E7%9A%84%E8%AF%AD%E6%B3%95"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 需求的语法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E7%AE%80%E5%8D%95%E9%9C%80%E6%B1%82-Simple-Requirements"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 简单需求 (Simple Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E7%B1%BB%E5%9E%8B%E9%9C%80%E6%B1%82-Type-Requirements"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 类型需求 (Type Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E5%A4%8D%E5%90%88%E9%9C%80%E6%B1%82-Compound-Requirements"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 复合需求 (Compound Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E5%B5%8C%E5%A5%97%E9%9C%80%E6%B1%82-Nested-Requirements"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 嵌套需求 (Nested Requirements)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-5-%E6%80%BB%E7%BB%93%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="toc-number">2.2.4.1.</span> <span class="toc-text">2.2.5 总结对比表</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BD%BF%E7%94%A8-Concepts"><span class="toc-number">3.</span> <span class="toc-text">3 使用 Concepts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%87%E5%87%86%E5%BA%93%E4%B8%AD%E7%9A%84%E5%B8%B8%E7%94%A8-Concepts"><span class="toc-number">4.</span> <span class="toc-text">标准库中的常用 Concepts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8A%BF"><span class="toc-number">5.</span> <span class="toc-text">优势</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++新特性梳理-Concepts
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-09-21T09:20:57.000Z" class="dt-published" itemprop="datePublished">2025-09-21</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/C-20/" rel="tag">C++20</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-Concepts-简介"><a href="#1-Concepts-简介" class="headerlink" title="1 Concepts 简介"></a>1 Concepts 简介</h1><p>C++20 引入了 <strong>Concepts</strong>，这是一个革命性的特性，旨在解决模板编程中长期存在的问题，特别是编译错误信息晦涩难懂和对模板参数缺乏明确约束的问题。Concepts 提供了一种直接、清晰的方式来<strong>定义模板参数必须满足的接口要求</strong>。</p>
+<p>在 C++20 之前，模板是“隐式契约”：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function">T <span class="title">add</span><span class="params">(T a, T b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b; <span class="comment">// 隐含要求：T 必须支持 operator+</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果传入一个不支持 <code>+</code> 的类型（如 <code>std::thread</code>），编译器会报出一长串难以理解的错误信息，追溯到 <code>operator+</code> 调用失败。</p>
+<p><strong>Concepts 的目标就是将这种“隐式契约”变成“显式契约”</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">    <span class="keyword">requires</span> Addable&lt;T&gt; <span class="comment">// 显式要求 T 满足 Addable 概念</span></span><br><span class="line"><span class="function">T <span class="title">add</span><span class="params">(T a, T b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>现在，如果 <code>T</code> 不满足 <code>Addable</code>，编译器会直接告诉你“<code>T</code> 不满足 <code>Addable</code> 概念”，错误信息清晰明了。</p>
+<hr>
+<h1 id="2-如何定义Concept"><a href="#2-如何定义Concept" class="headerlink" title="2 如何定义Concept"></a>2 如何定义Concept</h1><h2 id="2-1-一些定义-Concept-的案例"><a href="#2-1-一些定义-Concept-的案例" class="headerlink" title="2.1 一些定义 Concept 的案例"></a>2.1 一些定义 Concept 的案例</h2><p>使用 <code>template</code> 和 <code>concept</code> 关键字，结合 <code>requires</code> 表达式来定义。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;concepts&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;type_traits&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义一个名为 Addable 的 concept</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Addable = <span class="built_in">requires</span>(T a, T b) &#123;</span><br><span class="line">    a + b; <span class="comment">// 要求表达式 a + b 是合法的</span></span><br><span class="line">    <span class="comment">// 可以添加更多要求，如返回类型</span></span><br><span class="line">    &#123; a + b &#125; -&gt; std::same_as&lt;T&gt;; <span class="comment">// 要求 a + b 的返回类型是 T</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义一个名为 Printable 的 concept</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Printable = <span class="built_in">requires</span>(T t, std::ostream&amp; os) &#123;</span><br><span class="line">    os &lt;&lt; t; <span class="comment">// 要求 T 支持输出到 ostream</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 定义一个更复杂的 concept：Number</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Number = std::is_arithmetic_v&lt;T&gt;; <span class="comment">// 基于类型特征</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 或者使用 requires 表达式</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Integral = <span class="built_in">requires</span>(T a) &#123;</span><br><span class="line">    <span class="keyword">requires</span> std::is_integral_v&lt;T&gt;;</span><br><span class="line">    <span class="comment">// 或者更直接地检查操作</span></span><br><span class="line">    &#123; a / <span class="number">2</span> &#125; -&gt; std::convertible_to&lt;T&gt;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-需求的语法"><a href="#2-2-需求的语法" class="headerlink" title="2.2 需求的语法"></a>2.2 需求的语法</h2><p>从前面的案例我们观察到, <code>Concept</code> 的定义中，我们使用了 <code>requires</code> 关键字，其后的块中我们定义了多个限制条件, 这些限制条件我们称为需求(<code>requirement</code>), 其有下面几种语法:</p>
+<hr>
+<h3 id="2-2-1-简单需求-Simple-Requirements"><a href="#2-2-1-简单需求-Simple-Requirements" class="headerlink" title="2.2.1 简单需求 (Simple Requirements)"></a>2.2.1 简单需求 (Simple Requirements)</h3><p><strong>语法：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">expression;</span><br></pre></td></tr></table></figure>
+
+<p><strong>作用：</strong><br>检查 <code>expression</code> 是否是一个<strong>语法上合法的表达式</strong>。它只关心表达式能否被正确解析和编译，而不关心其返回类型、值类别或语义。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Addable = <span class="built_in">requires</span>(T a, T b) &#123;</span><br><span class="line">    a + b; <span class="comment">// 检查 &quot;a + b&quot; 这个表达式是否语法合法</span></span><br><span class="line">           <span class="comment">// 即 T 类型的对象是否重载了 operator+</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>如果 <code>T</code> 定义了 <code>operator+</code>，这个需求就满足。</li>
+<li>它不关心 <code>a + b</code> 返回的是 <code>T</code>、<code>T&amp;</code>、<code>int</code> 还是其他任何类型，只要表达式能写出来就行。</li>
+</ul>
+<hr>
+<h3 id="2-2-2-类型需求-Type-Requirements"><a href="#2-2-2-类型需求-Type-Requirements" class="headerlink" title="2.2.2 类型需求 (Type Requirements)"></a>2.2.2 类型需求 (Type Requirements)</h3><p><strong>语法：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typename</span> type-id;</span><br></pre></td></tr></table></figure>
+
+<p><strong>作用：</strong><br>检查某个类型是否存在。常用于检查嵌套类型（如 <code>value_type</code>, <code>iterator</code>）。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> HasValueType = <span class="keyword">requires</span> &#123;</span><br><span class="line">    <span class="keyword">typename</span> T::value_type; <span class="comment">// 检查 T 是否有名为 value_type 的嵌套类型</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Iterator = <span class="built_in">requires</span>(T it) &#123;</span><br><span class="line">    <span class="keyword">typename</span> std::iterator_traits&lt;T&gt;::value_type; <span class="comment">// 检查迭代器的 value_type</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-2-3-复合需求-Compound-Requirements"><a href="#2-2-3-复合需求-Compound-Requirements" class="headerlink" title="2.2.3 复合需求 (Compound Requirements)"></a>2.2.3 复合需求 (Compound Requirements)</h3><p>这是最复杂也最强大的一种，使用花括号 <code>&#123;&#125;</code> 包围表达式，并可以附加约束。</p>
+<p><strong>基本语法：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; expression &#125; [<span class="keyword">noexcept</span>] [-&gt; type-constraint];</span><br></pre></td></tr></table></figure>
+
+<p>这里的 <code>-&gt;</code> <strong>不是</strong> JavaScript 的箭头函数，而是 C++ <code>requires</code> 表达式中用于指定<strong>返回类型约束</strong>的语法。</p>
+<p><strong>a: 只检查表达式合法性（等同于简单需求，但更灵活</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; a + b &#125;;</span><br></pre></td></tr></table></figure>
+<p>这与 <code>a + b;</code> 效果相同，检查 <code>a + b</code> 是否语法合法。</p>
+<p><strong>b: 检查表达式的返回类型</strong></p>
+<p>这才是复合需求的精髓：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&#123; a + b &#125; -&gt; std::same_as&lt;T&gt;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>分解解释：</strong></p>
+<ul>
+<li><code>&#123; a + b &#125;</code>: 被检查的表达式。</li>
+<li><code>-&gt;</code>: 引入对表达式结果的约束。</li>
+<li><code>std::same_as&lt;T&gt;</code>: 一个 <strong>type-constraint</strong>（类型约束），它是一个 concept，要求左侧的类型与 <code>T</code> <strong>完全相同</strong>。</li>
+</ul>
+<p><strong>这意味着：</strong><br><code>a + b</code> 不仅要语法合法，其<strong>求值结果的类型</strong>还必须与 <code>T</code> 是同一个类型。</p>
+<p><strong>对比：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 只检查语法</span></span><br><span class="line">a + b;                    <span class="comment">// OK if operator+ exists, regardless of return type</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 检查语法 AND return type</span></span><br><span class="line">&#123; a + b &#125; -&gt; std::same_as&lt;T&gt;; <span class="comment">// Fails if operator+ returns int, float, or T&amp;, but not exactly T</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>c: 更多返回类型约束的例子</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> AddableStrict = <span class="built_in">requires</span>(T a, T b) &#123;</span><br><span class="line">    &#123; a + b &#125; -&gt; std::convertible_to&lt;T&gt;; <span class="comment">// 要求返回类型可隐式转换为 T</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> EqualityComparable = <span class="built_in">requires</span>(T a, T b) &#123;</span><br><span class="line">    &#123; a == b &#125; -&gt; std::convertible_to&lt;<span class="type">bool</span>&gt;; <span class="comment">// 要求 a == b 返回可转为 bool 的类型</span></span><br><span class="line">    &#123; a != b &#125; -&gt; std::same_as&lt;<span class="type">bool</span>&gt;;        <span class="comment">// 要求 a != b 返回 exactly bool</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Callable = <span class="built_in">requires</span>(T f) &#123;</span><br><span class="line">    &#123; <span class="built_in">f</span>() &#125; -&gt; std::same_as&lt;<span class="type">int</span>&gt;; <span class="comment">// 要求 f() 调用返回 int</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>d:检查异常规范</strong></p>
+<p>复合需求还可以检查表达式是否 <code>noexcept</code>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&#123; a + b &#125; <span class="keyword">noexcept</span>; <span class="comment">// 要求 a + b 是 noexcept 表达式</span></span><br><span class="line">&#123; a + b &#125; <span class="keyword">noexcept</span> -&gt; std::same_as&lt;T&gt;; <span class="comment">// 要求 noexcept 且返回 T</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-2-4-嵌套需求-Nested-Requirements"><a href="#2-2-4-嵌套需求-Nested-Requirements" class="headerlink" title="2.2.4 嵌套需求 (Nested Requirements)"></a>2.2.4 嵌套需求 (Nested Requirements)</h3><p>使用 <code>requires</code> 关键字在内部引入额外的逻辑条件。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> SignedIntegral = <span class="built_in">requires</span>(T a) &#123;</span><br><span class="line">    <span class="keyword">requires</span> std::integral&lt;T&gt;;        <span class="comment">// 嵌套要求：T 必须是整型</span></span><br><span class="line">    <span class="keyword">requires</span> std::is_signed_v&lt;T&gt;;     <span class="comment">// 嵌套要求：T 必须是有符号的</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>注意：嵌套需求中的 <code>requires</code> 后面直接跟一个布尔常量表达式（通常是另一个 concept 或 <code>bool</code> 值），而不需要分号结束（它本身就是一个声明）。</p>
+<hr>
+<h4 id="2-2-5-总结对比表"><a href="#2-2-5-总结对比表" class="headerlink" title="2.2.5 总结对比表"></a>2.2.5 总结对比表</h4><table>
+<thead>
+<tr>
+<th align="left">语法形式</th>
+<th align="left">示例</th>
+<th align="left">检查内容</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>简单需求</strong></td>
+<td align="left"><code>a + b;</code></td>
+<td align="left"><code>a + b</code> 是否是合法表达式</td>
+</tr>
+<tr>
+<td align="left"><strong>复合需求 (无 -&gt;)</strong></td>
+<td align="left"><code>&#123; a + b &#125;;</code></td>
+<td align="left">同上，等价于简单需求</td>
+</tr>
+<tr>
+<td align="left"><strong>复合需求 (带 -&gt;)</strong></td>
+<td align="left"><code>&#123; a + b &#125; -&gt; std::same_as&lt;T&gt;;</code></td>
+<td align="left"><code>a + b</code> 合法 <strong>且</strong> 返回类型 <strong>完全等于</strong> <code>T</code></td>
+</tr>
+<tr>
+<td align="left"><strong>复合需求 (带 -&gt;)</strong></td>
+<td align="left"><code>&#123; a + b &#125; -&gt; std::convertible_to&lt;T&gt;;</code></td>
+<td align="left"><code>a + b</code> 合法 <strong>且</strong> 返回类型 <strong>可隐式转换为</strong> <code>T</code></td>
+</tr>
+<tr>
+<td align="left"><strong>复合需求 (noexcept)</strong></td>
+<td align="left"><code>&#123; a + b &#125; noexcept;</code></td>
+<td align="left"><code>a + b</code> 合法 <strong>且</strong> 是 <code>noexcept</code></td>
+</tr>
+<tr>
+<td align="left"><strong>类型需求</strong></td>
+<td align="left"><code>typename T::value_type;</code></td>
+<td align="left"><code>T</code> 是否有 <code>value_type</code> 嵌套类型</td>
+</tr>
+<tr>
+<td align="left"><strong>嵌套需求</strong></td>
+<td align="left"><code>requires std::integral&lt;T&gt;;</code></td>
+<td align="left">额外的布尔条件</td>
+</tr>
+</tbody></table>
+<hr>
+<p><strong>为什么需要 <code>-&gt;</code> 形式？</strong></p>
+<p>因为<strong>许多操作符的返回类型是有约定的</strong>。例如：</p>
+<ul>
+<li><code>operator+</code> 通常返回一个新对象（值类型），而不是引用。</li>
+<li><code>operator==</code> 应该返回 <code>bool</code>。</li>
+</ul>
+<p>使用 <code>&#123; expr &#125; -&gt; constraint;</code> 可以精确地强制这些约定，使你的 concept 更加严谨和符合直觉。而简单的 <code>expr;</code> 只保证了操作符的存在，无法保证其行为的正确性。</p>
+<p>因此，当你需要对表达式的<strong>返回类型</strong>进行约束时，就必须使用复合需求的 <code>-&gt;</code> 形式。</p>
+<h1 id="3-使用-Concepts"><a href="#3-使用-Concepts" class="headerlink" title="3 使用 Concepts"></a>3 使用 Concepts</h1><p>有多种语法形式：</p>
+<p><strong>形式一：函数模板参数列表中使用 (推荐)</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 使用 concept 作为模板参数的约束</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;Addable T&gt;</span></span><br><span class="line"><span class="function">T <span class="title">add</span><span class="params">(T a, T b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 多个 concept 约束 (使用逻辑运算符)</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;Addable T&gt;</span></span><br><span class="line"><span class="function">    <span class="keyword">requires</span> Printable&lt;T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_add</span><span class="params">(T a, T b)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="built_in">add</span>(a, b) &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等价的简化语法 (C++20)</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_add</span><span class="params">(Addable <span class="keyword">auto</span> a, Addable <span class="keyword">auto</span> b)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; (a + b) &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>形式二：类模板约束</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;Printable T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Logger</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">log</span><span class="params">(<span class="type">const</span> T&amp; value)</span> </span>&#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Log: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用</span></span><br><span class="line">Logger&lt;<span class="type">int</span>&gt; logger1;     <span class="comment">// OK</span></span><br><span class="line">Logger&lt;std::string&gt; logger2; <span class="comment">// OK</span></span><br><span class="line"><span class="comment">// Logger&lt;std::thread&gt; logger3; // 错误！std::thread 不满足 Printable</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>形式三：函数参数约束</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 直接约束函数参数</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">process</span><span class="params">(Integral <span class="keyword">auto</span> value)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Processing integer: &quot;</span> &lt;&lt; value &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用</span></span><br><span class="line"><span class="built_in">process</span>(<span class="number">42</span>);    <span class="comment">// OK</span></span><br><span class="line"><span class="built_in">process</span>(<span class="number">3.14</span>);  <span class="comment">// 错误！double 不是 Integral</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="标准库中的常用-Concepts"><a href="#标准库中的常用-Concepts" class="headerlink" title="标准库中的常用 Concepts"></a>标准库中的常用 Concepts</h1><p>C++20 标准库在 <code>&lt;concepts&gt;</code> 头文件中定义了许多预定义的 Concepts，可以直接使用：</p>
+<ul>
+<li><p><strong>基本类型特征相关</strong>:</p>
+<ul>
+<li><code>std::integral&lt;T&gt;</code>: <code>T</code> 是整型</li>
+<li><code>std::floating_point&lt;T&gt;</code>: <code>T</code> 是浮点型</li>
+<li><code>std::arithmetic&lt;T&gt;</code>: <code>T</code> 是算术类型（整型或浮点型）</li>
+<li><code>std::same_as&lt;T, U&gt;</code>: <code>T</code> 和 <code>U</code> 是同一类型</li>
+<li><code>std::derived_from&lt;Base, Derived&gt;</code>: <code>Derived</code> 从 <code>Base</code> 派生</li>
+</ul>
+</li>
+<li><p><strong>对象类别相关</strong>:</p>
+<ul>
+<li><code>std::movable&lt;T&gt;</code>: <code>T</code> 可移动</li>
+<li><code>std::copyable&lt;T&gt;</code>: <code>T</code> 可拷贝</li>
+<li><code>std::destructible&lt;T&gt;</code>: <code>T</code> 可析构</li>
+</ul>
+</li>
+<li><p><strong>可调用相关</strong>:</p>
+<ul>
+<li><code>std::invocable&lt;F, Args...&gt;</code>: <code>F</code> 可以用 <code>Args...</code> 调用</li>
+<li><code>std::predicate&lt;F, Args...&gt;</code>: <code>F</code> 是一个返回布尔值的可调用对象</li>
+</ul>
+</li>
+<li><p><strong>容器和迭代器相关</strong>:</p>
+<ul>
+<li><code>std::default_constructible&lt;T&gt;</code></li>
+<li><code>std::swappable&lt;T&gt;</code></li>
+<li><code>std::ranges::input_iterator&lt;It&gt;</code> (在 <code>&lt;ranges&gt;</code> 中)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h1 id="优势"><a href="#优势" class="headerlink" title="优势"></a>优势</h1><ol>
+<li><strong>清晰的编译错误</strong>：当类型不满足概念时，错误信息直接指出哪个概念未满足，而不是深入模板实例化的细节。</li>
+<li><strong>更好的代码文档</strong>：模板的意图和要求一目了然。</li>
+<li><strong>函数重载和特化</strong>：可以根据不同的 concept 选择最合适的函数重载或类特化。<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;std::integral T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(T)</span> </span>&#123; <span class="comment">/* 处理整型 */</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;std::floating_point T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(T)</span> </span>&#123; <span class="comment">/* 处理浮点型 */</span> &#125;</span><br></pre></td></tr></table></figure></li>
+<li><strong>提高代码安全性</strong>：在编译期强制执行接口契约。</li>
+</ol>
+<hr>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>C++20 的 <strong>Concepts</strong> 是模板编程的重大进步。它通过<strong>显式声明模板参数的约束条件</strong>，极大地提升了模板代码的可读性、可维护性和错误诊断能力。掌握 Concepts 是现代 C++ 编程的关键技能之一。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Concepts-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Concepts 简介</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A6%82%E4%BD%95%E5%AE%9A%E4%B9%89Concept"><span class="toc-number">2.</span> <span class="toc-text">2 如何定义Concept</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%80%E4%BA%9B%E5%AE%9A%E4%B9%89-Concept-%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 一些定义 Concept 的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E9%9C%80%E6%B1%82%E7%9A%84%E8%AF%AD%E6%B3%95"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 需求的语法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E7%AE%80%E5%8D%95%E9%9C%80%E6%B1%82-Simple-Requirements"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 简单需求 (Simple Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E7%B1%BB%E5%9E%8B%E9%9C%80%E6%B1%82-Type-Requirements"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 类型需求 (Type Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E5%A4%8D%E5%90%88%E9%9C%80%E6%B1%82-Compound-Requirements"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 复合需求 (Compound Requirements)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-4-%E5%B5%8C%E5%A5%97%E9%9C%80%E6%B1%82-Nested-Requirements"><span class="toc-number">2.2.4.</span> <span class="toc-text">2.2.4 嵌套需求 (Nested Requirements)</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-5-%E6%80%BB%E7%BB%93%E5%AF%B9%E6%AF%94%E8%A1%A8"><span class="toc-number">2.2.4.1.</span> <span class="toc-text">2.2.5 总结对比表</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BD%BF%E7%94%A8-Concepts"><span class="toc-number">3.</span> <span class="toc-text">3 使用 Concepts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%87%E5%87%86%E5%BA%93%E4%B8%AD%E7%9A%84%E5%B8%B8%E7%94%A8-Concepts"><span class="toc-number">4.</span> <span class="toc-text">标准库中的常用 Concepts</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%98%E5%8A%BF"><span class="toc-number">5.</span> <span class="toc-text">优势</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&text=C++新特性梳理-Concepts"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&is_video=false&description=C++新特性梳理-Concepts"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理-Concepts&body=Check out this article: http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&title=C++新特性梳理-Concepts"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&name=C++新特性梳理-Concepts&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/&t=C++新特性梳理-Concepts"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

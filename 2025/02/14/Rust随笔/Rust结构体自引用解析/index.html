@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="在 Rust 中，自引用结构体是一种特殊的结构体，其中某些字段引用了同一结构体中的其他字段。尽管这种设计非常有用，但由于 Rust 的所有权和生命周期规则，直接实现自引用结构体会遇到一些挑战。本文将详细介绍什么是自引用、为什么它会引起 Rust 报错，以及如何使用 ouroboros crate 来解决这些问题。 1. 什么是自引用？自引用是指一个结构体中的某些字段引用了该结构体中其他字段的数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Rust随笔-结构体自引用解析">
+<meta property="og:url" content="http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="在 Rust 中，自引用结构体是一种特殊的结构体，其中某些字段引用了同一结构体中的其他字段。尽管这种设计非常有用，但由于 Rust 的所有权和生命周期规则，直接实现自引用结构体会遇到一些挑战。本文将详细介绍什么是自引用、为什么它会引起 Rust 报错，以及如何使用 ouroboros crate 来解决这些问题。 1. 什么是自引用？自引用是指一个结构体中的某些字段引用了该结构体中其他字段的数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-02-14T07:30:05.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.664Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="Rust">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Rust随笔-结构体自引用解析</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/02/14/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-09-%E8%8C%83%E5%9B%B4%E6%9F%A5%E8%AF%A2/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&text=Rust随笔-结构体自引用解析"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&is_video=false&description=Rust随笔-结构体自引用解析"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rust随笔-结构体自引用解析&body=Check out this article: http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&name=Rust随笔-结构体自引用解析&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&t=Rust随笔-结构体自引用解析"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF%E8%87%AA%E5%BC%95%E7%94%A8%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1. 什么是自引用？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%87%AA%E5%BC%95%E7%94%A8%E6%8A%A5%E9%94%99%E8%A7%A3%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">2. 自引用报错解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-ouroboros-%E7%9A%84%E5%9F%BA%E7%A1%80%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">3.  ouroboros 的基础使用</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Rust随笔-结构体自引用解析
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-02-14T07:30:05.000Z" class="dt-published" itemprop="datePublished">2025-02-14</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/Rust%E9%9A%8F%E7%AC%94/">Rust随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Rust/" rel="tag">Rust</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>在 <code>Rust</code> 中，自引用结构体是一种特殊的结构体，其中某些字段引用了同一结构体中的其他字段。尽管这种设计非常有用，但由于 Rust 的所有权和生命周期规则，直接实现自引用结构体会遇到一些挑战。本文将详细介绍什么是自引用、为什么它会引起 Rust 报错，以及如何使用 <code>ouroboros</code> crate 来解决这些问题。</p>
+<h1 id="1-什么是自引用？"><a href="#1-什么是自引用？" class="headerlink" title="1. 什么是自引用？"></a>1. 什么是自引用？</h1><p>自引用是指一个结构体中的某些字段引用了该结构体中其他字段的数据。例如，假设我们想创建一个包含字符串和对该字符串切片引用的结构体：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">SelfReferential</span> &#123;</span><br><span class="line">    data: <span class="type">String</span>,</span><br><span class="line">    reference: &amp;<span class="type">str</span>, <span class="comment">// 引用同一结构体中的 `data`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中，<code>reference</code> 是一个对 <code>data</code> 的字符串切片引用。然而，这段代码会引发编译错误，因为 Rust 缺乏足够的信息来确保 <code>reference</code> 的生命周期不会超出 <code>data</code> 的生命周期。</p>
+<h1 id="2-自引用报错解析"><a href="#2-自引用报错解析" class="headerlink" title="2. 自引用报错解析"></a>2. 自引用报错解析</h1><p>接下来从生命周期的角度解释为什么自引用会引起 <code>Rust</code> 报错。<code>Rust</code> 的生命周期规则要求所有引用的生命周期必须明确，并且不能超过被引用数据的生命周期。下面是一个具体例子来分析为什么自引用会导致编译器报错:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[derive(Debug)]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">Example</span>&lt;<span class="symbol">&#x27;a</span>&gt; &#123;</span><br><span class="line">    s1: <span class="type">String</span>,</span><br><span class="line">    borrow_s1: <span class="type">Option</span>&lt;&amp;<span class="symbol">&#x27;a</span> <span class="type">str</span>&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">st</span> = Example &#123;</span><br><span class="line">        s1: <span class="string">&quot;Annabelle&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        borrow_s1: <span class="literal">None</span>,</span><br><span class="line">    &#125;;</span><br><span class="line">    st.borrow_s1 = <span class="title function_ invoke__">Some</span>(&amp;st.s1[..<span class="number">4</span>]);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;&#123;:?&#125;&quot;</span>, st);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>s1</code> 是一个拥有所有权的 <code>String</code>。</li>
+<li><code>borrow_s1</code> 是一个对 <code>s1</code> 的切片引用 (<code>&amp;&#39;a str</code>)。</li>
+<li><code>&#39;a</code> 是一个生命周期参数，表示 <code>borrow_s1</code> 引用的有效范围。</li>
+</ul>
+<p>虽然这段代码可以正常工作，但如果尝试从函数返回这样的结构体，就会出现问题：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">new</span>&lt;<span class="symbol">&#x27;a</span>&gt;() <span class="punctuation">-&gt;</span> Example&lt;<span class="symbol">&#x27;a</span>&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">st</span> = Example &#123;</span><br><span class="line">        s1: <span class="string">&quot;Annabelle&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        borrow_s1: <span class="literal">None</span>,</span><br><span class="line">    &#125;;</span><br><span class="line">    st.borrow_s1 = <span class="title function_ invoke__">Some</span>(&amp;st.s1[..<span class="number">4</span>]);</span><br><span class="line"></span><br><span class="line">    st</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上述代码会报以下错误：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">error[E0515]: cannot return value referencing local data `st.s1`</span><br><span class="line">  --&gt; src/main.rs:24:5</span><br><span class="line">   |</span><br><span class="line">22 |     st.borrow_s1 = Some(&amp;st.s1[..4]);</span><br><span class="line">   |                             ----------- `st.s1` is borrowed here</span><br><span class="line">23 |</span><br><span class="line">24 |     st</span><br><span class="line">   |     ^^^^^^ returns a value referencing data owned by the current function</span><br></pre></td></tr></table></figure>
+
+<p><strong>详细分析</strong></p>
+<ol>
+<li><strong>生命周期不匹配</strong>：<code>st.s1</code> 是一个局部变量，其生命周期仅限于 <code>new</code> 函数的作用域。而 <code>st.borrow_s1</code> 持有一个对 <code>st.s1</code> 的引用，这意味着它的生命周期也必须限制在 <code>new</code> 函数的作用域内。</li>
+<li><strong>所有权转移问题</strong>：当 <code>new</code> 函数返回 <code>st</code> 时，<code>st.s1</code> 的所有权会被转移到调用者。然而，<code>st.borrow_s1</code> 中的引用仍然指向原始的 <code>st.s1</code>，这会导致悬垂引用（dangling reference）。</li>
+</ol>
+<p>因此，Rust 编译器禁止返回这样的结构体，以确保内存安全。</p>
+<h1 id="3-ouroboros-的基础使用"><a href="#3-ouroboros-的基础使用" class="headerlink" title="3.  ouroboros 的基础使用"></a>3.  <code>ouroboros</code> 的基础使用</h1><p>为了解决自引用问题，Rust 社区开发了一个名为 <code>ouroboros</code> 的 crate。它通过代码生成的方式，帮助开发者安全地创建和管理自引用结构体。</p>
+<p><strong>添加依赖</strong></p>
+<p>首先，在项目的 <code>Cargo.toml</code> 文件中添加 <code>ouroboros</code> 依赖：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">ouroboros</span> = <span class="string">&quot;*&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>基础使用方法</strong></p>
+<p>以下是使用 <code>ouroboros</code> 创建自引用结构体的一个简单示例：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[ouroboros::self_referencing]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">SelfReferential</span> &#123;</span><br><span class="line">    data: <span class="type">String</span>,</span><br><span class="line">    <span class="meta">#[borrows(data)]</span> <span class="comment">// 指定该字段引用 `data`</span></span><br><span class="line">    reference: &amp;<span class="symbol">&#x27;this</span> <span class="type">str</span>, <span class="comment">// `&amp;&#x27;this str` 表示对 `data` 的引用</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="comment">// 使用 `SelfReferentialBuilder` 创建实例</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">sr_builder</span> = SelfReferentialBuilder &#123;</span><br><span class="line">        data: <span class="string">&quot;Hello, world!&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        reference_builder: |data: &amp;<span class="type">String</span>| data.<span class="title function_ invoke__">as_str</span>(), <span class="comment">// 定义如何构建引用</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调用 `build` 方法完成构造</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">sr</span> = sr_builder.<span class="title function_ invoke__">build</span>();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 访问引用</span></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Reference points to: &#123;&#125;&quot;</span>, sr.<span class="title function_ invoke__">borrow_reference</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解释</strong></p>
+<ol>
+<li>**<code>#[self_referencing]</code>**：标记这是一个自引用结构体。</li>
+<li>**<code>#[borrows(data)]</code>**：指定 <code>reference</code> 字段引用了 <code>data</code> 字段。</li>
+<li>**<code>SelfReferentialBuilder</code>**：<code>ouroboros</code> 自动生成的一个辅助类型，用于安全地构造自引用结构。</li>
+<li>**<code>reference_builder</code>**：一个闭包，定义如何从 <code>data</code> 构建引用。</li>
+</ol>
+<p><strong>复杂示例：多个字段的引用</strong></p>
+<p>如果需要引用多个字段，可以通过 <code>#[borrows(...)]</code> 标注多个字段：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[ouroboros::self_referencing]</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">MultiBorrow</span> &#123;</span><br><span class="line">    first_s1: <span class="type">String</span>,</span><br><span class="line">    last_s1: <span class="type">String</span>,</span><br><span class="line"></span><br><span class="line">    <span class="meta">#[borrows(first_s1)]</span></span><br><span class="line">    first_ref: &amp;<span class="symbol">&#x27;this</span> <span class="type">str</span>,</span><br><span class="line"></span><br><span class="line">    <span class="meta">#[borrows(last_s1)]</span></span><br><span class="line">    last_ref: &amp;<span class="symbol">&#x27;this</span> <span class="type">str</span>,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">main</span>() &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">mb_builder</span> = MultiBorrowBuilder &#123;</span><br><span class="line">        first_s1: <span class="string">&quot;Alice&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        last_s1: <span class="string">&quot;Smith&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line"></span><br><span class="line">        first_ref_builder: |first_s1: &amp;<span class="type">String</span>| first_s1.<span class="title function_ invoke__">as_str</span>(),</span><br><span class="line">        last_ref_builder: |last_s1: &amp;<span class="type">String</span>| last_s1.<span class="title function_ invoke__">as_str</span>(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">mb</span> = mb_builder.<span class="title function_ invoke__">build</span>();</span><br><span class="line"></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;First s1: &#123;&#125;&quot;</span>, mb.<span class="title function_ invoke__">borrow_first_ref</span>());</span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;Last s1: &#123;&#125;&quot;</span>, mb.<span class="title function_ invoke__">borrow_last_ref</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF%E8%87%AA%E5%BC%95%E7%94%A8%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1. 什么是自引用？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%87%AA%E5%BC%95%E7%94%A8%E6%8A%A5%E9%94%99%E8%A7%A3%E6%9E%90"><span class="toc-number">2.</span> <span class="toc-text">2. 自引用报错解析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-ouroboros-%E7%9A%84%E5%9F%BA%E7%A1%80%E4%BD%BF%E7%94%A8"><span class="toc-number">3.</span> <span class="toc-text">3.  ouroboros 的基础使用</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&text=Rust随笔-结构体自引用解析"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&is_video=false&description=Rust随笔-结构体自引用解析"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Rust随笔-结构体自引用解析&body=Check out this article: http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&title=Rust随笔-结构体自引用解析"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&name=Rust随笔-结构体自引用解析&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/&t=Rust随笔-结构体自引用解析"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

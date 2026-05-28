@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本节课程的内容相对简单, 很多内容大家在学习C++或者Java并发编程的时候都已经接触过了, 因此本笔记将只会记录相对陌生的部分。 课程主页： https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 并行编程的整体思路 这张图展示了并行编程的整体思路, 基本上分为以下几个步骤:  问题分解（Decomposition）  将主要问题拆分成多个较小的子问题（Su">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec04-笔记-并行编程基础">
+<meta property="og:url" content="http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本节课程的内容相对简单, 很多内容大家在学习C++或者Java并发编程的时候都已经接触过了, 因此本笔记将只会记录相对陌生的部分。 课程主页： https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 并行编程的整体思路 这张图展示了并行编程的整体思路, 基本上分为以下几个步骤:  问题分解（Decomposition）  将主要问题拆分成多个较小的子问题（Su">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec04/parallel-programming-overview.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec04/PDE-problem.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec04/PDE-decomposition.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec04/PDE-result.png">
+<meta property="article:published_time" content="2024-11-24T05:09:19.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec04/parallel-programming-overview.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec04-笔记-并行编程基础</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec05-%E7%AC%94%E8%AE%B0-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D%E4%B8%8E%E8%B0%83%E5%BA%A6/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&text=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&is_video=false&description=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础&body=Check out this article: http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&name=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&t=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E7%9A%84%E6%95%B4%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-number">1.</span> <span class="toc-text">1 并行编程的整体思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D"><span class="toc-number">2.</span> <span class="toc-text">2 任务分配</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E9%9D%99%E6%80%81%E5%88%86%E9%85%8D"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 静态分配</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A8%E6%80%81%E5%88%86%E9%85%8D"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 动态分配</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%A1%88%E4%BE%8B-1-PDE"><span class="toc-number">3.</span> <span class="toc-text">3 案例-1-PDE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-SPMD%E7%9A%84%E6%80%9D%E6%83%B3"><span class="toc-number">4.</span> <span class="toc-text">3 SPMD的思想</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%BB%E5%8A%A1%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4%E5%85%B1%E4%BA%AB"><span class="toc-number">5.</span> <span class="toc-text">4 任务通信方式——地址空间共享</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E9%94%81"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%B1%8F%E9%9A%9C"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 屏障</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">6.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec04-笔记-并行编程基础
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-11-24T05:09:19.000Z" class="dt-published" itemprop="datePublished">2024-11-24</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本节课程的内容相对简单, 很多内容大家在学习<code>C++</code>或者<code>Java</code>并发编程的时候都已经接触过了, 因此本笔记将只会记录相对陌生的部分。</p>
+<p>课程主页： <a target="_blank" rel="noopener" href="https://gfxcourses.stanford.edu/cs149/fall24">https://gfxcourses.stanford.edu/cs149/fall24</a></p>
+<h1 id="1-并行编程的整体思路"><a href="#1-并行编程的整体思路" class="headerlink" title="1 并行编程的整体思路"></a>1 并行编程的整体思路</h1><p><img src="/../../images/CS149/Lec04/parallel-programming-overview.png" alt="parallel-programming-overview"></p>
+<p>这张图展示了并行编程的整体思路, 基本上分为以下几个步骤:</p>
+<ol>
+<li><p>问题分解（Decomposition）</p>
+<ul>
+<li>将主要问题拆分成多个较小的子问题（Subproblems）</li>
+<li>这些子问题也被称为”tasks”或”work to do”</li>
+<li>分解的目标是找到可以并行处理的任务单元</li>
+</ul>
+</li>
+<li><p>任务分配（Assignment）</p>
+<ul>
+<li>将分解后的子任务分配给并行线程（Parallel Threads）</li>
+<li>这些并行线程被称为”workers”（工作者）</li>
+<li>需要考虑负载均衡，确保每个线程的工作量相对均匀</li>
+</ul>
+</li>
+<li><p>任务编排（Orchestration）</p>
+<ul>
+<li>安排线程之间的通信和协作方式</li>
+<li>确定线程间的依赖关系</li>
+<li>建立线程之间的数据流动路径</li>
+<li>管理线程间的同步机制</li>
+</ul>
+</li>
+<li><p>映射（Mapping）</p>
+<ul>
+<li>将并行程序映射到实际的硬件资源上</li>
+<li>决定如何在并行计算机上分配和执行任务</li>
+<li>考虑硬件架构的特点和限制</li>
+</ul>
+</li>
+</ol>
+<h1 id="2-任务分配"><a href="#2-任务分配" class="headerlink" title="2 任务分配"></a>2 任务分配</h1><h2 id="2-1-静态分配"><a href="#2-1-静态分配" class="headerlink" title="2.1 静态分配"></a>2.1 静态分配</h2><p>这里就不详细介绍了， 之前<code>ispc</code>那节课和<code>Assignment 1</code>都已经体会过了。</p>
+<h2 id="2-2-动态分配"><a href="#2-2-动态分配" class="headerlink" title="2.2 动态分配"></a>2.2 动态分配</h2><p>回顾之前<code>ispc</code>中的<code>task</code>和<code>worker</code>, 每个<code>worker</code>在完成了当前的<code>task</code>后, 会从队列中取出一个新的<code>task</code>。</p>
+<h1 id="3-案例-1-PDE"><a href="#3-案例-1-PDE" class="headerlink" title="3 案例-1-PDE"></a>3 案例-1-PDE</h1><p><img src="/../../images/CS149/Lec04/PDE-problem.png" alt="PDE-problem"></p>
+<p>这里每个像素点都依赖周围像素点, 由于存在相互依赖, 因此很难进行任务分解。这里的任务分解采用了一些近似:</p>
+<p><img src="/../../images/CS149/Lec04/PDE-decomposition.png" alt="PDE-decomposition"></p>
+<p>每一轮迭代中, 每个像素点都依赖周围像素点, 因此每个像素点都作为一个<code>task</code>, 可以指定:</p>
+<ol>
+<li>奇数轮迭代只计算偶数行、奇数列的像素点</li>
+<li>偶数轮迭代只计算奇数行、偶数列的像素点</li>
+</ol>
+<p>结果像这样：<br><img src="/../../images/CS149/Lec04/PDE-result.png" alt="PDE-result"></p>
+<p>这样的近似解虽然不精确, 但是速度快, 而且可以并行处理，且满足常规情况下的精度要求。</p>
+<h1 id="3-SPMD的思想"><a href="#3-SPMD的思想" class="headerlink" title="3 SPMD的思想"></a>3 SPMD的思想</h1><p><code>SPMD</code>是”Single Program Multiple Data”(单程序多数据)的缩写,这是并行计算中一种常见的编程范式。</p>
+<ol>
+<li><p><strong>基本概念</strong></p>
+<ul>
+<li>同一个程序在多个处理器上并行执行</li>
+<li>每个处理器执行相同的代码</li>
+<li>但是处理不同的数据集</li>
+</ul>
+</li>
+<li><p><strong>工作方式</strong></p>
+<ul>
+<li>所有处理器运行相同的程序副本</li>
+<li>每个处理器可以访问不同的数据</li>
+<li>通过处理器的ID号来区分不同的任务</li>
+</ul>
+</li>
+<li><p><strong>优势</strong></p>
+<ul>
+<li>编程模型简单直观</li>
+<li>易于实现负载均衡</li>
+<li>代码维护成本较低</li>
+</ul>
+</li>
+</ol>
+<p>实现示例:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// MPI程序示例</span></span><br><span class="line"><span class="type">int</span> rank, size;</span><br><span class="line">MPI_Init(&amp;argc, &amp;argv);</span><br><span class="line">MPI_Comm_rank(MPI_COMM_WORLD, &amp;rank);  <span class="comment">// 获取当前进程的rank</span></span><br><span class="line">MPI_Comm_size(MPI_COMM_WORLD, &amp;size);  <span class="comment">// 获取总进程数</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 根据rank处理不同的数据段</span></span><br><span class="line"><span class="type">int</span> local_start = rank * (N/size);</span><br><span class="line"><span class="type">int</span> local_end = (rank+<span class="number">1</span>) * (N/size);</span><br></pre></td></tr></table></figure>
+
+<p><code>SPMD</code>是MPI(消息传递接口)等并行计算框架中最常用的编程模式之一。它使得并行程序的开发变得更加简单和标准化。</p>
+<h1 id="4-任务通信方式——地址空间共享"><a href="#4-任务通信方式——地址空间共享" class="headerlink" title="4 任务通信方式——地址空间共享"></a>4 任务通信方式——地址空间共享</h1><h2 id="4-1-锁"><a href="#4-1-锁" class="headerlink" title="4.1 锁"></a>4.1 锁</h2><p>如果采用动态的任务分配的话, 那么每个<code>worker</code>之间需要进行通信, 地址空间共享是其中一种通信方式。</p>
+<p>但因为多个<code>worker</code>会同时访问共享的内存地址, 因此需要引入<code>Lock</code>等同步机制来避免竞争。</p>
+<h2 id="4-2-屏障"><a href="#4-2-屏障" class="headerlink" title="4.2 屏障"></a>4.2 屏障</h2><p>如果计算被分为不同阶段, 那么每个阶段结束时可能需要进行同步, 这种同步方式称为<code>屏障</code>（<code>Barrier</code>）。</p>
+<h1 id="5-小节"><a href="#5-小节" class="headerlink" title="5 小节"></a>5 小节</h1><p>感觉这节课没讲啥干货, 就不总结了…</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E7%9A%84%E6%95%B4%E4%BD%93%E6%80%9D%E8%B7%AF"><span class="toc-number">1.</span> <span class="toc-text">1 并行编程的整体思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%BB%E5%8A%A1%E5%88%86%E9%85%8D"><span class="toc-number">2.</span> <span class="toc-text">2 任务分配</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E9%9D%99%E6%80%81%E5%88%86%E9%85%8D"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 静态分配</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%8A%A8%E6%80%81%E5%88%86%E9%85%8D"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 动态分配</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%A1%88%E4%BE%8B-1-PDE"><span class="toc-number">3.</span> <span class="toc-text">3 案例-1-PDE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-SPMD%E7%9A%84%E6%80%9D%E6%83%B3"><span class="toc-number">4.</span> <span class="toc-text">3 SPMD的思想</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%BB%BB%E5%8A%A1%E9%80%9A%E4%BF%A1%E6%96%B9%E5%BC%8F%E2%80%94%E2%80%94%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4%E5%85%B1%E4%BA%AB"><span class="toc-number">5.</span> <span class="toc-text">4 任务通信方式——地址空间共享</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E9%94%81"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 锁</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%B1%8F%E9%9A%9C"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 屏障</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">6.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&text=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&is_video=false&description=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础&body=Check out this article: http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&title=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&name=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/&t=Stanford-CS149-并行计算-Lec04-笔记-并行编程基础"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

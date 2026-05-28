@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="上一小节完成了文件IO的封装类, 这一小节为Block设置一个缓存池 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 缓存池原理与设计1.1 缓存池的作用在LSM Tree的实现中，数据读取是以Block为单位进行的。为了提高热点Block的读取效率，我们引入了缓存池（Buffer Pool）。缓存池的主要作用主要是减少磁盘I&#x2F;O, 通">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-06-Block缓存池">
+<meta property="og:url" content="http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="上一小节完成了文件IO的封装类, 这一小节为Block设置一个缓存池 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 缓存池原理与设计1.1 缓存池的作用在LSM Tree的实现中，数据读取是以Block为单位进行的。为了提高热点Block的读取效率，我们引入了缓存池（Buffer Pool）。缓存池的主要作用主要是减少磁盘I&#x2F;O, 通">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-02-09T02:08:20.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.668Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-06-Block缓存池</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/02/11/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-07-%E5%8D%95%E6%9C%BA%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E5%AE%9E%E7%8E%B01/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/02/08/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-05-%E6%96%87%E4%BB%B6IO/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&text=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池&body=Check out this article: http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&name=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&t=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%93%E5%AD%98%E6%B1%A0%E5%8E%9F%E7%90%86%E4%B8%8E%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 缓存池原理与设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-1-%E7%BC%93%E5%AD%98%E6%B1%A0%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">1.1 缓存池的作用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-LRU-K%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">1.2 LRU-K算法原理</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 设计思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 具体实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9B%B4%E6%96%B0block%E8%AF%BB%E5%8F%96%E9%80%BB%E8%BE%91"><span class="toc-number">4.</span> <span class="toc-text">3 更新block读取逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">4 性能测试</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-06-Block缓存池
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-02-09T02:08:20.000Z" class="dt-published" itemprop="datePublished">2025-02-09</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>上一小节完成了文件IO的封装类, 这一小节为<code>Block</code>设置一个缓存池</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">https://github.com/Vanilla-Beauty/tiny-lsm</a></p>
+<h1 id="1-缓存池原理与设计"><a href="#1-缓存池原理与设计" class="headerlink" title="1 缓存池原理与设计"></a>1 缓存池原理与设计</h1><h1 id="1-1-缓存池的作用"><a href="#1-1-缓存池的作用" class="headerlink" title="1.1 缓存池的作用"></a>1.1 缓存池的作用</h1><p>在LSM Tree的实现中，数据读取是以<code>Block</code>为单位进行的。为了提高热点<code>Block</code>的读取效率，我们引入了缓存池（<code>Buffer Pool</code>）。缓存池的主要作用主要是减少磁盘I&#x2F;O, 通过将频繁访问的<code>Block</code>缓存到内存中，可以显著减少对磁盘的读取次数，从而提高系统的整体性能。因此这里我们的目的就是尽量让热点<code>Block</code>数据常驻内存。</p>
+<h2 id="1-2-LRU-K算法原理"><a href="#1-2-LRU-K算法原理" class="headerlink" title="1.2 LRU-K算法原理"></a>1.2 LRU-K算法原理</h2><p>这里我采用<code>LRU-K</code>算法来管理缓存池。其实主要原因是以前做过<code>CMN15445</code>, 里面实现过<code>LRU-K</code>算法, 稍作改进可以直接拿来用, 这里就偷个懒了。照例还是先简单介绍下<code>LRU-K</code>。</p>
+<p><code>LRU-K</code>（Least Recently Used with K accesses）是一种基于访问频率和时间的缓存淘汰策略。相比于传统的<code>LRU</code>（最近最少使用），<code>LRU-K</code>考虑了更复杂的访问模式，能够更好地适应实际应用场景中的数据访问特性。<code>LRU-K</code>仍然是使用键值对来索引缓存内容。</p>
+<p><strong>设计思路</strong></p>
+<ul>
+<li>Key：表示在决定淘汰某个缓存项时，会考虑该缓存项在过去K次访问的时间间隔。当K&#x3D;1时，LRU-K退化为普通的LRU。这里我的的<code>Blcok</code>可以由<code>(sst_id, block_id)</code>唯一索引, 因此缓存池的的<code>Block</code>索引键可以设计为<code>std::pair&lt;sst_id, block_id&gt;</code></li>
+<li>访问链表：每个缓存项都有一个访问历史记录，记录其最近K次的访问时间。当最近访问次数大于等于K次, 则放在链表首部, 不足K次的放在后半部分, 按照访问时间排序。</li>
+</ul>
+<p><strong>淘汰规则</strong></p>
+<ul>
+<li>当缓存池满时，选择那些在过去K次访问中时间间隔最长的缓存项进行淘汰。</li>
+<li>如果多个缓存项的时间间隔相同，则选择最早插入缓存池的那个项。</li>
+</ul>
+<h1 id="2-代码实现"><a href="#2-代码实现" class="headerlink" title="2 代码实现"></a>2 代码实现</h1><h2 id="2-1-设计思路"><a href="#2-1-设计思路" class="headerlink" title="2.1 设计思路"></a>2.1 设计思路</h2><p>这里采用一个简化的<code>LRU-K</code>实现, 我们不需要记录访问的时间戳, 而是用链表的顺序来表达最新的访问记录, 最新的访问置于链表头部。另一方面，为保证快速查询，我们还需要一个哈希表，这个哈希表的索引键为<code>std::pair&lt;sst_id, block_id&gt;</code>， 索引值为链表的迭代器， 因此结合二者可以简单实现查询和新增均为<code>O(1)</code>的缓存池。那怎么表达<code>LRU-K</code>呢? 很简单, 采用2个链表, 一个存储访问次数少于<code>k</code>次的缓存项, 一个存储访问次数大于等于<code>k</code>次的缓存项。</p>
+<p>首先看一下头文件的关键定义:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">CacheItem</span> &#123;</span><br><span class="line">  <span class="type">int</span> sst_id;</span><br><span class="line">  <span class="type">int</span> block_id;</span><br><span class="line">  std::shared_ptr&lt;Block&gt; cache_block;</span><br><span class="line">  <span class="type">uint64_t</span> access_count; <span class="comment">// 访问时间戳</span></span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 定义缓存池</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">BlockCache</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="type">size_t</span> capacity_;          <span class="comment">// 缓存容量</span></span><br><span class="line">  <span class="type">size_t</span> k_;                 <span class="comment">// LRU-K 中的 K 值</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 双向链表存储缓存项</span></span><br><span class="line">  std::list&lt;CacheItem&gt; cache_list_greater_k;</span><br><span class="line">  std::list&lt;CacheItem&gt; cache_list_less_k;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 哈希表索引缓存项</span></span><br><span class="line">  std::unordered_map&lt;std::pair&lt;<span class="type">int</span>, <span class="type">int</span>&gt;, std::list&lt;CacheItem&gt;::iterator,</span><br><span class="line">                     pair_hash, pair_equal&gt;</span><br><span class="line">      cache_map_;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>我们结合<code>cache_list_greater_k</code>, <code>cache_list_less_k</code>和<code>cache_map_</code>来整理一下流程:</p>
+<p><strong>查询</strong></p>
+<ol>
+<li>先通过<code>cache_map_</code>查询缓存项的迭代器, 通过迭代器的访问次数判断其属于哪个链表。<ol>
+<li><code>访问次数 &lt; k</code> -&gt; 属于 <code>cache_list_less_k</code><ol>
+<li>如果<code>访问次数 == k-1</code>，更新访问次数后就就等于k了，将其重新置于<code>cache_list_greater_k</code>的头部。</li>
+<li>否则更新后仍然属于<code>cache_list_greater_k</code>，但需要将其移动到<code>cache_list_greater_k</code>的头部。</li>
+</ol>
+</li>
+<li><code>访问次数 = k</code> -&gt; 属于 <code>cache_list_greater_k</code>, 将其置于<code>cache_list_greater_k</code>的头部。但<code>访问次数</code>就固定在<code>k</code>, 不继续增长了</li>
+</ol>
+</li>
+</ol>
+<p><strong>插入</strong></p>
+<ol>
+<li>先通过<code>cache_map_</code>查询缓存项是否存在, 存在则按照之前的步骤更新缓存项即可</li>
+<li>不存在的话, 判断缓存池是否已满<ol>
+<li>没有满<ol>
+<li>直接插入到<code>cache_list_less_k</code>头部，并更新cache_map_索引。</li>
+</ol>
+</li>
+<li>满了<ol>
+<li>如果<code>cache_list_less_k</code>不为空，从<code>cache_list_less_k</code>末尾淘汰一个缓存项，并插入新的缓存项到<code>cache_list_less_k</code>头部。</li>
+<li>如果<code>cache_list_less_k</code>为空，从<code>cache_list_greater_k</code>末尾淘汰一个缓存项，并插入新的缓存项到<code>cache_list_less_k</code>。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<h2 id="2-2-具体实现"><a href="#2-2-具体实现" class="headerlink" title="2.2 具体实现"></a>2.2 具体实现</h2><p>接下来就是具体代码了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../../include/block/block_cache.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../../include/block/block.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;chrono&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;list&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;memory&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unordered_map&gt;</span></span></span><br><span class="line"></span><br><span class="line">BlockCache::<span class="built_in">BlockCache</span>(<span class="type">size_t</span> capacity, <span class="type">size_t</span> k)</span><br><span class="line">    : <span class="built_in">capacity_</span>(capacity), <span class="built_in">k_</span>(k) &#123;&#125;</span><br><span class="line"></span><br><span class="line">BlockCache::~<span class="built_in">BlockCache</span>() = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line"><span class="function">std::shared_ptr&lt;Block&gt; <span class="title">BlockCache::get</span><span class="params">(<span class="type">int</span> sst_id, <span class="type">int</span> block_id)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">  ++total_requests_; <span class="comment">// 增加总请求数</span></span><br><span class="line">  <span class="keyword">auto</span> key = std::<span class="built_in">make_pair</span>(sst_id, block_id);</span><br><span class="line">  <span class="keyword">auto</span> it = cache_map_.<span class="built_in">find</span>(key);</span><br><span class="line">  <span class="keyword">if</span> (it == cache_map_.<span class="built_in">end</span>()) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">nullptr</span>; <span class="comment">// 缓存未命中</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  ++hit_requests_; <span class="comment">// 增加命中请求数</span></span><br><span class="line">  <span class="comment">// 更新访问次数</span></span><br><span class="line">  <span class="built_in">update_access_count</span>(it-&gt;second);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> it-&gt;second-&gt;cache_block;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">BlockCache::put</span><span class="params">(<span class="type">int</span> sst_id, <span class="type">int</span> block_id, std::shared_ptr&lt;Block&gt; block)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">  <span class="keyword">auto</span> key = std::<span class="built_in">make_pair</span>(sst_id, block_id);</span><br><span class="line">  <span class="keyword">auto</span> it = cache_map_.<span class="built_in">find</span>(key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (it != cache_map_.<span class="built_in">end</span>()) &#123;</span><br><span class="line">    <span class="comment">// 更新已有缓存项</span></span><br><span class="line">    <span class="comment">// ! 照理说 Block 类的数据是不可变的，这里的更新分支应该不会存在,</span></span><br><span class="line">    <span class="comment">// 只是debug用</span></span><br><span class="line">    it-&gt;second-&gt;cache_block = block;</span><br><span class="line">    <span class="built_in">update_access_count</span>(it-&gt;second);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 插入新缓存项</span></span><br><span class="line">    <span class="keyword">if</span> (cache_map_.<span class="built_in">size</span>() &gt;= capacity_) &#123;</span><br><span class="line">      <span class="comment">// 移除最久未使用的缓存项</span></span><br><span class="line">      <span class="keyword">if</span> (!cache_list_less_k.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">        <span class="comment">// 优先从 cache_list_less_k 中移除</span></span><br><span class="line">        cache_map_.<span class="built_in">erase</span>(std::<span class="built_in">make_pair</span>(cache_list_less_k.<span class="built_in">back</span>().sst_id,</span><br><span class="line">                                        cache_list_less_k.<span class="built_in">back</span>().block_id));</span><br><span class="line">        cache_list_less_k.<span class="built_in">pop_back</span>();</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        cache_map_.<span class="built_in">erase</span>(std::<span class="built_in">make_pair</span>(cache_list_greater_k.<span class="built_in">back</span>().sst_id,</span><br><span class="line">                                        cache_list_greater_k.<span class="built_in">back</span>().block_id));</span><br><span class="line">        cache_list_greater_k.<span class="built_in">pop_back</span>();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    CacheItem item = &#123;sst_id, block_id, block, <span class="number">1</span>&#125;;</span><br><span class="line">    cache_list_less_k.<span class="built_in">push_front</span>(item);</span><br><span class="line">    cache_map_[key] = cache_list_less_k.<span class="built_in">begin</span>();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">double</span> <span class="title">BlockCache::hit_rate</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">  <span class="keyword">return</span> total_requests_ == <span class="number">0</span></span><br><span class="line">             ? <span class="number">0.0</span></span><br><span class="line">             : <span class="built_in">static_cast</span>&lt;<span class="type">double</span>&gt;(hit_requests_) / total_requests_;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">BlockCache::current_time</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> std::chrono::steady_clock::<span class="built_in">now</span>().<span class="built_in">time_since_epoch</span>().<span class="built_in">count</span>();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">BlockCache::update_access_count</span><span class="params">(std::list&lt;CacheItem&gt;::iterator it)</span> </span>&#123;</span><br><span class="line">  ++it-&gt;access_count;</span><br><span class="line">  <span class="keyword">if</span> (it-&gt;access_count &lt; k_) &#123;</span><br><span class="line">    <span class="comment">// 更新后仍然位于cache_list_less_k</span></span><br><span class="line">    <span class="comment">// 重新置于cache_list_less_k头部</span></span><br><span class="line">    cache_list_less_k.<span class="built_in">splice</span>(cache_list_less_k.<span class="built_in">begin</span>(), cache_list_less_k, it);</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (it-&gt;access_count == k_) &#123;</span><br><span class="line">    <span class="comment">// 更新后满足k次访问, 升级链表</span></span><br><span class="line">    <span class="comment">// 从 cache_list_less_k 移动到 cache_list_greater_k 头部</span></span><br><span class="line">    <span class="keyword">auto</span> item = *it;</span><br><span class="line">    cache_list_less_k.<span class="built_in">erase</span>(it);</span><br><span class="line">    cache_list_greater_k.<span class="built_in">push_front</span>(item);</span><br><span class="line">    cache_map_[std::<span class="built_in">make_pair</span>(item.sst_id, item.block_id)] =</span><br><span class="line">        cache_list_greater_k.<span class="built_in">begin</span>();</span><br><span class="line">  &#125; <span class="keyword">else</span> <span class="keyword">if</span> (it-&gt;access_count &gt; k_) &#123;</span><br><span class="line">    <span class="comment">// 本来就位于 cache_list_greater_k</span></span><br><span class="line">    <span class="comment">// 移动到 cache_list_greater_k 头部</span></span><br><span class="line">    cache_list_greater_k.<span class="built_in">splice</span>(cache_list_greater_k.<span class="built_in">begin</span>(),</span><br><span class="line">                                cache_list_greater_k, it);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-更新block读取逻辑"><a href="#3-更新block读取逻辑" class="headerlink" title="3 更新block读取逻辑"></a>3 更新<code>block</code>读取逻辑</h1><p>有了缓存池后我们可以更新<code>block</code>的读取逻辑，即在读取<code>block</code>时先从缓存池中查找，如果命中则直接返回，否则从磁盘中读取:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 这里的 block_cache 就是我们实现的缓存池的指针</span></span><br><span class="line"><span class="function">std::shared_ptr&lt;Block&gt; <span class="title">SST::read_block</span><span class="params">(<span class="type">size_t</span> block_idx)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (block_idx &gt;= meta_entries.<span class="built_in">size</span>()) &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">out_of_range</span>(<span class="string">&quot;Block index out of range&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 先从缓存中查找</span></span><br><span class="line">  <span class="keyword">if</span> (block_cache != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">    <span class="keyword">auto</span> cache_ptr = block_cache-&gt;<span class="built_in">get</span>(<span class="keyword">this</span>-&gt;sst_id, block_idx);</span><br><span class="line">    <span class="keyword">if</span> (cache_ptr != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> cache_ptr;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;Block cache not set&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> <span class="keyword">auto</span> &amp;meta = meta_entries[block_idx];</span><br><span class="line">  <span class="type">size_t</span> block_size;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 计算block大小</span></span><br><span class="line">  <span class="keyword">if</span> (block_idx == meta_entries.<span class="built_in">size</span>() - <span class="number">1</span>) &#123;</span><br><span class="line">    block_size = meta_block_offset - meta.offset;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    block_size = meta_entries[block_idx + <span class="number">1</span>].offset - meta.offset;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 读取block数据</span></span><br><span class="line">  <span class="keyword">auto</span> block_data = file.<span class="built_in">read_to_slice</span>(meta.offset, block_size);</span><br><span class="line">  <span class="keyword">auto</span> block_res = Block::<span class="built_in">decode</span>(block_data, <span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 更新缓存</span></span><br><span class="line">  <span class="keyword">if</span> (block_cache != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">    block_cache-&gt;<span class="built_in">put</span>(<span class="keyword">this</span>-&gt;sst_id, block_idx, block_res);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;Block cache not set&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> block_res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其他地方还需要对缓存池进行初始化等操作, 但都是琐碎但简单的操作, 这里不陈述了, 建议直接看我的Github 源码</p>
+<h1 id="4-性能测试"><a href="#4-性能测试" class="headerlink" title="4 性能测试"></a>4 性能测试</h1><p>照理说, <code>block</code>原来从硬盘读取很费时间的, 这里我们实现缓存池后, 性能有质的飞跃, 那不妨找一个测试来试试:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">TEST_F</span>(LSMTest, Persistence) &#123;</span><br><span class="line">  std::unordered_map&lt;std::string, std::string&gt; kvs;</span><br><span class="line">  <span class="type">int</span> num = <span class="number">100000</span>;</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="function">LSM <span class="title">lsm</span><span class="params">(test_dir)</span></span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; num; ++i) &#123;</span><br><span class="line">      std::string key = <span class="string">&quot;key&quot;</span> + std::<span class="built_in">to_string</span>(i);</span><br><span class="line">      std::string value = <span class="string">&quot;value&quot;</span> + std::<span class="built_in">to_string</span>(i);</span><br><span class="line">      lsm.<span class="built_in">put</span>(key, value);</span><br><span class="line">      kvs[key] = value;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 删除之前被10整除的key</span></span><br><span class="line">      <span class="keyword">if</span> (i % <span class="number">10</span> == <span class="number">0</span> &amp;&amp; i != <span class="number">0</span>) &#123;</span><br><span class="line">        std::string del_key = <span class="string">&quot;key&quot;</span> + std::<span class="built_in">to_string</span>(i - <span class="number">10</span>);</span><br><span class="line">        lsm.<span class="built_in">remove</span>(del_key);</span><br><span class="line">        kvs.<span class="built_in">erase</span>(del_key);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="comment">// LSM destructor called here</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// Create new LSM instance</span></span><br><span class="line">  <span class="function">LSM <span class="title">lsm</span><span class="params">(test_dir)</span></span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; num; ++i) &#123;</span><br><span class="line">    std::string key = <span class="string">&quot;key&quot;</span> + std::<span class="built_in">to_string</span>(i);</span><br><span class="line">    <span class="keyword">if</span> (kvs.<span class="built_in">find</span>(key) != kvs.<span class="built_in">end</span>()) &#123;</span><br><span class="line">      <span class="built_in">EXPECT_EQ</span>(lsm.<span class="built_in">get</span>(key).<span class="built_in">value</span>(), kvs[key]);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="built_in">EXPECT_FALSE</span>(lsm.<span class="built_in">get</span>(key).<span class="built_in">has_value</span>());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个测试量够大, 也包含从文件读取<code>block</code>这一逻辑, 我们看看其测试时间:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ time xmake run test_lsm</span><br><span class="line">[==========] Running 5 tests from 1 <span class="built_in">test</span> suite.</span><br><span class="line">[----------] Global <span class="built_in">test</span> environment set-up.</span><br><span class="line">[----------] 5 tests from LSMTest</span><br><span class="line">[ RUN      ] LSMTest.BasicOperations</span><br><span class="line">[       OK ] LSMTest.BasicOperations (0 ms)</span><br><span class="line">[ RUN      ] LSMTest.Persistence</span><br><span class="line">[       OK ] LSMTest.Persistence (533 ms)</span><br><span class="line">[ RUN      ] LSMTest.LargeScaleOperations</span><br><span class="line">[       OK ] LSMTest.LargeScaleOperations (4 ms)</span><br><span class="line">[ RUN      ] LSMTest.IteratorOperations</span><br><span class="line">[       OK ] LSMTest.IteratorOperations (0 ms)</span><br><span class="line">[ RUN      ] LSMTest.MixedOperations</span><br><span class="line">[       OK ] LSMTest.MixedOperations (0 ms)</span><br><span class="line">[----------] 5 tests from LSMTest (539 ms total)</span><br><span class="line"></span><br><span class="line">[----------] Global <span class="built_in">test</span> environment tear-down</span><br><span class="line">[==========] 5 tests from 1 <span class="built_in">test</span> suite ran. (539 ms total)</span><br><span class="line">[  PASSED  ] 5 tests.</span><br><span class="line">xmake run test_lsm  0.61s user 0.01s system 98% cpu 0.629 total</span><br></pre></td></tr></table></figure>
+
+<p>我们<code>checkout</code>到之前的<code>commit</code>比较一下:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">$ time xmake run test_lsm</span><br><span class="line">[==========] Running 5 tests from 1 <span class="built_in">test</span> suite.</span><br><span class="line">[----------] Global <span class="built_in">test</span> environment set-up.</span><br><span class="line">[----------] 5 tests from LSMTest</span><br><span class="line">[ RUN      ] LSMTest.BasicOperations</span><br><span class="line">[       OK ] LSMTest.BasicOperations (0 ms)</span><br><span class="line">[ RUN      ] LSMTest.Persistence</span><br><span class="line">[       OK ] LSMTest.Persistence (1051 ms)</span><br><span class="line">[ RUN      ] LSMTest.LargeScaleOperations</span><br><span class="line">[       OK ] LSMTest.LargeScaleOperations (4 ms)</span><br><span class="line">[ RUN      ] LSMTest.IteratorOperations</span><br><span class="line">[       OK ] LSMTest.IteratorOperations (0 ms)</span><br><span class="line">[ RUN      ] LSMTest.MixedOperations</span><br><span class="line">[       OK ] LSMTest.MixedOperations (0 ms)</span><br><span class="line">[----------] 5 tests from LSMTest (1057 ms total)</span><br><span class="line"></span><br><span class="line">[----------] Global <span class="built_in">test</span> environment tear-down</span><br><span class="line">[==========] 5 tests from 1 <span class="built_in">test</span> suite ran. (1057 ms total)</span><br><span class="line">[  PASSED  ] 5 tests.</span><br><span class="line">xmake run test_lsm  1.02s user 0.12s system 98% cpu 1.160 total</span><br></pre></td></tr></table></figure>
+<p>可以看到速度提升差不多2倍, 从原来的<code>1051 ms</code>加速到<code>533 ms</code>, 并且其中还有部分时间是<code>sst</code>的编解码, 除去后性能提升会更明显。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%BC%93%E5%AD%98%E6%B1%A0%E5%8E%9F%E7%90%86%E4%B8%8E%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 缓存池原理与设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-1-%E7%BC%93%E5%AD%98%E6%B1%A0%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">2.</span> <span class="toc-text">1.1 缓存池的作用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-LRU-K%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">1.2 LRU-K算法原理</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 设计思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%85%B7%E4%BD%93%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 具体实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9B%B4%E6%96%B0block%E8%AF%BB%E5%8F%96%E9%80%BB%E8%BE%91"><span class="toc-number">4.</span> <span class="toc-text">3 更新block读取逻辑</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">5.</span> <span class="toc-text">4 性能测试</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&text=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池&body=Check out this article: http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&title=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&name=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/09/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-06-Block%E7%BC%93%E5%AD%98%E6%B1%A0/&t=C++从零开始实现LSM-Tree-KV存储-06-Block缓存池"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

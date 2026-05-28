@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="我们的主线内容其实都已经结束了, 这里先补充一些项目建设性方面的内容, 首先就是根据单元测试生成代码覆盖率的测试报告。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;a">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率">
+<meta property="og:url" content="http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="我们的主线内容其实都已经结束了, 这里先补充一些项目建设性方面的内容, 首先就是根据单元测试生成代码覆盖率的测试报告。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;a">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-05-27T03:10:16.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.670Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/05/08/%E9%A1%B9%E7%9B%AE/Tiny-LSM/%E7%95%AA%E5%A4%96-%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AA%20LSM%20%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%20Lab%20%E7%AD%89%E4%BD%A0%E6%9D%A5%E6%8C%91%E6%88%98/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&text=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率&body=Check out this article: http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&name=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&t=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 为什么需要代码覆盖率？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%B7%A5%E5%85%B7"><span class="toc-number">1.1.</span> <span class="toc-text">常见工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">1.2.</span> <span class="toc-text">常见的工作流</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.</span> <span class="toc-text">2 工具链使用介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%B7%A5%E5%85%B7%E9%93%BE%E8%AF%B4%E6%98%8E"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 工具链说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B7%A5%E5%85%B7%E9%93%BE%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 工具链安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-lcov-%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 lcov 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-genhtml-%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 genhtml 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-gcov-%E5%AE%89%E8%A3%85%EF%BC%88GCC-%E5%B7%A5%E5%85%B7%E9%93%BE%EF%BC%89"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 gcov 安装（GCC 工具链）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux"><span class="toc-number">2.2.3.1.</span> <span class="toc-text">Linux</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#macOS"><span class="toc-number">2.2.3.2.</span> <span class="toc-text">macOS</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%8E%B7%E5%8F%96%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E6%8A%A5%E5%91%8A"><span class="toc-number">3.</span> <span class="toc-text">3 获取代码覆盖率报告</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%BF%AE%E6%94%B9"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 配置文件修改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%B5%8B%E8%AF%95%E8%84%9A%E6%9C%AC%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 测试脚本说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E8%8E%B7%E5%8F%96%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 获取代码覆盖率的基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%8F%92%E5%85%A5%E8%A6%86%E7%9B%96%E7%8E%87%E4%BF%A1%E6%81%AF"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 编译阶段：插入覆盖率信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E8%BF%90%E8%A1%8C%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%94%B6%E9%9B%86%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84%E6%95%B0%E6%8D%AE"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 运行阶段：收集执行路径数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E4%B8%8E%E8%BF%87%E6%BB%A4"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 数据采集与过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-%E6%8A%A5%E5%91%8A%E7%94%9F%E6%88%90"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 报告生成</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-gcov%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="toc-number">4.</span> <span class="toc-text">4 gcov相关知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%BC%96%E8%AF%91%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 编译参数说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%94%9F%E6%88%90%E6%96%87%E4%BB%B6%E8%AF%B4%E6%98%8E"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 生成文件说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E8%AF%B4%E6%98%8E"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 常用命令说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-lcov-%E5%91%BD%E4%BB%A4"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 lcov 命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-genhtml-%E5%91%BD%E4%BB%A4"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 genhtml 命令</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E6%B5%81%E7%A8%8B%E7%AE%80%E8%A6%81%E5%9B%9E%E9%A1%BE"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 流程简要回顾</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-05-27T03:10:16.000Z" class="dt-published" itemprop="datePublished">2025-05-27</time>
+        
+      
+    </div>
+
+
+      
+
+      
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>我们的主线内容其实都已经结束了, 这里先补充一些项目建设性方面的内容, 首先就是根据单元测试生成代码覆盖率的测试报告。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a> 感谢您的 <code>Star</code>!</p>
+<p>欢迎支持本项目同步更新的从零开始实现的视频教程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+<p>欢迎加入讨论群：<a target="_blank" rel="noopener" href="https://qm.qq.com/q/lkIzCPvcdM">Tiny-LSM项目交流群</a></p>
+<h1 id="1-为什么需要代码覆盖率？"><a href="#1-为什么需要代码覆盖率？" class="headerlink" title="1 为什么需要代码覆盖率？"></a>1 为什么需要代码覆盖率？</h1><p>代码覆盖率测试是软件开发过程中验证测试完整性的重要手段，它通过统计程序中被执行的代码比例来评估测试用例的有效性。常见的代码覆盖率类型包括：</p>
+<ul>
+<li><strong>行覆盖率（Line Coverage）</strong>：衡量源文件中被测试执行的代码行数。</li>
+<li><strong>函数覆盖率（Function Coverage）</strong>：确认每个函数是否都被调用。</li>
+<li><strong>分支覆盖率（Branch Coverage）</strong>：检查程序中的条件判断是否都被覆盖。</li>
+</ul>
+<h2 id="常见工具"><a href="#常见工具" class="headerlink" title="常见工具"></a>常见工具</h2><p>以下是几种主流的代码覆盖率测试工具，按语言和技术栈分类说明：</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>语言&#x2F;平台</th>
+<th>简要说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>gcov &#x2F; lcov</strong></td>
+<td>C&#x2F;C++ (GCC)</td>
+<td><code>gcov</code> 是 GCC 自带的覆盖率分析工具，<code>lcov</code> 是其可视化前端，可生成 HTML 报告。</td>
+</tr>
+<tr>
+<td><strong>Valgrind + Gcov</strong></td>
+<td>C&#x2F;C++</td>
+<td>结合使用 Valgrind 的 callgrind 工具进行更精确的覆盖率分析。</td>
+</tr>
+<tr>
+<td><strong>Coverage.py</strong></td>
+<td>Python</td>
+<td>针对 Python 的代码覆盖率工具，支持分支覆盖率，并集成 unittest 和 pytest。</td>
+</tr>
+<tr>
+<td><strong>JaCoCo</strong></td>
+<td>Java</td>
+<td>Java 平台的标准覆盖率工具，支持 Ant、Maven、Gradle 构建系统，能与 Jenkins 等 CI 工具集成。</td>
+</tr>
+<tr>
+<td><strong>Istanbul &#x2F; nyc</strong></td>
+<td>JavaScript</td>
+<td>常用于 Node.js 项目，支持 ES6+，并能生成详细的 HTML 报告。</td>
+</tr>
+<tr>
+<td><strong>dotCover</strong></td>
+<td>.NET</td>
+<td>JetBrains 提供的商业工具，用于 .NET 框架和 .NET Core 的单元测试覆盖率分析。</td>
+</tr>
+<tr>
+<td><strong>OpenCppCoverage</strong></td>
+<td>C&#x2F;C++ (Windows)</td>
+<td>支持 Windows 平台的代码覆盖率工具，适合 MSVC 编译器环境。</td>
+</tr>
+</tbody></table>
+<h2 id="常见的工作流"><a href="#常见的工作流" class="headerlink" title="常见的工作流"></a>常见的工作流</h2><ol>
+<li><p><strong>自动化测试流程整合</strong>：</p>
+<ul>
+<li>可将覆盖率测试脚本集成到 CI&#x2F;CD 流水线（如 GitHub Actions、GitLab CI、Jenkins）中，确保每次提交都自动运行并生成报告。</li>
+</ul>
+</li>
+<li><p><strong>质量门禁设置</strong>：</p>
+<ul>
+<li>利用工具提供的阈值配置功能（例如 <code>lcov</code> 配合 <code>genhtml</code> 或 <code>coverage.py</code>），设定最低覆盖率要求，低于该值则构建失败。</li>
+</ul>
+</li>
+<li><p><strong>持续改进</strong>：</p>
+<ul>
+<li>定期查看覆盖率报告，针对未覆盖代码设计补充测试用例，提升整体测试质量和代码可靠性。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h1 id="2-工具链使用介绍"><a href="#2-工具链使用介绍" class="headerlink" title="2 工具链使用介绍"></a>2 工具链使用介绍</h1><h2 id="2-1-工具链说明"><a href="#2-1-工具链说明" class="headerlink" title="2.1 工具链说明"></a>2.1 工具链说明</h2><p>本项目由于采用了 <code>xmake</code> 构建系统，因此我们将使用 <code>xmake</code>、<code>lcov</code> 和 <code>genhtml</code> 等工具来生成代码覆盖率报告。以下是这些工具的简要说明：</p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>xmake</strong></td>
+<td>一款现代构建系统，简洁灵活，支持多平台和构建模式（如覆盖率模式）。 （这个系列用了这么久就不再过多介绍了  ）</td>
+</tr>
+<tr>
+<td><strong>lcov</strong></td>
+<td><code>gcov</code> 的图形化封装，生成 <code>.info</code> 格式的覆盖率数据文件。</td>
+</tr>
+<tr>
+<td><strong>genhtml</strong></td>
+<td>读取 <code>.info</code> 文件并生成 HTML 格式的可视化代码覆盖率报告。</td>
+</tr>
+<tr>
+<td><strong>gcov</strong></td>
+<td>GCC 的代码覆盖率分析工具，生成 <code>.gcno</code>、<code>.gcda</code> 数据文件供 <code>lcov</code> 使用。</td>
+</tr>
+</tbody></table>
+<h2 id="2-2-工具链安装"><a href="#2-2-工具链安装" class="headerlink" title="2.2 工具链安装"></a>2.2 工具链安装</h2><p>为了顺利使用 <code>xmake</code>、<code>lcov</code> 和 <code>genhtml</code> 工具生成代码覆盖率报告，需要在系统中安装这些工具。以下是各工具的<strong>安装说明</strong>，按不同操作系统分类。</p>
+<h3 id="2-2-1-lcov-安装"><a href="#2-2-1-lcov-安装" class="headerlink" title="2.2.1 lcov 安装"></a>2.2.1 lcov 安装</h3><p><code>lcov</code> 是基于 <code>gcov</code> 的前端工具，用于收集和处理覆盖率数据。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install lcov <span class="comment"># Ubuntu/Debian</span></span><br><span class="line">sudo dnf install lcov <span class="comment"># Fedora</span></span><br><span class="line">brew install lcov <span class="comment"># macOS（Homebrew）</span></span><br></pre></td></tr></table></figure>
+
+<p>验证是否安装成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lcov --version</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-2-2-genhtml-安装"><a href="#2-2-2-genhtml-安装" class="headerlink" title="2.2.2 genhtml 安装"></a>2.2.2 genhtml 安装</h3><p><code>genhtml</code> 是 <code>lcov</code> 的一部分，安装 <code>lcov</code> 后会自动包含 <code>genhtml</code>，无需单独安装。</p>
+<p>验证是否可用：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">genhtml --version</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-2-3-gcov-安装（GCC-工具链）"><a href="#2-2-3-gcov-安装（GCC-工具链）" class="headerlink" title="2.2.3 gcov 安装（GCC 工具链）"></a>2.2.3 gcov 安装（GCC 工具链）</h3><p><code>gcov</code> 是 GCC 自带的覆盖率分析工具，通常随编译器一起安装。</p>
+<h4 id="Linux"><a href="#Linux" class="headerlink" title="Linux"></a>Linux</h4><p>确保已安装 GCC：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install gcc g++</span><br></pre></td></tr></table></figure>
+
+<h4 id="macOS"><a href="#macOS" class="headerlink" title="macOS"></a>macOS</h4><p>默认可能使用的是 Clang，需手动安装 GCC（例如通过 Homebrew）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install gcc</span><br></pre></td></tr></table></figure>
+
+<p>验证是否安装成功：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcov --version</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>提示：</p>
+<ul>
+<li>若使用的是 CI 环境（如 GitHub Actions），可在 <code>.yml</code> 文件中添加上述安装命令。</li>
+<li>对于 Windows 平台若使用 MSVC 编译器，可考虑使用 <a target="_blank" rel="noopener" href="https://github.com/OpenCppCoverage/OpenCppCoverage">OpenCppCoverage</a> 替代方案。</li>
+</ul>
+</blockquote>
+<h1 id="3-获取代码覆盖率报告"><a href="#3-获取代码覆盖率报告" class="headerlink" title="3 获取代码覆盖率报告"></a>3 获取代码覆盖率报告</h1><h2 id="3-1-配置文件修改"><a href="#3-1-配置文件修改" class="headerlink" title="3.1 配置文件修改"></a>3.1 配置文件修改</h2><p>为了获取代码覆盖率测试, 我们在编译和链接文件时需要附上<code>--coverage</code>标志, 我们不妨再设置一个编译模式:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 在 coverage 模式下设置 flags</span></span><br><span class="line">add_rules(<span class="string">&quot;mode.debug&quot;</span>, <span class="string">&quot;mode.release&quot;</span>, <span class="string">&quot;mode.coverage&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> is_mode(<span class="string">&quot;coverage&quot;</span>) <span class="keyword">then</span></span><br><span class="line">    add_cxxflags(<span class="string">&quot;--coverage&quot;</span>)</span><br><span class="line">    add_ldflags(<span class="string">&quot;--coverage&quot;</span>)</span><br><span class="line"><span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+<p>在 <code>coverage</code> 模式下：</p>
+<ul>
+<li>使用 <code>--coverage</code> 编译器参数，以生成用于覆盖率分析的额外信息。</li>
+<li>使用 <code>--coverage</code> 链接器参数，以确保链接了必要的覆盖率运行库（如 <code>gcov</code>）。</li>
+</ul>
+<h2 id="3-2-测试脚本说明"><a href="#3-2-测试脚本说明" class="headerlink" title="3.2 测试脚本说明"></a>3.2 测试脚本说明</h2><p>脚本文件示例：<code>generate_coverage.sh</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 清理旧的构建和覆盖率报告</span></span><br><span class="line"><span class="built_in">rm</span> -rf build/*</span><br><span class="line"><span class="built_in">rm</span> -rf coverage-report</span><br><span class="line"></span><br><span class="line"><span class="comment"># 配置为覆盖率构建模式</span></span><br><span class="line">xmake f -m coverage</span><br><span class="line"></span><br><span class="line"><span class="comment"># 编译项目</span></span><br><span class="line">xmake</span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行所有测试（确保所有逻辑路径被触发）</span></span><br><span class="line">xmake run-all-tests</span><br><span class="line"></span><br><span class="line"><span class="comment"># 收集覆盖率数据</span></span><br><span class="line">lcov --capture --directory . --output-file coverage.info</span><br><span class="line"></span><br><span class="line"><span class="comment"># 去除无关路径（如系统库、xmake 缓存、测试代码等）</span></span><br><span class="line">lcov --remove coverage.info <span class="string">&#x27;/usr/*&#x27;</span> <span class="string">&#x27;*/.xmake/*&#x27;</span> <span class="string">&#x27;*/test/*&#x27;</span> -o coverage.cleaned.info</span><br><span class="line"></span><br><span class="line"><span class="comment"># 生成 HTML 格式的覆盖率报告</span></span><br><span class="line">genhtml -o coverage-report coverage.cleaned.info</span><br></pre></td></tr></table></figure>
+
+<p>为了更好地理解 <code>generate_coverage.sh</code>, 以下是对整个流程中关键步骤的详细解释。</p>
+<h2 id="3-3-获取代码覆盖率的基本原理"><a href="#3-3-获取代码覆盖率的基本原理" class="headerlink" title="3.3 获取代码覆盖率的基本原理"></a>3.3 获取代码覆盖率的基本原理</h2><h3 id="3-3-1-编译阶段：插入覆盖率信息"><a href="#3-3-1-编译阶段：插入覆盖率信息" class="headerlink" title="3.3.1 编译阶段：插入覆盖率信息"></a>3.3.1 编译阶段：插入覆盖率信息</h3><p>在使用 GCC 编译器时，通过添加编译选项（如 <code>-fprofile-arcs</code> 和 <code>-ftest-coverage</code> 或直接使用 <code>--coverage</code>），编译器会在生成的目标文件中插入额外的探针（instrumentation code）：</p>
+<ul>
+<li><p><strong><code>.gcno</code> 文件</strong>：</p>
+<ul>
+<li>在编译阶段生成。</li>
+<li>包含程序结构信息（如函数、基本块、分支等）。</li>
+<li>用于将运行时数据映射回源码。</li>
+</ul>
+</li>
+<li><p><strong><code>__gcov_init</code>, <code>__gcov_exit</code> 等调用</strong>：</p>
+<ul>
+<li>插入到函数入口和出口。</li>
+<li>用于记录执行路径。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-3-2-运行阶段：收集执行路径数据"><a href="#3-3-2-运行阶段：收集执行路径数据" class="headerlink" title="3.3.2 运行阶段：收集执行路径数据"></a>3.3.2 运行阶段：收集执行路径数据</h3><p>当程序运行时，这些探针会记录每条语句和分支是否被执行，并在程序正常退出时将结果写入 <code>.gcda</code> 文件：</p>
+<ul>
+<li><strong><code>.gcda</code> 文件</strong>：<ul>
+<li>每个 <code>.o</code> 文件对应一个 <code>.gcda</code> 文件。</li>
+<li>包含该模块中各行代码&#x2F;分支的实际执行次数。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>⚠️ 注意：程序必须正常退出（如调用 <code>exit()</code> 或从 <a href="file://d:\CSLearn\CSBlog\ch_img_shape.py#L31-L41">main</a> 返回），否则可能无法正确生成 <code>.gcda</code> 文件。</p>
+</blockquote>
+<h3 id="3-3-3-数据采集与过滤"><a href="#3-3-3-数据采集与过滤" class="headerlink" title="3.3.3 数据采集与过滤"></a>3.3.3 数据采集与过滤</h3><p>脚本使用 <code>lcov</code> 工具进行数据采集：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lcov --capture --directory . --output-file coverage.info</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>遍历当前目录及其子目录，收集所有 <code>.gcno</code> 和 <code>.gcda</code> 文件。</li>
+<li>将其转换为统一的 <code>coverage.info</code> 格式，便于后续处理。</li>
+</ul>
+<p>随后通过 <code>--remove</code> 命令过滤掉不关心的路径（如系统头文件、构建缓存、测试代码）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lcov --remove coverage.info <span class="string">&#x27;/usr/*&#x27;</span> <span class="string">&#x27;*/.xmake/*&#x27;</span> <span class="string">&#x27;*/test/*&#x27;</span> -o coverage.cleaned.info</span><br></pre></td></tr></table></figure>
+
+<p>这一步有助于聚焦项目核心代码，避免干扰。</p>
+<h3 id="3-3-4-报告生成"><a href="#3-3-4-报告生成" class="headerlink" title="3.3.4 报告生成"></a>3.3.4 报告生成</h3><p>最后，使用 <code>genhtml</code> 将 <code>.info</code> 文件转换为 HTML 可视化报告：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">genhtml -o coverage-report coverage.cleaned.info</span><br></pre></td></tr></table></figure>
+
+<p>生成的 HTML 页面中：</p>
+<ul>
+<li>每个源文件都有对应的覆盖率统计。</li>
+<li>行号颜色区分已覆盖（绿色）、未覆盖（红色）。</li>
+<li>支持点击进入具体函数或文件查看细节。</li>
+</ul>
+<h1 id="4-gcov相关知识点"><a href="#4-gcov相关知识点" class="headerlink" title="4 gcov相关知识点"></a>4 gcov相关知识点</h1><p>为了更清晰地理解代码覆盖率工具链中涉及的命令、参数和文件类型，以下是对 <code>gcov</code> 相关知识点的<strong>结构化整理</strong>，包括编译参数、生成文件、常用命令及其作用。</p>
+<hr>
+<h2 id="4-1-编译参数说明"><a href="#4-1-编译参数说明" class="headerlink" title="4.1 编译参数说明"></a>4.1 编译参数说明</h2><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>-fprofile-arcs</code></td>
+<td>记录程序执行路径（分支信息），用于分析控制流。</td>
+</tr>
+<tr>
+<td><code>-ftest-coverage</code></td>
+<td>生成 <code>.gcno</code> 文件，记录源码结构信息，供后续覆盖率分析使用。</td>
+</tr>
+<tr>
+<td><code>--coverage</code></td>
+<td>GCC 提供的快捷选项，等价于同时启用 <code>-fprofile-arcs</code> 和 <code>-ftest-coverage</code>，并链接 <code>gcov</code> 运行时库。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>✅ 推荐在构建测试版本时使用 <code>--coverage</code>，确保编译器和链接器都正确插入探针。</p>
+</blockquote>
+<hr>
+<h2 id="4-2-生成文件说明"><a href="#4-2-生成文件说明" class="headerlink" title="4.2 生成文件说明"></a>4.2 生成文件说明</h2><table>
+<thead>
+<tr>
+<th>文件类型</th>
+<th>来源阶段</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.gcno</code></td>
+<td>编译阶段</td>
+<td>包含函数、基本块、分支等源码结构信息，用于将运行时数据映射回源文件。</td>
+</tr>
+<tr>
+<td><code>.gcda</code></td>
+<td>运行阶段</td>
+<td>程序执行后生成，记录每条语句和分支的实际执行次数。</td>
+</tr>
+<tr>
+<td><code>.info</code></td>
+<td><code>lcov</code> 输出</td>
+<td>由 <code>lcov</code> 收集 <code>.gcno</code> 和 <code>.gcda</code> 生成的中间格式文件，便于后续处理。</td>
+</tr>
+</tbody></table>
+<h2 id="4-3-常用命令说明"><a href="#4-3-常用命令说明" class="headerlink" title="4.3 常用命令说明"></a>4.3 常用命令说明</h2><h3 id="4-3-1-lcov-命令"><a href="#4-3-1-lcov-命令" class="headerlink" title="4.3.1 lcov 命令"></a>4.3.1 lcov 命令</h3><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lcov --capture --directory . --output-file coverage.info</code></td>
+<td>收集当前目录下所有模块的 <code>.gcno</code> 和 <code>.gcda</code> 文件，合并为一个 <code>.info</code> 文件。</td>
+</tr>
+<tr>
+<td><code>lcov --remove coverage.info &#39;/usr/*&#39; &#39;*/.xmake/*&#39; &#39;*/test/*&#39; -o coverage.cleaned.info</code></td>
+<td>去除与项目无关的路径（如系统库、缓存、测试代码），提升报告准确性。</td>
+</tr>
+<tr>
+<td><code>lcov --list coverage.info</code></td>
+<td>查看 <code>.info</code> 文件中的覆盖信息内容。</td>
+</tr>
+<tr>
+<td><code>lcov --extract coverage.info &#39;src/*&#39; -o filtered.info</code></td>
+<td>提取特定路径下的覆盖率数据。</td>
+</tr>
+</tbody></table>
+<h3 id="4-3-2-genhtml-命令"><a href="#4-3-2-genhtml-命令" class="headerlink" title="4.3.2 genhtml 命令"></a>4.3.2 genhtml 命令</h3><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>genhtml -o coverage-report coverage.cleaned.info</code></td>
+<td>将 <code>.info</code> 文件转换为 HTML 格式报告，支持浏览器查看。</td>
+</tr>
+<tr>
+<td><code>genhtml --title &quot;My Project Coverage&quot; -o coverage-report coverage.cleaned.info</code></td>
+<td>自定义报告标题。</td>
+</tr>
+<tr>
+<td><code>genhtml --legend -o coverage-report coverage.cleaned.info</code></td>
+<td>显示详细图例，包括未覆盖行数和百分比。</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-4-流程简要回顾"><a href="#4-4-流程简要回顾" class="headerlink" title="4.4 流程简要回顾"></a>4.4 流程简要回顾</h2><ol>
+<li><strong>编译阶段</strong>：使用 <code>--coverage</code> 编译，生成 <code>.gcno</code>。</li>
+<li><strong>运行阶段</strong>：执行测试用例，生成 <code>.gcda</code>。</li>
+<li><strong>采集阶段</strong>：使用 <code>lcov --capture</code> 收集 <code>.gcno</code> 和 <code>.gcda</code>。</li>
+<li><strong>过滤阶段</strong>：使用 <code>lcov --remove</code> 移除不关心的路径。</li>
+<li><strong>生成阶段</strong>：使用 <code>genhtml</code> 生成 HTML 报告，可视化展示。</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 为什么需要代码覆盖率？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%B7%A5%E5%85%B7"><span class="toc-number">1.1.</span> <span class="toc-text">常见工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81"><span class="toc-number">1.2.</span> <span class="toc-text">常见的工作流</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BD%BF%E7%94%A8%E4%BB%8B%E7%BB%8D"><span class="toc-number">2.</span> <span class="toc-text">2 工具链使用介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%B7%A5%E5%85%B7%E9%93%BE%E8%AF%B4%E6%98%8E"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 工具链说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B7%A5%E5%85%B7%E9%93%BE%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 工具链安装</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-lcov-%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 lcov 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-genhtml-%E5%AE%89%E8%A3%85"><span class="toc-number">2.2.2.</span> <span class="toc-text">2.2.2 genhtml 安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-gcov-%E5%AE%89%E8%A3%85%EF%BC%88GCC-%E5%B7%A5%E5%85%B7%E9%93%BE%EF%BC%89"><span class="toc-number">2.2.3.</span> <span class="toc-text">2.2.3 gcov 安装（GCC 工具链）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Linux"><span class="toc-number">2.2.3.1.</span> <span class="toc-text">Linux</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#macOS"><span class="toc-number">2.2.3.2.</span> <span class="toc-text">macOS</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E8%8E%B7%E5%8F%96%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E6%8A%A5%E5%91%8A"><span class="toc-number">3.</span> <span class="toc-text">3 获取代码覆盖率报告</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E4%BF%AE%E6%94%B9"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 配置文件修改</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%B5%8B%E8%AF%95%E8%84%9A%E6%9C%AC%E8%AF%B4%E6%98%8E"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 测试脚本说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E8%8E%B7%E5%8F%96%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87%E7%9A%84%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 获取代码覆盖率的基本原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-%E7%BC%96%E8%AF%91%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%8F%92%E5%85%A5%E8%A6%86%E7%9B%96%E7%8E%87%E4%BF%A1%E6%81%AF"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 编译阶段：插入覆盖率信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E8%BF%90%E8%A1%8C%E9%98%B6%E6%AE%B5%EF%BC%9A%E6%94%B6%E9%9B%86%E6%89%A7%E8%A1%8C%E8%B7%AF%E5%BE%84%E6%95%B0%E6%8D%AE"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 运行阶段：收集执行路径数据</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86%E4%B8%8E%E8%BF%87%E6%BB%A4"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 数据采集与过滤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-%E6%8A%A5%E5%91%8A%E7%94%9F%E6%88%90"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 报告生成</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-gcov%E7%9B%B8%E5%85%B3%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="toc-number">4.</span> <span class="toc-text">4 gcov相关知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%BC%96%E8%AF%91%E5%8F%82%E6%95%B0%E8%AF%B4%E6%98%8E"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 编译参数说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%94%9F%E6%88%90%E6%96%87%E4%BB%B6%E8%AF%B4%E6%98%8E"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 生成文件说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E8%AF%B4%E6%98%8E"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 常用命令说明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-1-lcov-%E5%91%BD%E4%BB%A4"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.3.1 lcov 命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-2-genhtml-%E5%91%BD%E4%BB%A4"><span class="toc-number">4.3.2.</span> <span class="toc-text">4.3.2 genhtml 命令</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E6%B5%81%E7%A8%8B%E7%AE%80%E8%A6%81%E5%9B%9E%E9%A1%BE"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 流程简要回顾</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&text=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率&body=Check out this article: http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&title=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&name=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/&t=C++从零开始实现LSM-Tree-KV存储-22-代码覆盖率"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

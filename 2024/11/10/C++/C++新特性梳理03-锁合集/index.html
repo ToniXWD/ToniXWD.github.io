@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="鸽了好久, 终于想起来还有个博客主题没写… 1. 基础锁管理器：lock_guardstd::lock_guard 是最基础的 RAII 风格锁管理器，使用简单且安全。 123456789101112131415161718192021222324&#x2F;&#x2F; C++11 标准库提供了 std::lock_guard 用于自动管理互斥锁的锁定和解锁。#include &lt;iostream&gt;#in">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++新特性梳理03-锁合集">
+<meta property="og:url" content="http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="鸽了好久, 终于想起来还有个博客主题没写… 1. 基础锁管理器：lock_guardstd::lock_guard 是最基础的 RAII 风格锁管理器，使用简单且安全。 123456789101112131415161718192021222324&#x2F;&#x2F; C++11 标准库提供了 std::lock_guard 用于自动管理互斥锁的锁定和解锁。#include &lt;iostream&gt;#in">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-11-10T04:39:12.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.659Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta property="article:tag" content="C++20">
+<meta property="article:tag" content="C++17">
+<meta property="article:tag" content="C++23">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++新特性梳理03-锁合集</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/11/18/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Assignment1-%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/09/%E9%9A%8F%E7%AC%94/2025%E5%B1%8A%E7%A7%8B%E6%8B%9B%E4%B8%AA%E4%BA%BA%E6%80%BB%E7%BB%93%E4%B8%8E%E7%BB%8F%E9%AA%8C%E6%A2%B3%E7%90%86/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&text=C++新特性梳理03-锁合集"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&is_video=false&description=C++新特性梳理03-锁合集"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理03-锁合集&body=Check out this article: http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&name=C++新特性梳理03-锁合集&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&t=C++新特性梳理03-锁合集"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%9F%BA%E7%A1%80%E9%94%81%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%9Alock-guard"><span class="toc-number">1.</span> <span class="toc-text">1. 基础锁管理器：lock_guard</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%81%B5%E6%B4%BB%E7%9A%84%E9%94%81%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%9Aunique-lock"><span class="toc-number">2.</span> <span class="toc-text">2. 灵活的锁管理器：unique_lock</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%B6%85%E6%97%B6%E9%94%81%EF%BC%9Atimed-mutex"><span class="toc-number">3.</span> <span class="toc-text">3. 超时锁：timed_mutex</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%A4%9A%E9%94%81%E7%AE%A1%E7%90%86%EF%BC%9Ascoped-lock"><span class="toc-number">4.</span> <span class="toc-text">4. 多锁管理：scoped_lock</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%AF%BB%E5%86%99%E9%94%81%EF%BC%9Ashared-mutex"><span class="toc-number">5.</span> <span class="toc-text">5. 读写锁：shared_mutex</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B0%9D%E8%AF%95%E9%94%81%E5%AE%9A%EF%BC%9Atry-lock-%E5%92%8C-try-to-lock-t"><span class="toc-number">6.</span> <span class="toc-text">6. 尝试锁定：try_lock 和 try_to_lock_t</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">7.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++新特性梳理03-锁合集
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-11-10T04:39:12.000Z" class="dt-published" itemprop="datePublished">2024-11-10</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/C-17/" rel="tag">C++17</a>, <a class="p-category" href="/tags/C-20/" rel="tag">C++20</a>, <a class="p-category" href="/tags/C-23/" rel="tag">C++23</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>鸽了好久, 终于想起来还有个博客主题没写…</p>
+<h2 id="1-基础锁管理器：lock-guard"><a href="#1-基础锁管理器：lock-guard" class="headerlink" title="1. 基础锁管理器：lock_guard"></a>1. 基础锁管理器：lock_guard</h2><p><code>std::lock_guard</code> 是最基础的 RAII 风格锁管理器，使用简单且安全。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++11 标准库提供了 std::lock_guard 用于自动管理互斥锁的锁定和解锁。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_thread_id</span><span class="params">(<span class="type">int</span> id)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// std::lock_guard 是一个 RAII（Resource Acquisition Is</span></span><br><span class="line">  <span class="comment">// Initialization）风格的锁管理器，</span></span><br><span class="line">  <span class="comment">// 它在构造时自动锁定互斥锁，在析构时自动解锁。</span></span><br><span class="line">  <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>; <span class="comment">// 自动管理锁的生命周期</span></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread ID: &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(print_thread_id, <span class="number">1</span>)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(print_thread_id, <span class="number">2</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>构造时自动加锁</li>
+<li>析构时自动解锁</li>
+<li>不能手动解锁</li>
+<li>不能复制或移动</li>
+</ul>
+<h2 id="2-灵活的锁管理器：unique-lock"><a href="#2-灵活的锁管理器：unique-lock" class="headerlink" title="2. 灵活的锁管理器：unique_lock"></a>2. 灵活的锁管理器：unique_lock</h2><p><code>std::unique_lock</code> 提供了更灵活的锁管理方式，支持多种加锁策略：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++11 标准库提供了 std::unique_lock 用于灵活管理互斥锁的锁定和解锁。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_thread_id</span><span class="params">(<span class="type">int</span> id)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 1. defer_lock: 创建时不锁定互斥量</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock1</span><span class="params">(mtx, std::defer_lock)</span></span>;</span><br><span class="line">    lock1.<span class="built_in">lock</span>(); <span class="comment">// 手动锁定</span></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;defer_lock - Thread &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">    lock1.<span class="built_in">unlock</span>(); <span class="comment">// 手动解锁</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. try_to_lock: 尝试锁定，如果无法获得锁则返回 false</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock2</span><span class="params">(mtx, std::try_to_lock)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (lock2.<span class="built_in">owns_lock</span>()) &#123;</span><br><span class="line">      std::cout &lt;&lt; <span class="string">&quot;try_to_lock succeeded - Thread &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      std::cout &lt;&lt; <span class="string">&quot;try_to_lock failed - Thread &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 3. adopt_lock: 假设当前线程已经拥有互斥量的所有权</span></span><br><span class="line">  <span class="comment">// 作用：将原生的锁的生命周期托管给了 unique_lock 管理</span></span><br><span class="line">  &#123;</span><br><span class="line">    mtx.<span class="built_in">lock</span>(); <span class="comment">// 必须在之前手动锁定，否则是 Undefined Behavior</span></span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock3</span><span class="params">(mtx, std::adopt_lock)</span></span>;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;adopt_lock - Thread &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">  &#125; <span class="comment">// 自动解锁</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 4. 默认构造：立即锁定（最常用）</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock4</span><span class="params">(mtx)</span></span>; <span class="comment">// 等同于 lock_guard</span></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;default lock - Thread &quot;</span> &lt;&lt; id &lt;&lt; std::endl;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(print_thread_id, <span class="number">1</span>)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(print_thread_id, <span class="number">2</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>支持手动加锁&#x2F;解锁</li>
+<li>可以检查锁状态</li>
+<li>支持锁的所有权转移</li>
+<li>比 <code>lock_guard</code> 更灵活但开销略大</li>
+</ul>
+<h2 id="3-超时锁：timed-mutex"><a href="#3-超时锁：timed-mutex" class="headerlink" title="3. 超时锁：timed_mutex"></a>3. 超时锁：timed_mutex</h2><p><code>std::timed_mutex</code> 支持带超时的锁定操作，适用于需要避免长时间等待的场景。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;chrono&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::timed_mutex mtx;</span><br><span class="line"><span class="comment">// std::timed_mutex 支持带超时的锁定操作。</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">try_lock_with_timeout</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// try_lock_for 语义：</span></span><br><span class="line">  <span class="comment">// 1. 在指定时间内持续尝试获取锁，而不是等待 2 秒后再尝试</span></span><br><span class="line">  <span class="comment">// 2. 如果锁立即可用，立即获取并返回 true</span></span><br><span class="line">  <span class="comment">// 3. 如果锁不可用，会在 2 秒内持续尝试</span></span><br><span class="line">  <span class="comment">// 4. 2 秒后仍未获取到锁，返回 false</span></span><br><span class="line">  <span class="keyword">if</span> (mtx.<span class="built_in">try_lock_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">2</span>))) &#123;</span><br><span class="line">    <span class="comment">// 成功锁定</span></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Mutex locked&quot;</span> &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 注意：获取到锁后必须记得解锁</span></span><br><span class="line">    <span class="comment">// 建议使用 RAII 方式管理锁的生命周期，比如：</span></span><br><span class="line">    <span class="comment">// std::unique_lock&lt;std::timed_mutex&gt; lock(mtx, std::chrono::seconds(2));</span></span><br><span class="line">    mtx.<span class="built_in">unlock</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 锁定失败</span></span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Failed to lock mutex within 2 seconds&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 另一种写法：使用 try_lock_until 指定截止时间点</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">try_lock_until_deadline</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">auto</span> deadline = std::chrono::steady_clock::<span class="built_in">now</span>() + std::chrono::<span class="built_in">seconds</span>(<span class="number">2</span>);</span><br><span class="line">  <span class="keyword">if</span> (mtx.<span class="built_in">try_lock_until</span>(deadline)) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Locked before deadline&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    mtx.<span class="built_in">unlock</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 易错点：</span></span><br><span class="line">  <span class="comment">// 1. 不要在持有锁时调用可能抛出异常的代码，除非使用 RAII 管理锁</span></span><br><span class="line">  <span class="comment">// 2. 记得及时解锁，避免死锁</span></span><br><span class="line">  <span class="comment">// 3. 超时时间设置要合理，太短可能导致频繁失败，太长可能影响性能</span></span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(try_lock_with_timeout)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(try_lock_with_timeout)</span></span>;</span><br><span class="line"></span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>支持 <code>try_lock_for</code>：指定等待时长</li>
+<li>支持 <code>try_lock_until</code>：指定截止时间点</li>
+<li>避免无限等待</li>
+</ul>
+<h2 id="4-多锁管理：scoped-lock"><a href="#4-多锁管理：scoped-lock" class="headerlink" title="4. 多锁管理：scoped_lock"></a>4. 多锁管理：scoped_lock</h2><p><code>std::scoped_lock</code>（C++17）用于同时管理多个互斥锁，避免死锁。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++17 标准库提供了 std::scoped_lock 用于简化同时锁定多个互斥锁的操作。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx1, mtx2;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">perform_operation_with_1st_mutex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_1st_mutex start&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx1)</span></span>;</span><br><span class="line">  std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_1st_mutex done&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">perform_operation_with_2nd_mutex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_2nd_mutex start&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx2)</span></span>;</span><br><span class="line">  std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_2nd_mutex done&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">perform_operation_with_2_mutex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_2_mutex start&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="function">std::scoped_lock <span class="title">lock</span><span class="params">(mtx1, mtx2)</span></span>; <span class="comment">// 同时锁定多个互斥锁</span></span><br><span class="line">                                     <span class="comment">// 执行操作</span></span><br><span class="line">  std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>()</span><br><span class="line">            &lt;&lt; <span class="string">&quot; perform_operation_with_2_mutex done&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(perform_operation_with_2_mutex)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(perform_operation_with_1st_mutex)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t3</span><span class="params">(perform_operation_with_2nd_mutex)</span></span>;</span><br><span class="line"></span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line">  t3.<span class="built_in">join</span>();</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>可以同时锁定多个互斥量</li>
+<li>自动避免死锁</li>
+<li>RAII 风格管理</li>
+</ul>
+<h2 id="5-读写锁：shared-mutex"><a href="#5-读写锁：shared-mutex" class="headerlink" title="5. 读写锁：shared_mutex"></a>5. 读写锁：shared_mutex</h2><p><code>std::shared_mutex</code>（C++17）支持读写分离的场景，允许多个读操作同时进行。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++17 标准库提供了 std::shared_mutex 用于支持共享和独占访问的互斥锁。</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;shared_mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::shared_mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">read_data</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::shared_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>; <span class="comment">// 共享锁，shared_lock 由 C++14 提供</span></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Reading data...&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>() &lt;&lt; <span class="string">&quot; Reading data done&quot;</span></span><br><span class="line">            &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">write_data</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(mtx)</span></span>; <span class="comment">// 排他锁</span></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Writing data...&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  std::this_thread::<span class="built_in">sleep_for</span>(std::chrono::<span class="built_in">seconds</span>(<span class="number">1</span>));</span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Thread &quot;</span> &lt;&lt; std::this_thread::<span class="built_in">get_id</span>() &lt;&lt; <span class="string">&quot; Writing data done&quot;</span></span><br><span class="line">            &lt;&lt; std::endl;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(read_data)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(read_data)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t3</span><span class="params">(write_data)</span></span>;</span><br><span class="line"></span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line">  t3.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li>支持共享（读）和独占（写）两种访问模式</li>
+<li>多个读操作可以并发</li>
+<li>写操作需要独占访问</li>
+</ul>
+<h2 id="6-尝试锁定：try-lock-和-try-to-lock-t"><a href="#6-尝试锁定：try-lock-和-try-to-lock-t" class="headerlink" title="6. 尝试锁定：try_lock 和 try_to_lock_t"></a>6. 尝试锁定：try_lock 和 try_to_lock_t</h2><p>两种不同的尝试锁定方式：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;mutex&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;thread&gt;</span></span></span><br><span class="line"></span><br><span class="line">std::mutex mtx;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 try_lock() 函数方式</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">try_lock_mutex</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// std::try_lock 是一个函数，用于尝试锁定互斥锁</span></span><br><span class="line">  <span class="comment">// 立即返回结果：成功返回 true，失败返回 false</span></span><br><span class="line">  <span class="keyword">if</span> (mtx.<span class="built_in">try_lock</span>()) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Mutex locked using try_lock()&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    mtx.<span class="built_in">unlock</span>();</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Failed to lock mutex using try_lock()&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 try_to_lock_t 标签类型方式</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">try_lock_with_unique_lock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// std::try_to_lock_t 是一个标签类型，用于 RAII 方式的锁管理</span></span><br><span class="line">  <span class="comment">// 通过 std::try_to_lock 传递给 unique_lock 构造函数</span></span><br><span class="line">  <span class="function">std::unique_lock&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx, std::try_to_lock)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (lock.<span class="built_in">owns_lock</span>()) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Mutex locked using unique_lock with try_to_lock&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Failed to lock mutex using unique_lock with try_to_lock&quot;</span></span><br><span class="line">              &lt;&lt; std::endl;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// unique_lock 析构时自动释放锁</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 测试两种方式</span></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;Testing try_lock():&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="function">std::thread <span class="title">t1</span><span class="params">(try_lock_mutex)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t2</span><span class="params">(try_lock_mutex)</span></span>;</span><br><span class="line">  t1.<span class="built_in">join</span>();</span><br><span class="line">  t2.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;\nTesting try_to_lock_t:&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="function">std::thread <span class="title">t3</span><span class="params">(try_lock_with_unique_lock)</span></span>;</span><br><span class="line">  <span class="function">std::thread <span class="title">t4</span><span class="params">(try_lock_with_unique_lock)</span></span>;</span><br><span class="line">  t3.<span class="built_in">join</span>();</span><br><span class="line">  t4.<span class="built_in">join</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>特点：</p>
+<ul>
+<li><code>try_lock()</code>：函数调用方式</li>
+<li><code>try_to_lock_t</code>：用于 RAII 方式的锁管理</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>C++ 提供了丰富的锁机制，适应不同的场景需求：</p>
+<ol>
+<li>简单场景使用 <code>lock_guard</code></li>
+<li>需要灵活控制时使用 <code>unique_lock</code></li>
+<li>需要超时机制时使用 <code>timed_mutex</code></li>
+<li>多锁场景使用 <code>scoped_lock</code></li>
+<li>读写分离场景使用 <code>shared_mutex</code></li>
+</ol>
+<p>选择合适的锁机制对于编写高效的多线程程序至关重要。建议优先使用高级的 RAII 风格锁管理器，避免手动管理锁的状态。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E5%9F%BA%E7%A1%80%E9%94%81%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%9Alock-guard"><span class="toc-number">1.</span> <span class="toc-text">1. 基础锁管理器：lock_guard</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E7%81%B5%E6%B4%BB%E7%9A%84%E9%94%81%E7%AE%A1%E7%90%86%E5%99%A8%EF%BC%9Aunique-lock"><span class="toc-number">2.</span> <span class="toc-text">2. 灵活的锁管理器：unique_lock</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E8%B6%85%E6%97%B6%E9%94%81%EF%BC%9Atimed-mutex"><span class="toc-number">3.</span> <span class="toc-text">3. 超时锁：timed_mutex</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%A4%9A%E9%94%81%E7%AE%A1%E7%90%86%EF%BC%9Ascoped-lock"><span class="toc-number">4.</span> <span class="toc-text">4. 多锁管理：scoped_lock</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%AF%BB%E5%86%99%E9%94%81%EF%BC%9Ashared-mutex"><span class="toc-number">5.</span> <span class="toc-text">5. 读写锁：shared_mutex</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%B0%9D%E8%AF%95%E9%94%81%E5%AE%9A%EF%BC%9Atry-lock-%E5%92%8C-try-to-lock-t"><span class="toc-number">6.</span> <span class="toc-text">6. 尝试锁定：try_lock 和 try_to_lock_t</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">7.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&text=C++新特性梳理03-锁合集"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&is_video=false&description=C++新特性梳理03-锁合集"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理03-锁合集&body=Check out this article: http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&title=C++新特性梳理03-锁合集"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&name=C++新特性梳理03-锁合集&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/10/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8603-%E9%94%81%E5%90%88%E9%9B%86/&t=C++新特性梳理03-锁合集"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

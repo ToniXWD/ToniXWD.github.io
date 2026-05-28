@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一章是加餐，主要是给大家介绍一下如何使用Python SDK来操作我们之前实现的LSM-Tree-KV存储。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;avo61">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发">
+<meta property="og:url" content="http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一章是加餐，主要是给大家介绍一下如何使用Python SDK来操作我们之前实现的LSM-Tree-KV存储。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;avo61">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/lsm-sdk-bug.png">
+<meta property="article:published_time" content="2025-04-22T07:48:11.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.670Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/lsm-sdk-bug.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&text=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发&body=Check out this article: http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&name=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&t=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SDK-%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">1 SDK 的作用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-pybind11-%E7%AE%80%E4%BB%8B"><span class="toc-number">2.</span> <span class="toc-text">2 pybind11 简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-pybind11-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 pybind11 是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 安装与环境配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%A4%BA%E4%BE%8B%EF%BC%9A%E7%BB%91%E5%AE%9A-C-%E5%87%BD%E6%95%B0"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 示例：绑定 C++ 函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E7%BB%91%E5%AE%9A%E7%B1%BB%EF%BC%88C-%E7%B1%BB-%E2%86%92-Python-%E7%B1%BB%EF%BC%89"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 绑定类（C++ 类 → Python 类）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-5-%E4%BC%A0%E9%80%92-STL-%E7%B1%BB%E5%9E%8B"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 传递 STL 类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-6-%E6%80%BB%E7%BB%93"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Python-SDK-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 Python SDK 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-SDK-%E6%96%87%E4%BB%B6%E5%A4%B9%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 SDK 文件夹结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%A3%E7%A0%81%E7%BB%91%E5%AE%9A"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 代码绑定</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E4%BB%A3%E7%A0%81%E7%BB%91%E5%AE%9A%E7%9A%84C-%E4%BB%A3%E7%A0%81"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 代码绑定的C++代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E7%BC%96%E8%AF%91%E4%B8%BA%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 编译为动态链接库</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Python%E5%8C%85%E7%BB%84%E7%BB%87"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 Python包组织</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-%E6%A8%A1%E5%9D%97%E7%BB%93%E6%9E%84"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 模块结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E6%A8%A1%E5%9D%97%E5%AF%BC%E5%87%BA"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 模块导出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93%E5%8A%A0%E8%BD%BD"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 动态链接库加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-%E7%B1%BB%E5%9E%8B%E6%8F%90%E7%A4%BA%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 类型提示文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-5-%E5%AE%89%E8%A3%85%E8%84%9A%E6%9C%AC"><span class="toc-number">3.3.5.</span> <span class="toc-text">3.3.5 安装脚本</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-SDK-%E4%BD%BF%E7%94%A8"><span class="toc-number">4.</span> <span class="toc-text">4 SDK 使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-22T07:48:11.000Z" class="dt-published" itemprop="datePublished">2025-04-22</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>, <a class="p-category" href="/tags/Python/" rel="tag">Python</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一章是加餐，主要是给大家介绍一下如何使用<code>Python SDK</code>来操作我们之前实现的LSM-Tree-KV存储。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a> 感谢您的 <code>Star</code>!</p>
+<p>欢迎支持本项目同步更新的从零开始实现的视频教程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+<p>欢迎加入讨论群：<a target="_blank" rel="noopener" href="https://qm.qq.com/q/lkIzCPvcdM">Tiny-LSM项目交流群</a></p>
+<h1 id="1-SDK-的作用"><a href="#1-SDK-的作用" class="headerlink" title="1 SDK 的作用"></a>1 SDK 的作用</h1><p><code>Python SDK</code>的作用是提供一个简单易用的接口，让用户可以使用<code>Python</code>这样的脚本语言方便地使用我们实现的<code>LSM-Tree-KV</code>存储。通常来说, 成熟的数据库等基础设施都会提供类似<code>Python</code>或者<code>JavaScript</code>这样的脚本语言的SDK，方便用户进行二次开发和使用。否则， 就只能使用<code>C++</code>这样的编译型语言来进行开发，或者调用动态链接库的接口，这样会比较麻烦。</p>
+<p>这里我选择<code>Python</code>的<code>SDk</code>, 主要原因是<code>Python</code>的语法简单易懂，且有丰富的第三方库支持, 并且脚本语言也非常方便, 我自己调试的时候也更想用<code>Python</code>先验证一些流程的正确性, 然后再到具体的错误流程中进行<code>C++</code>的单步调试。</p>
+<p><code>C/C++</code>到<code>Python</code>的SDK开发主要是通过<code>pybind11</code>这个库来实现的。<code>pybind11</code>是一个轻量级的库，可以让我们很方便地将<code>C++</code>代码暴露给<code>Python</code>，并且支持大部分的<code>C++</code>特性，包括类、函数、模板等。本章接下来的内容主要是介绍如何使用<code>pybind11</code>来实现一个简单的<code>Python SDK</code>，并且提供一些简单的示例代码来演示如何使用这个SDK。</p>
+<h1 id="2-pybind11-简介"><a href="#2-pybind11-简介" class="headerlink" title="2 pybind11 简介"></a>2 pybind11 简介</h1><h2 id="2-1-pybind11-是什么"><a href="#2-1-pybind11-是什么" class="headerlink" title="2.1 pybind11 是什么"></a>2.1 pybind11 是什么</h2><p><code>pybind11</code> 是一个用于将 <strong>C++ 函数、类、模块</strong> 暴露给 <strong>Python 调用</strong> 的轻量级头文件库。它的目标是：</p>
+<ul>
+<li><strong>简洁语法</strong>：像写 Python 模块一样写 C++ 绑定。</li>
+<li><strong>无依赖性</strong>：只需要头文件，无需链接库。</li>
+<li><strong>性能极高</strong>：性能几乎与纯 C++ 接近。</li>
+</ul>
+<p>适用于以下场景：</p>
+<ul>
+<li>Python 调用高性能 C++ 模块（如计算密集型任务）</li>
+<li>Python 扩展模块编写（替代 CPython 的复杂 C API）</li>
+<li>将现有 C++ 库封装为 Python 模块</li>
+</ul>
+<h2 id="2-2-安装与环境配置"><a href="#2-2-安装与环境配置" class="headerlink" title="2.2 安装与环境配置"></a>2.2 安装与环境配置</h2><p>安装 <code>Python</code> 端 <code>pybind11</code>（用于提供 <code>--includes</code> 编译选项）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install pybind11</span><br></pre></td></tr></table></figure>
+
+<p>获取 C++ 头文件（两种方式）：</p>
+<ol>
+<li>使用 pip 安装版本，编译时用 <code>python -m pybind11 --includes</code></li>
+<li>或者 clone 官方仓库：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/pybind/pybind11.git</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>这里我们在项目中可以用<code>xmake</code>的包管理工具添加依赖:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">add_requires(<span class="string">&quot;pybind11&quot;</span>)</span><br><span class="line"></span><br><span class="line">target(<span class="string">&quot;lsm_pybind&quot;</span>)</span><br><span class="line">    ...</span><br><span class="line">    add_packages(<span class="string">&quot;pybind11&quot;</span>)</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-示例：绑定-C-函数"><a href="#2-3-示例：绑定-C-函数" class="headerlink" title="2.3 示例：绑定 C++ 函数"></a>2.3 示例：绑定 C++ 函数</h2><p><strong>📄 <code>example.cpp</code> 文件：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/pybind11.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 普通 C++ 函数</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> i, <span class="type">int</span> j)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> i + j;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 创建 Python 模块</span></span><br><span class="line"><span class="built_in">PYBIND11_MODULE</span>(example, m) &#123;</span><br><span class="line">    m.<span class="built_in">doc</span>() = <span class="string">&quot;pybind11 example plugin&quot;</span>; <span class="comment">// 模块说明（可选）</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// m.def(&quot;python函数名&quot;, C++函数指针, &quot;函数文档字符串&quot;)</span></span><br><span class="line">    m.<span class="built_in">def</span>(<span class="string">&quot;add&quot;</span>, &amp;add, <span class="string">&quot;A function that adds two numbers&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>🚀 编译命令（Linux&#x2F;macOS）：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">c++ -O3 -Wall -shared -std=c++11 -fPIC \</span><br><span class="line">    $(python3 -m pybind11 --includes) example.cpp \</span><br><span class="line">    -o example$(python3-config --extension-suffix)</span><br></pre></td></tr></table></figure>
+
+<p>📌 <strong>说明</strong>：</p>
+<ul>
+<li><code>-O3</code>：优化等级</li>
+<li><code>-fPIC</code>：生成与位置无关的代码</li>
+<li><code>--extension-suffix</code>：生成正确的 <code>.so</code> 或 <code>.pyd</code> 文件名</li>
+</ul>
+<p><strong>🐍 在 Python 中使用</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> example</span><br><span class="line"><span class="built_in">print</span>(example.add(<span class="number">3</span>, <span class="number">4</span>))  <span class="comment"># 输出 7</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="2-4-绑定类（C-类-→-Python-类）"><a href="#2-4-绑定类（C-类-→-Python-类）" class="headerlink" title="2.4 绑定类（C++ 类 → Python 类）"></a>2.4 绑定类（C++ 类 → Python 类）</h2><p><strong>📄 <code>example.cpp</code> 中绑定类：</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/pybind11.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> pybind11;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Pet</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Pet</span>(<span class="type">const</span> std::string &amp;name) : <span class="built_in">name</span>(name) &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">setName</span><span class="params">(<span class="type">const</span> std::string &amp;name_)</span> </span>&#123; name = name_; &#125;</span><br><span class="line">    <span class="function"><span class="type">const</span> std::string &amp;<span class="title">getName</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> name; &#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::string name;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="built_in">PYBIND11_MODULE</span>(example, m) &#123;</span><br><span class="line">    <span class="built_in">class_</span>&lt;Pet&gt;(m, <span class="string">&quot;Pet&quot;</span>)</span><br><span class="line">        .<span class="built_in">def</span>(<span class="built_in">init</span>&lt;<span class="type">const</span> std::string &amp;&gt;()) <span class="comment">// 绑定构造函数</span></span><br><span class="line">        .<span class="built_in">def</span>(<span class="string">&quot;setName&quot;</span>, &amp;Pet::setName)</span><br><span class="line">        .<span class="built_in">def</span>(<span class="string">&quot;getName&quot;</span>, &amp;Pet::getName);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>🐍 Python 中使用：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> example</span><br><span class="line"></span><br><span class="line">dog = example.Pet(<span class="string">&quot;Buddy&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(dog.getName())   <span class="comment"># 输出：Buddy</span></span><br><span class="line">dog.setName(<span class="string">&quot;Rocky&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(dog.getName())   <span class="comment"># 输出：Rocky</span></span><br></pre></td></tr></table></figure>
+
+<p>📌 <strong>关键语法说明</strong>：</p>
+<ul>
+<li><code>class_&lt;T&gt;(module, &quot;Python类名&quot;)</code>：绑定 C++ 类</li>
+<li><code>.def(init&lt;Args...&gt;())</code>：绑定构造函数</li>
+<li><code>.def(&quot;方法名&quot;, &amp;方法指针)</code>：绑定成员方法</li>
+</ul>
+<hr>
+<h2 id="2-5-传递-STL-类型"><a href="#2-5-传递-STL-类型" class="headerlink" title="2.5 传递 STL 类型"></a>2.5 传递 STL 类型</h2><p>pybind11 支持常见 STL 类型的自动转换：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/pybind11.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/stl.h&gt;</span> <span class="comment">// STL 支持</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">std::vector&lt;<span class="type">int</span>&gt; <span class="title">generate</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>&#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">PYBIND11_MODULE</span>(example, m) &#123;</span><br><span class="line">    m.<span class="built_in">def</span>(<span class="string">&quot;generate&quot;</span>, &amp;generate);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Python 使用：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">print</span>(example.generate())  <span class="comment"># [1, 2, 3, 4]</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="2-6-总结"><a href="#2-6-总结" class="headerlink" title="2.6 总结"></a>2.6 总结</h2><table>
+<thead>
+<tr>
+<th>功能</th>
+<th>语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>绑定函数</td>
+<td><code>m.def(&quot;name&quot;, &amp;func)</code></td>
+<td>将 C++ 函数暴露给 Python</td>
+</tr>
+<tr>
+<td>绑定类</td>
+<td><code>class_&lt;T&gt;(m, &quot;Class&quot;)</code></td>
+<td>创建 Python 类</td>
+</tr>
+<tr>
+<td>构造函数</td>
+<td><code>.def(init&lt;Args...&gt;())</code></td>
+<td>构造器绑定</td>
+</tr>
+<tr>
+<td>成员方法</td>
+<td><code>.def(&quot;name&quot;, &amp;method)</code></td>
+<td>类成员方法绑定</td>
+</tr>
+<tr>
+<td>STL支持</td>
+<td><code>#include &lt;pybind11/stl.h&gt;</code></td>
+<td>启用 vector&#x2F;map&#x2F;list 自动转换</td>
+</tr>
+<tr>
+<td>NumPy支持</td>
+<td><code>#include &lt;pybind11/numpy.h&gt;</code></td>
+<td>绑定 NumPy 数组</td>
+</tr>
+</tbody></table>
+<h1 id="3-Python-SDK-实现"><a href="#3-Python-SDK-实现" class="headerlink" title="3 Python SDK 实现"></a>3 Python SDK 实现</h1><h2 id="3-1-SDK-文件夹结构"><a href="#3-1-SDK-文件夹结构" class="headerlink" title="3.1 SDK 文件夹结构"></a>3.1 SDK 文件夹结构</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">sdk/</span><br><span class="line">├── lsm_pybind.cpp      <span class="comment"># Pybind11绑定入口</span></span><br><span class="line">├── tonilsm/</span><br><span class="line">│   ├── __init__.py     <span class="comment"># 包安装脚本</span></span><br><span class="line">│   ├── tonilsm/</span><br><span class="line">│   │    ├── __init__.py    <span class="comment"># 核心模块加载器</span></span><br><span class="line">│   │  ├── __init__.pyi   <span class="comment"># 类型提示文件</span></span><br><span class="line">│   │  └── core/          <span class="comment"># 编译产物目录</span></span><br><span class="line">├── └setup.py <span class="comment"># Python包安装脚本</span></span><br><span class="line">xmake.lua             <span class="comment"># 构建配置文件</span></span><br><span class="line">src/                  <span class="comment"># C++存储引擎源码</span></span><br><span class="line">include/              <span class="comment"># C++头文件</span></span><br></pre></td></tr></table></figure>
+<p>这里对每个模块说明如下:</p>
+<ul>
+<li><code>sdk/</code>：SDK的根目录<ul>
+<li><code>lsm_pybind.cpp</code>：SDK的绑定入口文件，主要是将C++的类和函数绑定到<code>Python</code>中</li>
+<li><code>tonilsm/</code>：<code>Python</code>模块的目录，包含了<code>Python</code>模块的核心代码和类型提示文件，以及类型提示文件<ul>
+<li><code>tonilsm/__init__.py</code>：<code>Python</code>模块的安装脚本，主要是将<code>tonilsm</code>模块导入到<code>Python</code>中</li>
+<li><code>tonilsm/__init__.pyi</code>：类型提示文件，主要是给<code>Python</code>的IDE提供类型提示</li>
+<li><code>tonilsm/core/</code>：编译产物目录，主要是存放编译后的<code>Python</code>模块</li>
+<li><code>setup.py</code>：<code>Python</code>模块的安装脚本，主要是将<code>tonilsm</code>模块安装到<code>Python</code>中</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>xmake.lua</code>：<code>xmake</code>的构建配置文件，主要是配置<code>C++</code>的编译选项和依赖</li>
+</ul>
+<h2 id="3-2-代码绑定"><a href="#3-2-代码绑定" class="headerlink" title="3.2 代码绑定"></a>3.2 代码绑定</h2><h3 id="3-2-1-代码绑定的C-代码"><a href="#3-2-1-代码绑定的C-代码" class="headerlink" title="3.2.1 代码绑定的C++代码"></a>3.2.1 代码绑定的C++代码</h3><p>这里我们只需要将<code>lsm/engine.h</code> 中的类和函数绑定到 <code>Python</code> 中即可, 但由于我们的主类类似<code>beigin</code>这样的迭代器返回的对象是一个迭代器, 且参数中包括一些自定义的隔离级别的枚举, 所以我们需要先将这些自定义数据类型也绑定到 <code>Python</code> 中。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sdk/lsm_pybind.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/lsm/engine.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/lsm/level_iterator.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/functional.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/pybind11.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;pybind11/stl.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">namespace</span> py = pybind11;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 绑定 TwoMergeIterator 迭代器</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">bind_TwoMergeIterator</span><span class="params">(py::<span class="keyword">module</span> &amp;m)</span> </span>&#123;</span><br><span class="line">  py::<span class="built_in">class_</span>&lt;TwoMergeIterator&gt;(m, <span class="string">&quot;TwoMergeIterator&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;__iter__&quot;</span>, [](TwoMergeIterator &amp;it) &#123; <span class="keyword">return</span> &amp;it; &#125;)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;__next__&quot;</span>, [](TwoMergeIterator &amp;it) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!it.<span class="built_in">is_valid</span>())</span><br><span class="line">          <span class="keyword">throw</span> py::<span class="built_in">stop_iteration</span>();</span><br><span class="line">        <span class="keyword">auto</span> kv = *it;</span><br><span class="line">        ++it;</span><br><span class="line">        <span class="keyword">return</span> py::<span class="built_in">make_tuple</span>(kv.first, kv.second);</span><br><span class="line">      &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">bind_Level_Iterator</span><span class="params">(py::<span class="keyword">module</span> &amp;m)</span> </span>&#123;</span><br><span class="line">  py::<span class="built_in">class_</span>&lt;Level_Iterator&gt;(m, <span class="string">&quot;Level_Iterator&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;__iter__&quot;</span>, [](Level_Iterator &amp;it) &#123; <span class="keyword">return</span> &amp;it; &#125;)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;__next__&quot;</span>, [](Level_Iterator &amp;it) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!it.<span class="built_in">is_valid</span>())</span><br><span class="line">          <span class="keyword">throw</span> py::<span class="built_in">stop_iteration</span>();</span><br><span class="line">        <span class="keyword">auto</span> kv = *it;</span><br><span class="line">        ++it;</span><br><span class="line">        <span class="keyword">return</span> py::<span class="built_in">make_tuple</span>(kv.first, kv.second);</span><br><span class="line">      &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 绑定 TranContext 事务上下文</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 提前声明 TranContext（如果头文件未包含）</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TranContext</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 绑定 TranContext</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">bind_TranContext</span><span class="params">(py::<span class="keyword">module</span> &amp;m)</span> </span>&#123;</span><br><span class="line">  py::class_&lt;TranContext, std::shared_ptr&lt;TranContext&gt;&gt;(m, <span class="string">&quot;TranContext&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;commit&quot;</span>, &amp;TranContext::commit,</span><br><span class="line">           py::<span class="built_in">arg</span>(<span class="string">&quot;test_fail&quot;</span>) = <span class="literal">false</span>) <span class="comment">// 处理默认参数</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;abort&quot;</span>, &amp;TranContext::abort)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;get&quot;</span>, &amp;TranContext::get)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;remove&quot;</span>, &amp;TranContext::remove)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;put&quot;</span>, &amp;TranContext::put);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">bind_IsolationLevel</span><span class="params">(py::<span class="keyword">module</span> &amp;m)</span> </span>&#123;</span><br><span class="line">  py::<span class="built_in">enum_</span>&lt;IsolationLevel&gt;(m, <span class="string">&quot;IsolationLevel&quot;</span>)</span><br><span class="line">      .<span class="built_in">value</span>(<span class="string">&quot;READ_UNCOMMITTED&quot;</span>, IsolationLevel::READ_UNCOMMITTED)</span><br><span class="line">      .<span class="built_in">value</span>(<span class="string">&quot;READ_COMMITTED&quot;</span>, IsolationLevel::READ_COMMITTED)</span><br><span class="line">      .<span class="built_in">value</span>(<span class="string">&quot;REPEATABLE_READ&quot;</span>, IsolationLevel::REPEATABLE_READ)</span><br><span class="line">      .<span class="built_in">value</span>(<span class="string">&quot;SERIALIZABLE&quot;</span>, IsolationLevel::SERIALIZABLE)</span><br><span class="line">      .<span class="built_in">export_values</span>();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>pybind11 语法解释：</p>
+<ul>
+<li><code>py::class_</code>: 用于将 C++ 类暴露给 Python。第一个参数是 C++ 类类型，第二个参数是 Python 类的名称。</li>
+<li><code>def()</code>: 用于绑定方法或函数。例如，.def(“方法名”, &amp;类::方法) 将 C++ 方法绑定到 Python 方法。</li>
+<li><code>py::arg()</code>: 允许指定默认参数。例如，py::arg(“test_fail”) &#x3D; false 设置 test_fail 参数的默认值。</li>
+<li><code>py::make_tuple()</code>: 将 C++ 元组转换为 Python 元组，方便返回多个值。</li>
+<li><code>py::stop_iteration()</code>: 用于在 Python 中信号迭代结束，类似于抛出 StopIteration 异常。</li>
+<li><code>py::enum_</code>: 用于将 C++ 枚举暴露给 Python。每个 .value() 调用将 C++ 枚举常量映射到 Python 枚举常量。</li>
+<li><code>export_values()</code>: 导出所有定义的枚举值，以便可以直接访问，而不需要使用枚举名称前缀。</li>
+</ul>
+<p>在此后, 我们需要将<code>LSM</code>这个对外暴露的<code>C++</code>类绑定到<code>Python</code>中, 这里我们只需要将<code>LSM</code>类的构造函数和一些对外暴露的接口绑定到<code>Python</code>中即可, 具体代码如下:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sdk/lsm_pybind.cpp</span></span><br><span class="line"><span class="built_in">PYBIND11_MODULE</span>(lsm_pybind, m) &#123;</span><br><span class="line">  <span class="comment">// 绑定辅助类</span></span><br><span class="line">  <span class="built_in">bind_TwoMergeIterator</span>(m);</span><br><span class="line">  <span class="built_in">bind_Level_Iterator</span>(m);</span><br><span class="line">  <span class="built_in">bind_TranContext</span>(m);</span><br><span class="line">  <span class="built_in">bind_IsolationLevel</span>(m);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 主类 LSM</span></span><br><span class="line">  py::<span class="built_in">class_</span>&lt;LSM&gt;(m, <span class="string">&quot;LSM&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(py::<span class="built_in">init</span>&lt;<span class="type">const</span> std::string &amp;&gt;())</span><br><span class="line">      <span class="comment">// 基础操作</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;put&quot;</span>, &amp;LSM::put, py::<span class="built_in">arg</span>(<span class="string">&quot;key&quot;</span>), py::<span class="built_in">arg</span>(<span class="string">&quot;value&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Insert a key-value pair (bytes type)&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;get&quot;</span>, &amp;LSM::get, py::<span class="built_in">arg</span>(<span class="string">&quot;key&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Get value by key, returns None if not found&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;remove&quot;</span>, &amp;LSM::remove, py::<span class="built_in">arg</span>(<span class="string">&quot;key&quot;</span>), <span class="string">&quot;Delete a key&quot;</span>)</span><br><span class="line">      <span class="comment">// 批量操作</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;put_batch&quot;</span>, &amp;LSM::put_batch, py::<span class="built_in">arg</span>(<span class="string">&quot;kvs&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Batch insert key-value pairs&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;remove_batch&quot;</span>, &amp;LSM::remove_batch, py::<span class="built_in">arg</span>(<span class="string">&quot;keys&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Batch delete keys&quot;</span>)</span><br><span class="line">      <span class="comment">// 迭代器</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;begin&quot;</span>, &amp;LSM::begin, py::<span class="built_in">arg</span>(<span class="string">&quot;tranc_id&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Start an iterator with transaction ID&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;end&quot;</span>, &amp;LSM::end, <span class="string">&quot;Get end iterator&quot;</span>)</span><br><span class="line">      <span class="comment">// 事务</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;begin_tran&quot;</span>, &amp;LSM::begin_tran, py::<span class="built_in">arg</span>(<span class="string">&quot;isolation_level&quot;</span>),</span><br><span class="line">           <span class="string">&quot;Start a transaction&quot;</span>)</span><br><span class="line">      <span class="comment">// 其他方法</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;clear&quot;</span>, &amp;LSM::clear, <span class="string">&quot;Clear all data&quot;</span>) <span class="comment">// ! Fix bugs</span></span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;flush&quot;</span>, &amp;LSM::flush, <span class="string">&quot;Flush memory table to disk&quot;</span>)</span><br><span class="line">      .<span class="built_in">def</span>(<span class="string">&quot;flush_all&quot;</span>, &amp;LSM::flush_all, <span class="string">&quot;Flush all pending data&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-2-编译为动态链接库"><a href="#3-2-2-编译为动态链接库" class="headerlink" title="3.2.2 编译为动态链接库"></a>3.2.2 编译为动态链接库</h3><p>我们做的这些绑定操作都需要编译为动态链接库, 这里我们使用<code>xmake</code>来编译, 具体的<code>xmake.lua</code>文件如下:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">target(<span class="string">&quot;lsm_pybind&quot;</span>)</span><br><span class="line">    set_kind(<span class="string">&quot;shared&quot;</span>)</span><br><span class="line">    add_files(<span class="string">&quot;sdk/lsm_pybind.cpp&quot;</span>)</span><br><span class="line">    add_packages(<span class="string">&quot;pybind11&quot;</span>)</span><br><span class="line">    add_deps(<span class="string">&quot;lsm_shared&quot;</span>)</span><br><span class="line">    add_includedirs(<span class="string">&quot;include&quot;</span>, &#123;public = <span class="literal">true</span>&#125;)</span><br><span class="line">    set_targetdir(<span class="string">&quot;$(buildir)/lib&quot;</span>)</span><br><span class="line">    set_filename(<span class="string">&quot;lsm_pybind.so&quot;</span>)  <span class="comment">-- 确保生成的文件名为 lsm_pybind.so</span></span><br><span class="line">    add_ldflags(<span class="string">&quot;-Wl,-rpath,$ORIGIN&quot;</span>)</span><br><span class="line">    add_defines(<span class="string">&quot;TONILSM_EXPORT=__attribute__((visibility(\&quot;default\&quot;)))&quot;</span>)</span><br><span class="line">    add_cxxflags(<span class="string">&quot;-fvisibility=hidden&quot;</span>)  <span class="comment">-- 隐藏非导出符号</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="3-3-Python包组织"><a href="#3-3-Python包组织" class="headerlink" title="3.3 Python包组织"></a>3.3 Python包组织</h2><h3 id="3-3-1-模块结构"><a href="#3-3-1-模块结构" class="headerlink" title="3.3.1 模块结构"></a>3.3.1 模块结构</h3><p>在有了这个动态链接库后, 我们需要将这个动态链接库组织成一个<code>Python</code>包, 这部分模块结构为:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">tonilsm</span><br><span class="line">├── tonilsm</span><br><span class="line">│   ├── core</span><br><span class="line">│   │   ├── __init__.py</span><br><span class="line">│   │   ├── __init__.pyi</span><br><span class="line">│   │   ├── lib</span><br><span class="line">│   │   │   ├── liblsm_shared.so</span><br><span class="line">│   │   │   └── lsm_pybind.so</span><br><span class="line">│   ├── __init__.py</span><br><span class="line">│   └── setup.py</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这里忽略了自动生成和缓存的文件夹和文件</p>
+</blockquote>
+<p>这里简单介绍下这部分的模块:</p>
+<ul>
+<li><p><strong><code>tonilsm/</code></strong>: 这是整个 Python 包的根目录。</p>
+<ul>
+<li><strong><code>tonilsm/__init__.py</code></strong>: 这个文件用于初始化 <code>tonilsm</code> 包。它可以包含包的导入逻辑和其他初始化代码。</li>
+</ul>
+</li>
+<li><p><strong><code>tonilsm/core/</code></strong>: 这个目录包含核心的实现代码和动态链接库。</p>
+<ul>
+<li><p><strong><code>tonilsm/core/__init__.py</code></strong>: 这个文件用于初始化 <code>core</code> 子包。通常在这个文件中导入动态链接库中的模块，以便用户可以直接从 <code>tonilsm.core</code> 中访问这些模块。</p>
+</li>
+<li><p><strong><code>tonilsm/core/__init__.pyi</code></strong>: 这个文件是类型提示文件（type stub），用于提供类型信息，帮助 IDE 和静态类型检查工具（如 <code>mypy</code>）更好地理解代码结构。</p>
+</li>
+<li><p><strong><code>tonilsm/core/lib/</code></strong>: 这个目录存放编译生成的动态链接库文件。</p>
+<ul>
+<li><strong><code>tonilsm/core/lib/liblsm_shared.so</code></strong>: 这是 C++ 存储引擎的共享库文件。</li>
+<li><strong><code>tonilsm/core/lib/lsm_pybind.so</code></strong>: 这是通过 <code>pybind11</code> 绑定生成的 Python 扩展模块。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-3-2-模块导出"><a href="#3-3-2-模块导出" class="headerlink" title="3.3.2 模块导出"></a>3.3.2 模块导出</h3><p><code>tonilsm/__init__.py</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># tonilsm/__init__.py</span></span><br><span class="line"><span class="keyword">from</span> .core <span class="keyword">import</span> LSM, IsolationLevel  <span class="comment"># 从 core 子模块导出 LSM 类</span></span><br><span class="line"></span><br><span class="line">__all__ = [<span class="string">&quot;LSM&quot;</span>, <span class="string">&quot;IsolationLevel&quot;</span>]</span><br></pre></td></tr></table></figure>
+<p>这里的作用是将 <code>LSM</code>、<code>IsolationLevel</code> 模块导入到 <code>tonilsm</code> 包中，这样用户可以直接使用 <code>from tonilsm import ...</code> 的方式来访问核心功能。</p>
+<h3 id="3-3-3-动态链接库加载"><a href="#3-3-3-动态链接库加载" class="headerlink" title="3.3.3 动态链接库加载"></a>3.3.3 动态链接库加载</h3><p>在 <code>tonilsm/core/__init__.py</code> 中，我们需要加载动态链接库 <code>lsm_pybind.so</code>，以便在 Python 中使用 C++ 实现的功能。我们可以使用 <code>importlib</code> 模块来动态加载这个库。</p>
+<p><code>tonilsm/core/__init__.py</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> importlib.util</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取当前目录</span></span><br><span class="line">current_dir = os.path.dirname(os.path.abspath(__file__))</span><br><span class="line"></span><br><span class="line"><span class="comment"># 添加动态链接库目录到系统路径</span></span><br><span class="line">lib_dir = os.path.join(current_dir, <span class="string">&#x27;lib&#x27;</span>)</span><br><span class="line">sys.path.append(lib_dir)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载动态链接库</span></span><br><span class="line">spec = importlib.util.spec_from_file_location(<span class="string">&quot;lsm_pybind&quot;</span>, os.path.join(lib_dir, <span class="string">&quot;lsm_pybind.so&quot;</span>))</span><br><span class="line">lsm_pybind = importlib.util.module_from_spec(spec)</span><br><span class="line">spec.loader.exec_module(lsm_pybind)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 导出模块中的类和函数</span></span><br><span class="line"><span class="keyword">from</span> lsm_pybind <span class="keyword">import</span> LSM, TwoMergeIterator, Level_Iterator, TranContext, IsolationLevel</span><br><span class="line"></span><br><span class="line">__all__ = [<span class="string">&#x27;LSM&#x27;</span>, <span class="string">&#x27;TwoMergeIterator&#x27;</span>, <span class="string">&#x27;Level_Iterator&#x27;</span>, <span class="string">&#x27;TranContext&#x27;</span>, <span class="string">&#x27;IsolationLevel&#x27;</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-4-类型提示文件"><a href="#3-3-4-类型提示文件" class="headerlink" title="3.3.4 类型提示文件"></a>3.3.4 类型提示文件</h3><p>类型提示文件 <code>tonilsm/core/__init__.pyi</code> 用于提供类型信息，帮助 IDE 和静态类型检查工具（如 <code>mypy</code>）更好地理解代码结构。这个文件的内容与 <code>tonilsm/core/__init__.py</code> 中的类和函数定义相对应。<br>这里我们需要定义 <code>LSM</code> 类、<code>TwoMergeIterator</code> 类、<code>Level_Iterator</code> 类、<code>TranContext</code> 类和 <code>IsolationLevel</code> 枚举类型的接口。<br><code>tonilsm/core/__init__.pyi</code> 文件的内容如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> typing <span class="keyword">import</span> *</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LSM</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, path: <span class="built_in">str</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">put</span>(<span class="params">self, key: <span class="built_in">bytes</span>, value: <span class="built_in">bytes</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">self, key: <span class="built_in">bytes</span></span>) -&gt; <span class="type">Optional</span>[<span class="built_in">bytes</span>]: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">remove</span>(<span class="params">self, key: <span class="built_in">bytes</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">put_batch</span>(<span class="params">self, kvs: <span class="type">List</span>[<span class="type">Tuple</span>[<span class="built_in">bytes</span>, <span class="built_in">bytes</span>]]</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">remove_batch</span>(<span class="params">self, keys: <span class="type">List</span>[<span class="built_in">bytes</span>]</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">begin</span>(<span class="params">self, tranc_id: <span class="built_in">int</span></span>) -&gt; <span class="string">&#x27;TwoMergeIterator&#x27;</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">end</span>(<span class="params">self</span>) -&gt; <span class="string">&#x27;TwoMergeIterator&#x27;</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">begin_tran</span>(<span class="params">self, isolation_level: <span class="string">&#x27;IsolationLevel&#x27;</span></span>) -&gt; <span class="string">&#x27;TranContext&#x27;</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">clear</span>(<span class="params">self</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">flush</span>(<span class="params">self</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">flush_all</span>(<span class="params">self</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TwoMergeIterator</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__iter__</span>(<span class="params">self</span>) -&gt; <span class="string">&#x27;TwoMergeIterator&#x27;</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__next__</span>(<span class="params">self</span>) -&gt; <span class="type">Tuple</span>[<span class="built_in">bytes</span>, <span class="built_in">bytes</span>]: ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Level_Iterator</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__iter__</span>(<span class="params">self</span>) -&gt; <span class="string">&#x27;Level_Iterator&#x27;</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__next__</span>(<span class="params">self</span>) -&gt; <span class="type">Tuple</span>[<span class="built_in">bytes</span>, <span class="built_in">bytes</span>]: ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">TranContext</span>:</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">commit</span>(<span class="params">self, test_fail: <span class="built_in">bool</span> = <span class="literal">False</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">abort</span>(<span class="params">self</span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">get</span>(<span class="params">self, key: <span class="built_in">bytes</span></span>) -&gt; <span class="type">Optional</span>[<span class="built_in">bytes</span>]: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">remove</span>(<span class="params">self, key: <span class="built_in">bytes</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">put</span>(<span class="params">self, key: <span class="built_in">bytes</span>, value: <span class="built_in">bytes</span></span>) -&gt; <span class="literal">None</span>: ...</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">IsolationLevel</span>(<span class="title class_ inherited__">Enum</span>):</span><br><span class="line">    READ_UNCOMMITTED: <span class="string">&#x27;IsolationLevel&#x27;</span></span><br><span class="line">    READ_COMMITTED: <span class="string">&#x27;IsolationLevel&#x27;</span></span><br><span class="line">    REPEATABLE_READ: <span class="string">&#x27;IsolationLevel&#x27;</span></span><br><span class="line">    SERIALIZABLE: <span class="string">&#x27;IsolationLevel&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-5-安装脚本"><a href="#3-3-5-安装脚本" class="headerlink" title="3.3.5 安装脚本"></a>3.3.5 安装脚本</h3><p>安装脚本 <code>tonilsm/setup.py</code> 用于构建和安装 Python 包。这个脚本使用 <code>setuptools</code> 构建 Python 包:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> platform</span><br><span class="line"><span class="keyword">from</span> setuptools <span class="keyword">import</span> setup, find_packages</span><br><span class="line"><span class="keyword">from</span> setuptools.command.build_py <span class="keyword">import</span> build_py</span><br><span class="line"></span><br><span class="line"><span class="comment"># 版本和基本描述</span></span><br><span class="line">VERSION = <span class="string">&quot;0.1.0&quot;</span></span><br><span class="line">DESCRIPTION = <span class="string">&quot;A Python binding for Toni&#x27;s LSM Tree Storage Engine&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomBuild</span>(<span class="title class_ inherited__">build_py</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">run</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="comment"># 使用绝对路径确保准确性</span></span><br><span class="line">        build_lib_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), <span class="string">&quot;../../build/lib&quot;</span>))</span><br><span class="line">        package_lib_dir = os.path.join(self.build_lib, <span class="string">&quot;tonilsm/core/lib&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 创建目标目录</span></span><br><span class="line">        self.mkpath(package_lib_dir)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 动态库文件列表</span></span><br><span class="line">        lib_files = [</span><br><span class="line">            (<span class="string">&quot;liblsm_shared.so&quot;</span>, <span class="string">&quot;liblsm_shared.so&quot;</span>),</span><br><span class="line">            (<span class="string">&quot;lsm_pybind.so&quot;</span>, <span class="string">&quot;lsm_pybind.so&quot;</span>)</span><br><span class="line">        ]</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 复制文件</span></span><br><span class="line">        <span class="keyword">for</span> src_name, dst_name <span class="keyword">in</span> lib_files:</span><br><span class="line">            src = os.path.join(build_lib_dir, src_name)</span><br><span class="line">            dst = os.path.join(package_lib_dir, dst_name)</span><br><span class="line">            <span class="keyword">if</span> os.path.exists(src):</span><br><span class="line">                self.copy_file(src, dst)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span> FileNotFoundError(<span class="string">f&quot;Missing library file: <span class="subst">&#123;src&#125;</span>&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="built_in">super</span>().run()</span><br><span class="line"></span><br><span class="line">setup(</span><br><span class="line">    name=<span class="string">&quot;tonilsm&quot;</span>,</span><br><span class="line">    version=VERSION,</span><br><span class="line">    description=DESCRIPTION,</span><br><span class="line">    packages=find_packages(),</span><br><span class="line">package_data=&#123;</span><br><span class="line">    <span class="string">&quot;tonilsm.core&quot;</span>: [</span><br><span class="line">        <span class="string">&quot;lib/*.so&quot;</span>,</span><br><span class="line">        <span class="string">&quot;lib/*.dylib&quot;</span>,</span><br><span class="line">        <span class="string">&quot;lib/*.dll&quot;</span>,</span><br><span class="line">        <span class="string">&quot;lib/*.pyd&quot;</span></span><br><span class="line">    ]</span><br><span class="line">&#125;,</span><br><span class="line">    cmdclass=&#123;<span class="string">&quot;build_py&quot;</span>: CustomBuild&#125;,</span><br><span class="line">    install_requires=[<span class="string">&quot;pybind11&gt;=2.10&quot;</span>],  <span class="comment"># 需声明绑定依赖</span></span><br><span class="line">    python_requires=<span class="string">&quot;&gt;=3.8&quot;</span>,</span><br><span class="line">    author=<span class="string">&quot;Your Name&quot;</span>,</span><br><span class="line">    classifiers=[</span><br><span class="line">        <span class="string">&quot;Development Status :: 3 - Alpha&quot;</span>,</span><br><span class="line">        <span class="string">&quot;Programming Language :: Python :: 3&quot;</span>,</span><br><span class="line">    ]</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-SDK-使用"><a href="#4-SDK-使用" class="headerlink" title="4 SDK 使用"></a>4 SDK 使用</h1><p>现在我们可以直接通过<code>Python</code>来使用这个<code>LSM</code>存储引擎了, 这里我们给出一个简单的使用示例:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tonilsm</span><br><span class="line"></span><br><span class="line">db = tonilsm.LSM(<span class="string">&quot;test2_db&quot;</span>)</span><br><span class="line"></span><br><span class="line">db.put(<span class="string">b&quot;tomxx&quot;</span>, <span class="string">b&quot;catxx&quot;</span>)</span><br><span class="line"></span><br><span class="line">db.get(<span class="string">&quot;tomxx&quot;</span>)</span><br><span class="line"><span class="comment"># &#x27;catxx&#x27;</span></span><br><span class="line"></span><br><span class="line">t = db.begin_tran(isolation_level=tonilsm.IsolationLevel.READ_COMMITTED)</span><br><span class="line"></span><br><span class="line">t.get(<span class="string">&#x27;tomxx&#x27;</span>)</span><br><span class="line"><span class="comment"># &#x27;catxx&#x27;</span></span><br><span class="line"></span><br><span class="line">t.put(<span class="string">&#x27;tomxx&#x27;</span>, <span class="string">&#x27;1&#x27;</span>)</span><br><span class="line"></span><br><span class="line">t.get(<span class="string">&#x27;tomxx&#x27;</span>)</span><br><span class="line"><span class="comment"># &#x27;1&#x27;</span></span><br><span class="line"></span><br><span class="line">db.get(<span class="string">&quot;tomxx&quot;</span>)</span><br><span class="line"><span class="comment"># &#x27;catxx&#x27;</span></span><br><span class="line"></span><br><span class="line">t.commit()</span><br><span class="line"><span class="comment"># True</span></span><br><span class="line"></span><br><span class="line">db.get(<span class="string">&quot;tomxx&quot;</span>)</span><br><span class="line"><span class="comment"># &#x27;1&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>但这里其实有一个<code>bug</code>:</p>
+<p><img src="/../../../images/Proj/LSM/lsm-sdk-bug.png" alt="bug"></p>
+<p>调用<code>clear</code>方法后直接<code>core dump</code>了, 这个<code>clear</code>函数在<code>C++</code>文件中是正常使用的, 但不知道为什么到<code>Python</code>层就<code>core dump</code>了, 这个我暂时不知道什么原因。如果有网页感兴趣，可以看看这个<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm/issues/7">issue</a></p>
+<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>在这一章中，我们介绍了如何使用 <code>pybind11</code> 来将<code>C++</code>代码绑定到 <code>Python</code> 中，并且实现了一个简单的 <code>Python SDK</code>。我们还介绍了如何组织 <code>Python</code> 包的结构，以及如何使用 <code>setuptools</code> 来构建和安装 <code>Python</code> 包。</p>
+<p>这一章算是加餐内容吧, 基础的<code>Python SDK</code>已经实现了, 但有一些细节的<code>bug</code>和优化没有在之前的文章中提及, 因为比较琐碎, 写起来也比较复杂。</p>
+<p>如果本项目有帮到你，请给个<code>star</code>吧，您的支持是我继续维护和开发这个项目的动力。如果你想自己从零开始手敲代码实现这个项目，欢迎支持我的付费视频课程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SDK-%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">1.</span> <span class="toc-text">1 SDK 的作用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-pybind11-%E7%AE%80%E4%BB%8B"><span class="toc-number">2.</span> <span class="toc-text">2 pybind11 简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-pybind11-%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 pybind11 是什么</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%AE%89%E8%A3%85%E4%B8%8E%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 安装与环境配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E7%A4%BA%E4%BE%8B%EF%BC%9A%E7%BB%91%E5%AE%9A-C-%E5%87%BD%E6%95%B0"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 示例：绑定 C++ 函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E7%BB%91%E5%AE%9A%E7%B1%BB%EF%BC%88C-%E7%B1%BB-%E2%86%92-Python-%E7%B1%BB%EF%BC%89"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 绑定类（C++ 类 → Python 类）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-5-%E4%BC%A0%E9%80%92-STL-%E7%B1%BB%E5%9E%8B"><span class="toc-number">2.5.</span> <span class="toc-text">2.5 传递 STL 类型</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-6-%E6%80%BB%E7%BB%93"><span class="toc-number">2.6.</span> <span class="toc-text">2.6 总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Python-SDK-%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 Python SDK 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-SDK-%E6%96%87%E4%BB%B6%E5%A4%B9%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 SDK 文件夹结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%A3%E7%A0%81%E7%BB%91%E5%AE%9A"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 代码绑定</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E4%BB%A3%E7%A0%81%E7%BB%91%E5%AE%9A%E7%9A%84C-%E4%BB%A3%E7%A0%81"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 代码绑定的C++代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E7%BC%96%E8%AF%91%E4%B8%BA%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 编译为动态链接库</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-Python%E5%8C%85%E7%BB%84%E7%BB%87"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 Python包组织</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-%E6%A8%A1%E5%9D%97%E7%BB%93%E6%9E%84"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 模块结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E6%A8%A1%E5%9D%97%E5%AF%BC%E5%87%BA"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 模块导出</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-3-%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93%E5%8A%A0%E8%BD%BD"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 动态链接库加载</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-4-%E7%B1%BB%E5%9E%8B%E6%8F%90%E7%A4%BA%E6%96%87%E4%BB%B6"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 类型提示文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-5-%E5%AE%89%E8%A3%85%E8%84%9A%E6%9C%AC"><span class="toc-number">3.3.5.</span> <span class="toc-text">3.3.5 安装脚本</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-SDK-%E4%BD%BF%E7%94%A8"><span class="toc-number">4.</span> <span class="toc-text">4 SDK 使用</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&text=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发&body=Check out this article: http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&title=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&name=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/&t=C++从零开始实现LSM-Tree-KV存储-20-Python-SDK开发"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

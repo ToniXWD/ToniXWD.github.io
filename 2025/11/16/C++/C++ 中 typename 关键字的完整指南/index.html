@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="在 C++ 模板编程中，typename 是一个看似简单却极易被误解的关键字。它不仅用于声明模板类型参数，更在处理嵌套依赖类型时扮演着“编译器翻译官”的角色。本文将系统梳理 typename 的所有用法、规则与陷阱，帮助你彻底掌握这一核心概念。  一、typename 的两种核心用途typename 在 C++ 中主要有两个作用：  声明模板中的类型参数（常见） 指明依赖名称是一个类型（关键但易错">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++ 中 typename 关键字的完整指南">
+<meta property="og:url" content="http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="在 C++ 模板编程中，typename 是一个看似简单却极易被误解的关键字。它不仅用于声明模板类型参数，更在处理嵌套依赖类型时扮演着“编译器翻译官”的角色。本文将系统梳理 typename 的所有用法、规则与陷阱，帮助你彻底掌握这一核心概念。  一、typename 的两种核心用途typename 在 C++ 中主要有两个作用：  声明模板中的类型参数（常见） 指明依赖名称是一个类型（关键但易错">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-11-16T09:22:27.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.658Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++ 中 typename 关键字的完整指南</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&text=C++ 中 typename 关键字的完整指南"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&is_video=false&description=C++ 中 typename 关键字的完整指南"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++ 中 typename 关键字的完整指南&body=Check out this article: http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&name=C++ 中 typename 关键字的完整指南&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&t=C++ 中 typename 关键字的完整指南"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81typename-%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%A0%B8%E5%BF%83%E7%94%A8%E9%80%94"><span class="toc-number">1.</span> <span class="toc-text">一、typename 的两种核心用途</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%94%A8%E6%B3%95-1%EF%BC%9A%E5%A3%B0%E6%98%8E%E6%A8%A1%E6%9D%BF%E7%B1%BB%E5%9E%8B%E5%8F%82%E6%95%B0"><span class="toc-number">2.</span> <span class="toc-text">二、用法 1：声明模板类型参数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%94%A8%E6%B3%95-2%EF%BC%9A%E6%8C%87%E6%98%8E%E4%BE%9D%E8%B5%96%E5%90%8D%E7%A7%B0%E6%98%AF%E7%B1%BB%E5%9E%8B%EF%BC%88%E9%87%8D%E7%82%B9%EF%BC%81%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、用法 2：指明依赖名称是类型（重点！）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9C%E4%BE%9D%E8%B5%96%E5%90%8D%E7%A7%B0%E2%80%9D%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 什么是“依赖名称”？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-typename%EF%BC%9F"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 为什么需要 typename？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%AD%A3%E7%A1%AE%E5%86%99%E6%B3%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 正确写法示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BD%95%E6%97%B6%E5%BF%85%E9%A1%BB%E4%BD%BF%E7%94%A8-typename%EF%BC%9F"><span class="toc-number">4.</span> <span class="toc-text">四、何时必须使用 typename？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%9C%BA%E6%99%AF"><span class="toc-number">4.1.</span> <span class="toc-text">常见场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E5%B7%A5%E7%A8%8B%E4%BE%8B%E5%AD%90"><span class="toc-number">4.2.</span> <span class="toc-text">实际工程例子</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BE%8B%E5%A4%96%EF%BC%9A%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8-typename-%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="toc-number">5.</span> <span class="toc-text">五、例外：禁止使用 typename 的地方</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%9F%BA%E7%B1%BB%E5%A3%B0%E6%98%8E%EF%BC%88Base-Class-List%EF%BC%89"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 基类声明（Base Class List）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E6%88%90%E5%91%98%E5%88%9D%E5%A7%8B%E5%8C%96%E5%88%97%E8%A1%A8%E4%B8%AD%E7%9A%84%E5%9F%BA%E7%B1%BB%E6%9E%84%E9%80%A0"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 成员初始化列表中的基类构造</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%A8%A1%E6%9D%BF%E5%AE%9E%E5%8F%82%EF%BC%88%E6%9F%90%E4%BA%9B%E6%83%85%E5%86%B5%EF%BC%89"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 模板实参（某些情况）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%B8%B8%E8%A7%81%E8%AF%AF%E5%8C%BA%E4%B8%8E%E9%99%B7%E9%98%B1"><span class="toc-number">6.</span> <span class="toc-text">六、常见误区与陷阱</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-1%EF%BC%9A%E8%AE%A4%E4%B8%BA-typename-%E6%98%AF%E2%80%9C%E5%AE%9A%E4%B9%89%E6%96%B0%E7%B1%BB%E5%9E%8B%E2%80%9D"><span class="toc-number">6.1.</span> <span class="toc-text">误区 1：认为 typename 是“定义新类型”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-2%EF%BC%9A%E5%9C%A8%E9%9D%9E%E6%A8%A1%E6%9D%BF%E4%BB%A3%E7%A0%81%E4%B8%AD%E6%BB%A5%E7%94%A8-typename"><span class="toc-number">6.2.</span> <span class="toc-text">误区 2：在非模板代码中滥用 typename</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-3%EF%BC%9A%E6%B7%B7%E6%B7%86-typename-%E5%92%8C-class-%E5%9C%A8%E6%A8%A1%E6%9D%BF%E5%8F%82%E6%95%B0%E4%B8%AD%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">6.3.</span> <span class="toc-text">误区 3：混淆 typename 和 class 在模板参数中的区别</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%8E%B0%E4%BB%A3-C-%E4%B8%AD%E7%9A%84%E5%8F%98%E5%8C%96%EF%BC%88C-17-%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">七、现代 C++ 中的变化（C++17+）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%BB%E7%BB%93%EF%BC%9A%E4%B8%80%E5%BC%A0%E8%A1%A8%E6%8E%8C%E6%8F%A1-typename"><span class="toc-number">8.</span> <span class="toc-text">八、总结：一张表掌握 typename</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++ 中 typename 关键字的完整指南
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-11-16T09:22:27.000Z" class="dt-published" itemprop="datePublished">2025-11-16</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>在 C++ 模板编程中，<code>typename</code> 是一个看似简单却极易被误解的关键字。它不仅用于声明模板类型参数，更在处理嵌套依赖类型时扮演着“编译器翻译官”的角色。本文将系统梳理 <code>typename</code> 的所有用法、规则与陷阱，帮助你彻底掌握这一核心概念。</p>
+<hr>
+<h1 id="一、typename-的两种核心用途"><a href="#一、typename-的两种核心用途" class="headerlink" title="一、typename 的两种核心用途"></a>一、<code>typename</code> 的两种核心用途</h1><p><code>typename</code> 在 C++ 中主要有两个作用：</p>
+<ol>
+<li><strong>声明模板中的类型参数</strong>（常见）</li>
+<li><strong>指明依赖名称是一个类型</strong>（关键但易错）</li>
+</ol>
+<p>下面分别展开说明。</p>
+<h1 id="二、用法-1：声明模板类型参数"><a href="#二、用法-1：声明模板类型参数" class="headerlink" title="二、用法 1：声明模板类型参数"></a>二、用法 1：声明模板类型参数</h1><p>这是最直观的用法：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Container</span> &#123;</span><br><span class="line">    T data;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 等价于</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Container</span> &#123; <span class="comment">/* ... */</span> &#125;;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>typename</code> 和 <code>class</code> 在此处完全等价。</li>
+<li>但习惯上，当 <code>T</code> 可能是非类类型（如 <code>int</code>、<code>float</code>）时，更推荐使用 <code>typename</code>，语义更准确。</li>
+</ul>
+<blockquote>
+<p>✅ 小贴士：虽然 <code>class</code> 也能用于基本类型，但 <code>typename</code> 表达了“任意类型”的含义，更具通用性。</p>
+</blockquote>
+<h1 id="三、用法-2：指明依赖名称是类型（重点！）"><a href="#三、用法-2：指明依赖名称是类型（重点！）" class="headerlink" title="三、用法 2：指明依赖名称是类型（重点！）"></a>三、用法 2：指明依赖名称是类型（重点！）</h1><p>这一用法是许多 C++ 程序员容易混淆的地方。理解它需要先了解“依赖名称”的概念。</p>
+<h2 id="3-1-什么是“依赖名称”？"><a href="#3-1-什么是“依赖名称”？" class="headerlink" title="3.1 什么是“依赖名称”？"></a>3.1 什么是“依赖名称”？</h2><p>在模板中，如果一个名称<strong>依赖于模板参数</strong>，就称为 <strong>dependent name（依赖名称）</strong>。</p>
+<p>例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    T::value_type x;  <span class="comment">// ← T::value_type 依赖于 T，是依赖名称</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-2-为什么需要-typename？"><a href="#3-2-为什么需要-typename？" class="headerlink" title="3.2 为什么需要 typename？"></a>3.2 为什么需要 <code>typename</code>？</h2><p>C++ 编译器在解析模板定义时，<strong>还不知道 <code>T</code> 具体是什么类型</strong>。因此，对于像 <code>T::value_type</code> 这样的表达式，编译器无法确定它是：</p>
+<ul>
+<li>一个<strong>嵌套类型</strong>（如 <code>std::vector&lt;int&gt;::value_type</code>）</li>
+<li>还是一个<strong>静态成员变量&#x2F;常量</strong>（如 <code>MyClass::MAX_SIZE</code>）</li>
+</ul>
+<p>根据 C++ 标准，<strong>编译器默认假设依赖名称不是类型</strong>（即当作值处理）。</p>
+<p>👉 所以，如果你明确知道它是类型，就必须用 <code>typename</code> 告诉编译器！</p>
+<h2 id="3-3-正确写法示例"><a href="#3-3-正确写法示例" class="headerlink" title="3.3 正确写法示例"></a>3.3 正确写法示例</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_value_type</span><span class="params">(<span class="type">const</span> T&amp; container)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 错误 ❌：缺少 typename</span></span><br><span class="line">    <span class="comment">// T::value_type val;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 正确 ✅：</span></span><br><span class="line">    <span class="keyword">typename</span> T::value_type val = *container.<span class="built_in">begin</span>();</span><br><span class="line">    std::cout &lt;&lt; val &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">std::vector&lt;<span class="type">int</span>&gt; v = &#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>&#125;;</span><br><span class="line"><span class="built_in">print_value_type</span>(v);  <span class="comment">// T = std::vector&lt;int&gt;, T::value_type = int</span></span><br></pre></td></tr></table></figure>
+
+<p>如果没有 <code>typename</code>，编译器会尝试将 <code>T::value_type</code> 解析为一个值，导致类似以下错误：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">error: expected &#x27;;&#x27; before &#x27;val&#x27;</span><br><span class="line">error: &#x27;T::value_type&#x27; is not a type</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="四、何时必须使用-typename？"><a href="#四、何时必须使用-typename？" class="headerlink" title="四、何时必须使用 typename？"></a>四、何时必须使用 <code>typename</code>？</h1><p><strong>规则</strong>：  </p>
+<blockquote>
+<p>如果一个<strong>嵌套名称</strong>（形式为 <code>X::Y</code>）出现在模板中，且 <code>X</code> 依赖于模板参数，并且你<strong>将其用作类型</strong>，那么必须在前面加上 <code>typename</code>。</p>
+</blockquote>
+<h2 id="常见场景"><a href="#常见场景" class="headerlink" title="常见场景"></a>常见场景</h2><table>
+<thead>
+<tr>
+<th>表达式</th>
+<th>是否需要 <code>typename</code>？</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T x;</code></td>
+<td>❌</td>
+<td><code>T</code> 本身就是类型参数</td>
+</tr>
+<tr>
+<td><code>T::iterator it;</code></td>
+<td>✅</td>
+<td><code>iterator</code> 是嵌套依赖类型</td>
+</tr>
+<tr>
+<td><code>std::vector&lt;T&gt;::size_type n;</code></td>
+<td>✅</td>
+<td>依赖 <code>T</code>，且 <code>size_type</code> 是类型</td>
+</tr>
+<tr>
+<td><code>MyClass::static_val</code></td>
+<td>❌</td>
+<td><code>MyClass</code> 不依赖模板参数（非依赖名）</td>
+</tr>
+<tr>
+<td><code>using U = T::type;</code></td>
+<td>✅</td>
+<td>类型别名，<code>T::type</code> 是依赖类型</td>
+</tr>
+</tbody></table>
+<h2 id="实际工程例子"><a href="#实际工程例子" class="headerlink" title="实际工程例子"></a>实际工程例子</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Container&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">process</span><span class="params">(Container&amp; c)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> ValueType = <span class="keyword">typename</span> Container::value_type;        <span class="comment">// ✅</span></span><br><span class="line">    <span class="keyword">typename</span> Container::iterator it = c.<span class="built_in">begin</span>();            <span class="comment">// ✅</span></span><br><span class="line">    <span class="keyword">typename</span> std::allocator_traits&lt;</span><br><span class="line">        <span class="keyword">typename</span> Container::allocator_type                  <span class="comment">// ✅ 嵌套依赖</span></span><br><span class="line">    &gt;::pointer ptr = &amp;(*it);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="五、例外：禁止使用-typename-的地方"><a href="#五、例外：禁止使用-typename-的地方" class="headerlink" title="五、例外：禁止使用 typename 的地方"></a>五、例外：禁止使用 <code>typename</code> 的地方</h1><p>尽管大多数依赖类型前要加 <code>typename</code>，但在某些上下文中<strong>不允许使用</strong>，因为编译器已经知道那里必须是类型。</p>
+<h2 id="5-1-基类声明（Base-Class-List）"><a href="#5-1-基类声明（Base-Class-List）" class="headerlink" title="5.1 基类声明（Base Class List）"></a>5.1 基类声明（Base Class List）</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Derived</span> : <span class="keyword">public</span> T::nested_type &#123;  <span class="comment">// ✅ 正确</span></span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// ❌ 错误：不能写成</span></span><br><span class="line"><span class="comment">// class Derived : public typename T::nested_type</span></span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>原因：继承列表中只能是类型，所以 C++ 隐含了 <code>typename</code>。</p>
+</blockquote>
+<h2 id="5-2-成员初始化列表中的基类构造"><a href="#5-2-成员初始化列表中的基类构造" class="headerlink" title="5.2 成员初始化列表中的基类构造"></a>5.2 成员初始化列表中的基类构造</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">D</span> : Base&lt;T&gt; &#123;</span><br><span class="line">    <span class="built_in">D</span>() : Base&lt;T&gt;::<span class="built_in">Base</span>() &#123;&#125;  <span class="comment">// 这里不加 typename</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-3-模板实参（某些情况）"><a href="#5-3-模板实参（某些情况）" class="headerlink" title="5.3 模板实参（某些情况）"></a>5.3 模板实参（某些情况）</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">template</span>&lt;<span class="keyword">typename</span>&gt; <span class="keyword">class</span> <span class="title class_">C</span>, <span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    C&lt;T&gt; obj;  <span class="comment">// C 是模板模板参数，T 是类型，无需 typename</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="六、常见误区与陷阱"><a href="#六、常见误区与陷阱" class="headerlink" title="六、常见误区与陷阱"></a>六、常见误区与陷阱</h1><h2 id="误区-1：认为-typename-是“定义新类型”"><a href="#误区-1：认为-typename-是“定义新类型”" class="headerlink" title="误区 1：认为 typename 是“定义新类型”"></a>误区 1：认为 <code>typename</code> 是“定义新类型”</h2><p>❌ 错误理解：  </p>
+<blockquote>
+<p>“<code>typename T::value_type</code> 是在定义一个叫 <code>value_type</code> 的新类型。”</p>
+</blockquote>
+<p>✅ 正确理解：  </p>
+<blockquote>
+<p>它只是<strong>告诉编译器</strong> <code>T::value_type</code> <strong>已经是一个类型名</strong>，请按类型解析。</p>
+</blockquote>
+<hr>
+<h2 id="误区-2：在非模板代码中滥用-typename"><a href="#误区-2：在非模板代码中滥用-typename" class="headerlink" title="误区 2：在非模板代码中滥用 typename"></a>误区 2：在非模板代码中滥用 <code>typename</code></h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span> <span class="title class_">MyList</span> &#123;</span><br><span class="line">    <span class="keyword">using</span> value_type = <span class="type">int</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">test</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// ❌ 不需要 typename，因为不在模板中，且 MyList 已知</span></span><br><span class="line">    <span class="keyword">typename</span> MyList::value_type x;  <span class="comment">// 虽然能编译，但冗余！</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// ✅ 直接写：</span></span><br><span class="line">    MyList::value_type x;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>只有在<strong>模板中 + 依赖名称</strong>时才需要 <code>typename</code>。</p>
+</blockquote>
+<hr>
+<h2 id="误区-3：混淆-typename-和-class-在模板参数中的区别"><a href="#误区-3：混淆-typename-和-class-在模板参数中的区别" class="headerlink" title="误区 3：混淆 typename 和 class 在模板参数中的区别"></a>误区 3：混淆 <code>typename</code> 和 <code>class</code> 在模板参数中的区别</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">T</span>&gt;   <span class="comment">// OK</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt; <span class="comment">// 也 OK，且更推荐</span></span><br></pre></td></tr></table></figure>
+
+<p>两者在声明类型参数时完全等价。但注意：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">template</span>&lt;<span class="keyword">typename</span>&gt; <span class="keyword">class</span> <span class="title class_">C</span>&gt;  <span class="comment">// 必须用 class（C++17 前）</span></span><br><span class="line"><span class="comment">// C++17 起允许写 template&lt;template&lt;typename&gt; typename C&gt;</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="七、现代-C-中的变化（C-17-）"><a href="#七、现代-C-中的变化（C-17-）" class="headerlink" title="七、现代 C++ 中的变化（C++17+）"></a>七、现代 C++ 中的变化（C++17+）</h1><p>C++17 放宽了部分限制：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// C++17 起合法</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">template</span>&lt;<span class="keyword">typename</span>&gt; <span class="keyword">typename</span> Container&gt;</span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MyWrapper</span>;</span><br></pre></td></tr></table></figure>
+
+<p>但 <code>typename</code> 在依赖类型中的核心作用<strong>没有改变</strong>。</p>
+<p>此外，C++20 引入的 <strong>Concepts</strong> 可以减少对 <code>enable_if + typename</code> 的依赖，但底层机制仍相同。</p>
+<hr>
+<h1 id="八、总结：一张表掌握-typename"><a href="#八、总结：一张表掌握-typename" class="headerlink" title="八、总结：一张表掌握 typename"></a>八、总结：一张表掌握 <code>typename</code></h1><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>是否需要 <code>typename</code></th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>模板参数声明</td>
+<td>可选（推荐用）</td>
+<td><code>template&lt;typename T&gt;</code></td>
+</tr>
+<tr>
+<td>依赖嵌套类型（模板内）</td>
+<td>✅ 必须</td>
+<td><code>typename T::iterator</code></td>
+</tr>
+<tr>
+<td>非依赖名称</td>
+<td>❌ 不需要</td>
+<td><code>MyClass::value_type</code></td>
+</tr>
+<tr>
+<td>基类列表</td>
+<td>❌ 禁止</td>
+<td><code>class D : public T::Base</code></td>
+</tr>
+<tr>
+<td>函数返回类型（依赖）</td>
+<td>✅ 需要</td>
+<td><code>typename T::result_type func();</code></td>
+</tr>
+<tr>
+<td><code>using</code> 类型别名（依赖）</td>
+<td>✅ 需要</td>
+<td><code>using U = typename T::type;</code></td>
+</tr>
+</tbody></table>
+<p><code>typename</code> 是 C++ 模板元编程的基石之一。理解它不仅是写出正确模板代码的前提，更是掌握 SFINAE、类型萃取、泛型库设计的关键。记住核心原则：</p>
+<blockquote>
+<p><strong>“依赖名称默认不是类型；若它是类型，请用 <code>typename</code> 明确告知。”</strong></p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%80%E3%80%81typename-%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%A0%B8%E5%BF%83%E7%94%A8%E9%80%94"><span class="toc-number">1.</span> <span class="toc-text">一、typename 的两种核心用途</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E7%94%A8%E6%B3%95-1%EF%BC%9A%E5%A3%B0%E6%98%8E%E6%A8%A1%E6%9D%BF%E7%B1%BB%E5%9E%8B%E5%8F%82%E6%95%B0"><span class="toc-number">2.</span> <span class="toc-text">二、用法 1：声明模板类型参数</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%94%A8%E6%B3%95-2%EF%BC%9A%E6%8C%87%E6%98%8E%E4%BE%9D%E8%B5%96%E5%90%8D%E7%A7%B0%E6%98%AF%E7%B1%BB%E5%9E%8B%EF%BC%88%E9%87%8D%E7%82%B9%EF%BC%81%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、用法 2：指明依赖名称是类型（重点！）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9C%E4%BE%9D%E8%B5%96%E5%90%8D%E7%A7%B0%E2%80%9D%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 什么是“依赖名称”？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-typename%EF%BC%9F"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 为什么需要 typename？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%AD%A3%E7%A1%AE%E5%86%99%E6%B3%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 正确写法示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%BD%95%E6%97%B6%E5%BF%85%E9%A1%BB%E4%BD%BF%E7%94%A8-typename%EF%BC%9F"><span class="toc-number">4.</span> <span class="toc-text">四、何时必须使用 typename？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E5%9C%BA%E6%99%AF"><span class="toc-number">4.1.</span> <span class="toc-text">常见场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E9%99%85%E5%B7%A5%E7%A8%8B%E4%BE%8B%E5%AD%90"><span class="toc-number">4.2.</span> <span class="toc-text">实际工程例子</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E4%BE%8B%E5%A4%96%EF%BC%9A%E7%A6%81%E6%AD%A2%E4%BD%BF%E7%94%A8-typename-%E7%9A%84%E5%9C%B0%E6%96%B9"><span class="toc-number">5.</span> <span class="toc-text">五、例外：禁止使用 typename 的地方</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%9F%BA%E7%B1%BB%E5%A3%B0%E6%98%8E%EF%BC%88Base-Class-List%EF%BC%89"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 基类声明（Base Class List）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E6%88%90%E5%91%98%E5%88%9D%E5%A7%8B%E5%8C%96%E5%88%97%E8%A1%A8%E4%B8%AD%E7%9A%84%E5%9F%BA%E7%B1%BB%E6%9E%84%E9%80%A0"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 成员初始化列表中的基类构造</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-%E6%A8%A1%E6%9D%BF%E5%AE%9E%E5%8F%82%EF%BC%88%E6%9F%90%E4%BA%9B%E6%83%85%E5%86%B5%EF%BC%89"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 模板实参（某些情况）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%B8%B8%E8%A7%81%E8%AF%AF%E5%8C%BA%E4%B8%8E%E9%99%B7%E9%98%B1"><span class="toc-number">6.</span> <span class="toc-text">六、常见误区与陷阱</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-1%EF%BC%9A%E8%AE%A4%E4%B8%BA-typename-%E6%98%AF%E2%80%9C%E5%AE%9A%E4%B9%89%E6%96%B0%E7%B1%BB%E5%9E%8B%E2%80%9D"><span class="toc-number">6.1.</span> <span class="toc-text">误区 1：认为 typename 是“定义新类型”</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-2%EF%BC%9A%E5%9C%A8%E9%9D%9E%E6%A8%A1%E6%9D%BF%E4%BB%A3%E7%A0%81%E4%B8%AD%E6%BB%A5%E7%94%A8-typename"><span class="toc-number">6.2.</span> <span class="toc-text">误区 2：在非模板代码中滥用 typename</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AF%E5%8C%BA-3%EF%BC%9A%E6%B7%B7%E6%B7%86-typename-%E5%92%8C-class-%E5%9C%A8%E6%A8%A1%E6%9D%BF%E5%8F%82%E6%95%B0%E4%B8%AD%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">6.3.</span> <span class="toc-text">误区 3：混淆 typename 和 class 在模板参数中的区别</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E7%8E%B0%E4%BB%A3-C-%E4%B8%AD%E7%9A%84%E5%8F%98%E5%8C%96%EF%BC%88C-17-%EF%BC%89"><span class="toc-number">7.</span> <span class="toc-text">七、现代 C++ 中的变化（C++17+）</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%80%BB%E7%BB%93%EF%BC%9A%E4%B8%80%E5%BC%A0%E8%A1%A8%E6%8E%8C%E6%8F%A1-typename"><span class="toc-number">8.</span> <span class="toc-text">八、总结：一张表掌握 typename</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&text=C++ 中 typename 关键字的完整指南"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&is_video=false&description=C++ 中 typename 关键字的完整指南"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++ 中 typename 关键字的完整指南&body=Check out this article: http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&title=C++ 中 typename 关键字的完整指南"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&name=C++ 中 typename 关键字的完整指南&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/&t=C++ 中 typename 关键字的完整指南"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

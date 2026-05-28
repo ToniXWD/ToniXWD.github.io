@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="0 前言这篇文章记录了我C++开发的学习路线，领域包含互联网后端、数据库、存储、操作系统等。虽然我最后秋招的Offer是C++后端开发, 但也有一些其他领域的求职和学习经验, 在这里给大家分享一下。 既然这篇文章是介绍C++的, 那么首先我从个人的角度回答一下, C++和Java应该学哪个这个热点问题。我水的C++群都在唱衰C++, 我水的Java群都在Diss Java。就我个人经验而言，可以如">
+<meta property="og:type" content="article">
+<meta property="og:title" content="25届的C++开发学习路线经验分享">
+<meta property="og:url" content="http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="0 前言这篇文章记录了我C++开发的学习路线，领域包含互联网后端、数据库、存储、操作系统等。虽然我最后秋招的Offer是C++后端开发, 但也有一些其他领域的求职和学习经验, 在这里给大家分享一下。 既然这篇文章是介绍C++的, 那么首先我从个人的角度回答一下, C++和Java应该学哪个这个热点问题。我水的C++群都在唱衰C++, 我水的Java群都在Diss Java。就我个人经验而言，可以如">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Notes/OS-three.png">
+<meta property="og:image" content="http://example.com/images/Notes/CSNetWorking.png">
+<meta property="og:image" content="http://example.com/images/Notes/HPLSP.png">
+<meta property="og:image" content="http://example.com/images/Notes/redis-book.png">
+<meta property="og:image" content="http://example.com/images/Notes/Nginx-book.png">
+<meta property="article:published_time" content="2025-04-23T01:35:07.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.667Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="秋招">
+<meta property="article:tag" content="实习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Notes/OS-three.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>25届的C++开发学习路线经验分享</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&text=25届的C++开发学习路线经验分享"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&is_video=false&description=25届的C++开发学习路线经验分享"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=25届的C++开发学习路线经验分享&body=Check out this article: http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&name=25届的C++开发学习路线经验分享&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&t=25届的C++开发学习路线经验分享"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">0 前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%98%B6%E6%AE%B51-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E5%AD%A6%E4%B9%A0"><span class="toc-number">2.</span> <span class="toc-text">1 阶段1-基础语法学习</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%98%B6%E6%AE%B52-%E5%9F%BA%E7%A1%80%E5%9B%9B%E5%A4%A7%E4%BB%B6%E5%AD%A6%E4%B9%A0"><span class="toc-number">3.</span> <span class="toc-text">2 阶段2-基础四大件学习</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 数据结构与算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 操作系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C"><span class="toc-number">3.3.</span> <span class="toc-text">2.3 计算机网络</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-number">3.4.</span> <span class="toc-text">2.4 数据库</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E9%98%B6%E6%AE%B53-%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5"><span class="toc-number">4.</span> <span class="toc-text">3 阶段3-项目实践</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-TinyWebServer-%E7%83%82%E5%A4%A7%E8%A1%97-%E5%81%9A%E8%BF%87"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 TinyWebServer(烂大街&#x2F;做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%8D%8F%E7%A8%8B%E5%BA%93-%E5%81%9A%E8%BF%87"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 协程库(做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-RPC%E6%A1%86%E6%9E%B6-%E7%9C%8B%E8%BF%87%E6%B2%A1%E5%81%9A%E8%BF%87"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 RPC框架(看过没做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%8D%95%E6%9C%BAKV%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E-%E4%B8%AA%E4%BA%BA%E5%B9%BF%E5%91%8A"><span class="toc-number">4.4.</span> <span class="toc-text">3.4 单机KV存储引擎(个人广告)</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E9%98%B6%E6%AE%B54-%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E5%AD%A6%E4%B9%A0-%E7%A7%8B%E6%8B%9B-%E5%AE%9E%E7%8E%B0%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">4 阶段4-常用工具学习(秋招&#x2F;实现面试必考)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-Docker-K8S"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 Docker&#x2F;K8S</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Redis"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 Redis</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-Nginx"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-Linux%E7%8E%AF%E5%A2%83%E5%B7%A5%E5%85%B7%E9%93%BE"><span class="toc-number">5.4.</span> <span class="toc-text">4.4 Linux环境工具链</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">6.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        25届的C++开发学习路线经验分享
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-23T01:35:07.000Z" class="dt-published" itemprop="datePublished">2025-04-23</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%9A%8F%E7%AC%94/">随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%AE%9E%E4%B9%A0/" rel="tag">实习</a>, <a class="p-category" href="/tags/%E7%A7%8B%E6%8B%9B/" rel="tag">秋招</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="0-前言"><a href="#0-前言" class="headerlink" title="0 前言"></a>0 前言</h1><p>这篇文章记录了我<code>C++</code>开发的学习路线，领域包含互联网后端、数据库、存储、操作系统等。虽然我最后秋招的<code>Offer</code>是<code>C++</code>后端开发, 但也有一些其他领域的求职和学习经验, 在这里给大家分享一下。</p>
+<p>既然这篇文章是介绍<code>C++</code>的, 那么首先我从个人的角度回答一下, <code>C++</code>和<code>Java</code>应该学哪个这个热点问题。我水的<code>C++</code>群都在唱衰<code>C++</code>, 我水的<code>Java</code>群都在Diss <code>Java</code>。就我个人经验而言，可以如下做一个总结：</p>
+<p><strong>C++的优势&#x2F;Java的劣势</strong></p>
+<ol>
+<li><code>C++</code>可以做底层开发, 相对而言可替代性比较低; 而<code>Java</code>确实人太多太卷，相对而言可替代性高。</li>
+<li><code>C++</code>就业领域更广, 除后端外还有<code>嵌入式</code>, <code>操作系统</code>, <code>数据库</code>, <code>存储</code>, <code>音视频</code>, <code>编译器</code>, <code>量化开发</code>, <code>AI infra</code>, <code>HPC</code>等; 而<code>Java</code>的除后端外应用领域相对较少.</li>
+<li><code>C++</code>的八股相对少, 基本上就是语言本身的知识; <code>Java</code>的八股更庞杂, 除了语言本身外, 还有<code>Spring</code>全家桶以及各种中间件</li>
+</ol>
+<p><strong>C++的劣势&#x2F;Java的优势</strong></p>
+<ol>
+<li><code>C++</code>学习难度大, 语法复杂, 学习曲线陡峭; 而<code>Java</code>相对简单, 学习曲线平缓. 可以认为, <code>C++</code>的八股<code>少而难</code>, <code>Java</code>大八股<code>庞而杂</code></li>
+<li><code>C++</code>不同领域的知识点差异大, 不同领域不容易互转, 例如<code>音视频</code>和<code>AI infra</code>的专业领域知识完全不同, 很难互转; <code>Java</code>领域局限且统一</li>
+<li><code>C++</code>就业时的门槛确实相对较高</li>
+</ol>
+<p>不过有一点需要澄清, 尽管<code>C++</code>和<code>Java</code>的语言选择确实一定程度上影响求职面试, 但其权重远不如你四大件和笔试的影响大, 求职最重要的还是你个人的能力和项目经验, 语言只是一个工具而已。</p>
+<h1 id="1-阶段1-基础语法学习"><a href="#1-阶段1-基础语法学习" class="headerlink" title="1 阶段1-基础语法学习"></a>1 阶段1-基础语法学习</h1><p>我从研0阶段开始学习<code>C++</code>的基础语法, 由于一开始没有领路人全靠自学, <code>C++</code>语言本身我前后至少学了3遍:</p>
+<p><strong>第一遍: 看黑马的视频课程</strong><br>由于自己一开始不懂, 直接看的黑马的视频课程, 但其缺少常见新特性和并发编程的知识, 仅仅适合新人入门, 距离你找工作差得很远</p>
+<p><strong>第二遍: 刷CS106L</strong><br>后来发现了<a target="_blank" rel="noopener" href="https://csdiy.wiki/">csdiy</a>这个自学指南, 就刷这里推荐的公开课, 这里我刷的是<code>CS106L</code>, 同时建议把杜克大学的C语言的课程<a target="_blank" rel="noopener" href="https://www.coursera.org/specializations/c-programming">Introductory C Programming Specialization</a>也刷了</p>
+<p><strong>第三遍: 阅读电子书学习现代C++特性</strong><br>这一阶段, 我学习的目标主要是涉及<code>C++</code>的新特性, 包括智能指针、右值引用、模板元编程这一类</p>
+<p><strong>推荐的学习方法</strong><br>其实我列举出我的3遍<code>C++</code>学习路线, 不是为了说明<code>C++</code>真的要学三遍, 而是为了说明方法很重要, 我学3遍的原因还不是因为没有找到合适的途径. 现在要推荐的话, 我如下推荐:</p>
+<ol>
+<li>电子教程 or 刷视频快速学习<code>C++</code>基础知识, 视频推荐<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1o8411x7K3/?spm_id_from=333.1387.upload.video_card.click&vd_source=213e02ac84a7c6ef251b9f5d6691e21c">B站</a>, 电子书推荐(零基础C++)[<a target="_blank" rel="noopener" href="https://www.yuque.com/lianlianfengchen-cvvh2/zack]">https://www.yuque.com/lianlianfengchen-cvvh2/zack]</a>, 其中这份电子书不仅仅是基础, 包括后续的高阶知识, 强烈推荐</li>
+<li>刷视频课 or 电子书重点学习<code>C++</code>的新特性, 这里的电子书包括: <a target="_blank" rel="noopener" href="https://changkun.de/modern-cpp/zh-cn/00-preface/">现代C++教程</a>, 视频课推荐之前提到的<a target="_blank" rel="noopener" href="https://web.stanford.edu/class/cs106l/">CS106L</a></li>
+</ol>
+<blockquote>
+<p>顺带提一句, 我个人十分不推荐使用<code>C++ Primer Plus</code>这些经典书籍进行学习, 因为他们的可交互性太差了。学习编程语言，敲代码才能熟练。电子书或者视频可见的代码内容能一键复制，极大地提高了效率，而纸质书则非常并不方便</p>
+</blockquote>
+<h1 id="2-阶段2-基础四大件学习"><a href="#2-阶段2-基础四大件学习" class="headerlink" title="2 阶段2-基础四大件学习"></a>2 阶段2-基础四大件学习</h1><p>无论是什么语言，基础四大件都是学习不可缺少的，我基础四大件基本上都是经典教材+刷公开课or训练营的方式学习的。因此我虽然不是计算机科班，但我的计算机基础知识其实还挺扎实的：</p>
+<h2 id="2-1-数据结构与算法"><a href="#2-1-数据结构与算法" class="headerlink" title="2.1 数据结构与算法"></a>2.1 数据结构与算法</h2><p>这个没什么好说的， 坚持每天刷<code>LeetCode</code>就行了。我到去年秋招时刷了差不多300道题，足够应付正常难度的笔试了. 不过有一些要点需要关注:</p>
+<ol>
+<li>如果没有时间， 就优先刷<code>Hot100</code></li>
+<li>刷题时尽量选择ACM模式, 贴近笔试的实际场景</li>
+<li><code>LeetCode</code>缺少图论的题, 可从其他途径补充图论的算法题</li>
+</ol>
+<p>刷题重要知识点梳理:</p>
+<ol>
+<li>字符串<ol>
+<li><code>KMP</code>算法</li>
+<li>双指针</li>
+</ol>
+</li>
+<li>树<ol>
+<li>不同遍历方法</li>
+<li>反转、重构</li>
+<li>树与数组的转化</li>
+</ol>
+</li>
+<li>图<ol>
+<li>最短路径算法</li>
+<li>查并集</li>
+<li>最小生成树</li>
+</ol>
+</li>
+<li>回溯</li>
+<li>贪心</li>
+<li>动态规划</li>
+</ol>
+<h2 id="2-2-操作系统"><a href="#2-2-操作系统" class="headerlink" title="2.2 操作系统"></a>2.2 操作系统</h2><p>操作系统曾是我主要技术栈之一，我的学习路线是：</p>
+<p><strong>第一步： 经典教材阅读</strong><br>这里我强烈推荐《操作系统导论》</p>
+<p><img src="/../../images/Notes/OS-three.png" alt="操作系统导论"></p>
+<blockquote>
+<p>这里还有一个本教程推荐: 《操作系统真相还原》</p>
+</blockquote>
+<p><strong>第二步: 刷 MIT6.S081</strong><br>这里我刷了知名课程<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.S081/2020/schedule.html">MIT6.S081</a>并做完了<code>xv6</code>的课程<code>lab</code>, 收获很多。其实熟读完《操作系统导论》后， <code>MIT6.S081</code>的课程知识很多都是重复的，这里的重点学习内容是<code>xv6</code>的课程作业, 通过代码来实践与加强对操作系统的理解。</p>
+<blockquote>
+<p>这里不一定刷<code>MIT6.S081</code>这一课程, 南京大学蒋炎岩老师的<a target="_blank" rel="noopener" href="https://jyywiki.cn/OS/2023/index.html">操作系统：设计与实现</a>或者UCB的<a target="_blank" rel="noopener" href="https://cs162.org/">CS162</a>也很不错</p>
+</blockquote>
+<p><strong>第三步: 参见OS训练营</strong><br>之后我又参与了清华大学举办的开源操作系统训练营, 并获得了优秀学员, 这里是用<code>Rust</code>完成各项作业. 这个训练营分为三个阶段:</p>
+<ol>
+<li>阶段一: <code>rustlings</code>熟悉<code>Rust</code>语法和基本编程概念</li>
+<li>阶段二: <code>Rust</code>开发一个简单的操作系统<code>rCore</code></li>
+<li>阶段三: 按照不同方向进行进一步的线上实习(也同样是上课做项目), 包括<ol>
+<li>内核进阶</li>
+<li>虚拟化</li>
+<li>组件化的<code>ArceOS</code></li>
+<li>Linux内核驱动开发项目: <a target="_blank" rel="noopener" href="https://github.com/rust-for-linux/">Rust for Linux</a></li>
+</ol>
+</li>
+</ol>
+<p>关于这个训练营，我还有一个专栏记录自己的学习过程：<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1738250998752292864">清华大学开源操作系统训练营</a></p>
+<p>可以看到, 学习操作系统的过程中, 我基础打得非常扎实, 因为我当时是把操作系统和驱动开发作为未来的求职方向之一，不过如果你对深入学习操作系统没有兴趣， 仅仅是为了满足对操作系统的基础学习的话，这里完成我的第一步， 读一下《操作系统导论》就可以了。</p>
+<h2 id="2-3-计算机网络"><a href="#2-3-计算机网络" class="headerlink" title="2.3 计算机网络"></a>2.3 计算机网络</h2><p>计算机网络也是我基础四大件之一，且这直接对应于互联网后端这一岗位，非常重要。我学习路线是：</p>
+<ol>
+<li>阅读《计算机网络： 自顶向下方法》</li>
+<li>刷CS144</li>
+</ol>
+<p><img src="/../../images/Notes/CSNetWorking.png" alt="计算机网络-自顶向下方法"></p>
+<blockquote>
+<p>这里说明一下, 中科大的计算机网络课程也是使用的《计算机网络： 自顶向下方法》这本教材, 且更精炼一些, 如果时间不够或者读教材困难, 可以选择直接刷<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1JV411t7ow/?spm_id_from=333.337.search-card.all.click">中科大的计算机网络视频课</a></p>
+</blockquote>
+<p>同样, 时间不多的同学可以只看一下《计算机网络： 自顶向下方法》就可以了, 不需要再去刷公开课的<code>Lab</code>, 反正后面你大概率会通过C++网络编程的学习巩固这些知识</p>
+<h2 id="2-4-数据库"><a href="#2-4-数据库" class="headerlink" title="2.4 数据库"></a>2.4 数据库</h2><p>数据库同样是我花了很多时间和精力去学习的，我学习路线是：<br><strong>步骤1： 阅读《MySQL是怎样运行的》</strong><br>阅读这本书，你会对数据库有一个基本的认识，并且大致了解其运行机制和实现原理。</p>
+<p><strong>步骤2: 刷CMU 15445</strong><br>我是直接看了<code>CMU 15445</code>所有的视频课程, 并自己独立完成了<code>CMU 15445</code>的课程作业<code>bustub</code>。独立做完这个课程项目后，你的数据库方面的知识已经能够比绝大多数非数据库领域的校招生强了。</p>
+<blockquote>
+<p>其实我是先做的<code>CMU 15445</code>再看的《MySQL是怎样运行的》, 后者只要是为了应付秋招, 毕竟<code>CMU 15445</code>是宏观介绍所有的数据库基本知识, 而《MySQL是怎样运行的》聚焦于<code>MySQL</code>(国内最热门的数据库)</p>
+</blockquote>
+<p><strong>步骤3: 刷MIT6.824</strong><br>严格来说，数据库不等同于分布式系统，不过实际上他们结合很紧密，我这里就放在一起说了。<code>MIT6.824</code>是经典的分布式系统课程，基本上也是数据库领域校招生必学的课程。这里我同样完成了<code>MIT6.824</code>全套的<code>Lab</code>, 同样记录在<a target="_blank" rel="noopener" href="https://www.zhihu.com/column/c_1725883332322226177">专栏: MIT6.8540(6.824)合集</a>和<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/MIT6.5840">Github</a></p>
+<p><strong>步骤4: 刷Talent Plan的TinyKV</strong><br><code>Talent Plan</code>是国内数据库公司<code>PingCap</code>举办的线上训练营, 其中的<code>TinyKV</code>项目是<code>MIT6.824</code>的完善版本, 实现了基于<code>Raft</code>的分布式KV数据库</p>
+<p>数据库领域也是我之前学习的主攻方向之一, 最后秋招去了业务后端岗还挺遗憾的。如果对这方面感兴趣，也可以看看我自己原创的<code>LSM Tree KV存储引擎</code>项目：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Tiny-LSM</a></p>
+<blockquote>
+<p>虽然这里的<code>MIT6.824</code>和<code>TinyKV</code>都是<code>Go</code>的项目而不是<code>C++</code>, 但他们的知识都是互通的, 且<code>C++</code>选手也会辅修<code>Go</code>的</p>
+</blockquote>
+<h1 id="3-阶段3-项目实践"><a href="#3-阶段3-项目实践" class="headerlink" title="3 阶段3-项目实践"></a>3 阶段3-项目实践</h1><p>在完成了四大件的学习后, 基本上就可以开始做项目了。这里的项目可以直接用之前学习四大件时候的公开课项目来做, 也可以自己找网上的项目。</p>
+<h2 id="3-1-TinyWebServer-烂大街-做过"><a href="#3-1-TinyWebServer-烂大街-做过" class="headerlink" title="3.1 TinyWebServer(烂大街&#x2F;做过)"></a>3.1 TinyWebServer(烂大街&#x2F;做过)</h2><p><a target="_blank" rel="noopener" href="https://github.com/qinguoyi/TinyWebServer">TinyWebServer</a>虽然已经烂大街了, 但是项目本身的内容还是非常值得学习的。同时，这个项目基本上就是《Linux高性能服务器编程》这本书附带项目的进阶版本， 因此强烈建议阅读这本书。</p>
+<p><img src="/../../images/Notes/HPLSP.png" alt="HPLSP"></p>
+<h2 id="3-2-协程库-做过"><a href="#3-2-协程库-做过" class="headerlink" title="3.2 协程库(做过)"></a>3.2 协程库(做过)</h2><p>网上的协程库项目非常多，尤其是在<code>C++ 20</code>以前, 协程库是热门轮子项目。这里最推荐的是：<a target="_blank" rel="noopener" href="https://github.com/sylar-yin/sylar">sylar</a>, 其本身是一个C++高性能分布式服务器框架, 协程只是其中的一个模块, 该项目有全套的视频课程, 可以参考。</p>
+<h2 id="3-3-RPC框架-看过没做过"><a href="#3-3-RPC框架-看过没做过" class="headerlink" title="3.3 RPC框架(看过没做过)"></a>3.3 RPC框架(看过没做过)</h2><p><code>RPC</code>框架也是非常热门的轮子项目, 这里推荐一个开源的<code>RPC</code>框架：<a target="_blank" rel="noopener" href="https://github.com/Gooddbird/tinyrpc">tinyrpc</a>, 同样是文档齐全易于学习。（不过我只是看过没做过，毕竟人的精力是有限的）</p>
+<h2 id="3-4-单机KV存储引擎-个人广告"><a href="#3-4-单机KV存储引擎-个人广告" class="headerlink" title="3.4 单机KV存储引擎(个人广告)"></a>3.4 单机KV存储引擎(个人广告)</h2><p>这一小节是给自己打个广告, 我自己基于<code>LSM Tree</code>开发了一个KV存储引擎, 且兼容<code>Redis</code>的<code>Resp</code>协议, 换句话说可以代替<code>redis-server</code>作为<code>redis</code>的后端(相信大家知道这个创新性了), 欢迎大家来学习: <a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Tiny-LSM</a></p>
+<h1 id="4-阶段4-常用工具学习-秋招-实现面试必考"><a href="#4-阶段4-常用工具学习-秋招-实现面试必考" class="headerlink" title="4 阶段4-常用工具学习(秋招&#x2F;实现面试必考)"></a>4 阶段4-常用工具学习(秋招&#x2F;实现面试必考)</h1><p>在完成上面所有的学习路线后, 就可以开始准备秋招或者实习了, 但还需要额外学习一些常用工具, 也就是组件中间件什么的:</p>
+<h2 id="4-1-Docker-K8S"><a href="#4-1-Docker-K8S" class="headerlink" title="4.1 Docker&#x2F;K8S"></a>4.1 Docker&#x2F;K8S</h2><p>我学习<code>Docker</code>是基于这个视频课程: <a target="_blank" rel="noopener" href="https://kodekloud.com/courses/docker-for-the-absolute-beginner/">https://kodekloud.com/courses/docker-for-the-absolute-beginner/</a></p>
+<p><code>K8S</code>相对<code>Docker</code>来说更复杂, 但属于是锦上添花的技术栈, 这里推荐在线教程 <a target="_blank" rel="noopener" href="https://k8s-tutorials.pages.dev/">Kubernetes 练习手册</a></p>
+<h2 id="4-2-Redis"><a href="#4-2-Redis" class="headerlink" title="4.2 Redis"></a>4.2 Redis</h2><p><code>Redis</code>的学习分为2部分:</p>
+<p><strong>第一部分: Redis的使用</strong><br>这一部分直接到Bilibili上搜一份视频课程就可以了, 你英文好也可以看官方文档</p>
+<p><strong>第二部分: Redis的原理</strong><br>这部分如果有时间, 推荐阅读书籍《Redis设计与实现》</p>
+<p><img src="/../../images/Notes/redis-book.png" alt="redis-book"></p>
+<h2 id="4-3-Nginx"><a href="#4-3-Nginx" class="headerlink" title="4.3 Nginx"></a>4.3 Nginx</h2><p>和<code>Redis</code>类似, 基础的知识找个视频教程就可以了, 进阶学习我推荐《深入理解Nginx》</p>
+<p><img src="/../../images/Notes/Nginx-book.png" alt="Nginx-book"></p>
+<h2 id="4-4-Linux环境工具链"><a href="#4-4-Linux环境工具链" class="headerlink" title="4.4 Linux环境工具链"></a>4.4 Linux环境工具链</h2><p>这里的工具链包括<code>Git/Cmake/Make/GDB</code>等, 每一个都不难, 只需要搜索对应的视频教程学习就好, 这里不展开介绍了</p>
+<h1 id="5-小节"><a href="#5-小节" class="headerlink" title="5 小节"></a>5 小节</h1><p>我上面的学习路线是我个人的学习路线, 仅供参考, 具体的学习路线还是要根据自己的情况来定. </p>
+<p>我个人的学习路线非常庞杂, 如果你想参考我的学习路线但是时间不够的话, 建议进行适当的删减, 例如去除掉刷公开课的环境, 直觉阅读教程或者八股.</p>
+<p>希望我的经验能够帮助到你们, 祝大家都能顺利找到心仪的工作, 也希望大家能多多交流学习经验, 共同进步!</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">0 前言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%98%B6%E6%AE%B51-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E5%AD%A6%E4%B9%A0"><span class="toc-number">2.</span> <span class="toc-text">1 阶段1-基础语法学习</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%98%B6%E6%AE%B52-%E5%9F%BA%E7%A1%80%E5%9B%9B%E5%A4%A7%E4%BB%B6%E5%AD%A6%E4%B9%A0"><span class="toc-number">3.</span> <span class="toc-text">2 阶段2-基础四大件学习</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 数据结构与算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 操作系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C"><span class="toc-number">3.3.</span> <span class="toc-text">2.3 计算机网络</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-number">3.4.</span> <span class="toc-text">2.4 数据库</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E9%98%B6%E6%AE%B53-%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5"><span class="toc-number">4.</span> <span class="toc-text">3 阶段3-项目实践</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-TinyWebServer-%E7%83%82%E5%A4%A7%E8%A1%97-%E5%81%9A%E8%BF%87"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 TinyWebServer(烂大街&#x2F;做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%8D%8F%E7%A8%8B%E5%BA%93-%E5%81%9A%E8%BF%87"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 协程库(做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-RPC%E6%A1%86%E6%9E%B6-%E7%9C%8B%E8%BF%87%E6%B2%A1%E5%81%9A%E8%BF%87"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 RPC框架(看过没做过)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%8D%95%E6%9C%BAKV%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E-%E4%B8%AA%E4%BA%BA%E5%B9%BF%E5%91%8A"><span class="toc-number">4.4.</span> <span class="toc-text">3.4 单机KV存储引擎(个人广告)</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E9%98%B6%E6%AE%B54-%E5%B8%B8%E7%94%A8%E5%B7%A5%E5%85%B7%E5%AD%A6%E4%B9%A0-%E7%A7%8B%E6%8B%9B-%E5%AE%9E%E7%8E%B0%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83"><span class="toc-number">5.</span> <span class="toc-text">4 阶段4-常用工具学习(秋招&#x2F;实现面试必考)</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-Docker-K8S"><span class="toc-number">5.1.</span> <span class="toc-text">4.1 Docker&#x2F;K8S</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Redis"><span class="toc-number">5.2.</span> <span class="toc-text">4.2 Redis</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-Nginx"><span class="toc-number">5.3.</span> <span class="toc-text">4.3 Nginx</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-Linux%E7%8E%AF%E5%A2%83%E5%B7%A5%E5%85%B7%E9%93%BE"><span class="toc-number">5.4.</span> <span class="toc-text">4.4 Linux环境工具链</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">6.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&text=25届的C++开发学习路线经验分享"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&is_video=false&description=25届的C++开发学习路线经验分享"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=25届的C++开发学习路线经验分享&body=Check out this article: http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&title=25届的C++开发学习路线经验分享"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&name=25届的C++开发学习路线经验分享&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/&t=25届的C++开发学习路线经验分享"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

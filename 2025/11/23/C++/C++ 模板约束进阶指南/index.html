@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="在现代 C++（尤其是 C++20 引入 Concepts 之后）中，模板约束（Template Constraints）已成为编写安全、清晰且高效泛型代码的重要工具。本文将系统梳理 C++ 模板约束的核心知识点，帮助你深入理解 concept、requires 表达式、约束优先级以及标准库中的常用工具变量模板。 1. Concept 的约束表达式：原子约束、合取式与析取式C++20 中引入的 C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++ 模板约束进阶指南">
+<meta property="og:url" content="http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="在现代 C++（尤其是 C++20 引入 Concepts 之后）中，模板约束（Template Constraints）已成为编写安全、清晰且高效泛型代码的重要工具。本文将系统梳理 C++ 模板约束的核心知识点，帮助你深入理解 concept、requires 表达式、约束优先级以及标准库中的常用工具变量模板。 1. Concept 的约束表达式：原子约束、合取式与析取式C++20 中引入的 C">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-11-23T01:10:54.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.658Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta property="article:tag" content="C++20">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++ 模板约束进阶指南</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&text=C++ 模板约束进阶指南"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&is_video=false&description=C++ 模板约束进阶指南"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++ 模板约束进阶指南&body=Check out this article: http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&name=C++ 模板约束进阶指南&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&t=C++ 模板约束进阶指南"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Concept-%E7%9A%84%E7%BA%A6%E6%9D%9F%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%9A%E5%8E%9F%E5%AD%90%E7%BA%A6%E6%9D%9F%E3%80%81%E5%90%88%E5%8F%96%E5%BC%8F%E4%B8%8E%E6%9E%90%E5%8F%96%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">1. Concept 的约束表达式：原子约束、合取式与析取式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E5%AD%90%E7%BA%A6%E6%9D%9F%EF%BC%88Atomic-Constraint%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原子约束（Atomic Constraint）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%90%88%E5%8F%96%E5%BC%8F%EF%BC%88Conjunction%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 合取式（Conjunction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%9E%90%E5%8F%96%E5%BC%8F%EF%BC%88Disjunction%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 析取式（Disjunction）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-requires-%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%88Requires-Expression%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2 requires 表达式（Requires Expression）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Simple-Requirements"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Simple Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Type-Requirements"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Type Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Compound-Requirements"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Compound Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-Nested-requirement"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 Nested requirement</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%A4%9A%E4%B8%AA%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E4%B9%8B%E9%97%B4%E7%9A%84%E4%BC%98%E5%85%88%E7%BA%A7%E5%88%A4%E6%96%AD"><span class="toc-number">3.</span> <span class="toc-text">3. 多个模板约束之间的优先级判断</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%BA%A6%E6%9D%9F%E8%95%B4%E5%90%AB%EF%BC%88Subsumption%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 约束蕴含（Subsumption）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E9%99%85%E8%A7%84%E5%88%99"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实际规则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-C-%E6%A0%87%E5%87%86%E5%BA%93%E4%B8%AD%E7%9A%84%E5%B8%B8%E8%A7%81%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81%EF%BC%88Type-Traits%EF%BC%89%E4%B8%8E%E5%8F%98%E9%87%8F%E6%A8%A1%E6%9D%BF"><span class="toc-number">3.3.</span> <span class="toc-text">4. C++ 标准库中的常见类型特征（Type Traits）与变量模板</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%B8%B8%E8%A7%81%E7%9A%84%E5%B8%83%E5%B0%94%E5%9E%8B%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81%EF%BC%88%E5%8F%8A%E5%85%B6-v-%E5%8F%98%E9%87%8F%E6%A8%A1%E6%9D%BF%EF%BC%89"><span class="toc-number">3.3.1.</span> <span class="toc-text">4.1 常见的布尔型类型特征（及其 _v 变量模板）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%85%B3%E7%B3%BB%E5%9E%8B%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81"><span class="toc-number">3.3.2.</span> <span class="toc-text">4.2 关系型类型特征</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E7%B1%BB%E5%9E%8B%E5%8F%98%E6%8D%A2%EF%BC%88Transformation-Traits%EF%BC%89%E4%B8%8E-t-%E5%88%AB%E5%90%8D%E6%A8%A1%E6%9D%BF"><span class="toc-number">3.3.3.</span> <span class="toc-text">4.3 类型变换（Transformation Traits）与 _t 别名模板</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.4.</span> <span class="toc-text">使用示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++ 模板约束进阶指南
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-11-23T01:10:54.000Z" class="dt-published" itemprop="datePublished">2025-11-23</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/C-20/" rel="tag">C++20</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>在现代 C++（尤其是 C++20 引入 Concepts 之后）中，模板约束（Template Constraints）已成为编写安全、清晰且高效泛型代码的重要工具。本文将系统梳理 C++ 模板约束的核心知识点，帮助你深入理解 <code>concept</code>、<code>requires</code> 表达式、约束优先级以及标准库中的常用工具变量模板。</p>
+<h1 id="1-Concept-的约束表达式：原子约束、合取式与析取式"><a href="#1-Concept-的约束表达式：原子约束、合取式与析取式" class="headerlink" title="1. Concept 的约束表达式：原子约束、合取式与析取式"></a>1. Concept 的约束表达式：原子约束、合取式与析取式</h1><p>C++20 中引入的 <strong>Concepts</strong> 允许我们对模板参数施加编译期约束，从而提升错误信息可读性并实现更精准的重载解析。一个 <code>concept</code> 的定义本质上是一个 <strong>布尔常量表达式</strong>，其内部可以包含以下三种基本形式：</p>
+<h2 id="1-1-原子约束（Atomic-Constraint）"><a href="#1-1-原子约束（Atomic-Constraint）" class="headerlink" title="1.1 原子约束（Atomic Constraint）"></a>1.1 原子约束（Atomic Constraint）</h2><p>原子约束是最基本的约束单元，通常是一个 <strong>类型谓词（type trait）</strong> 或 <strong>requires 表达式</strong>，其结果为 <code>true</code> 或 <code>false</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Integral = std::is_integral_v&lt;T&gt;;</span><br></pre></td></tr></table></figure>
+
+<p>这里的 <code>std::is_integral_v&lt;T&gt;</code> 就是一个原子约束。</p>
+<h2 id="1-2-合取式（Conjunction）"><a href="#1-2-合取式（Conjunction）" class="headerlink" title="1.2 合取式（Conjunction）"></a>1.2 合取式（Conjunction）</h2><p>多个约束通过逻辑 <strong>与（&amp;&amp;）</strong> 连接，表示所有条件必须同时满足。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> SignedIntegral = Integral&lt;T&gt; &amp;&amp; std::is_signed_v&lt;T&gt;;</span><br></pre></td></tr></table></figure>
+
+<p>只有当 <code>T</code> 既是整数类型又是有符号类型时，该 concept 才成立。</p>
+<h2 id="1-3-析取式（Disjunction）"><a href="#1-3-析取式（Disjunction）" class="headerlink" title="1.3 析取式（Disjunction）"></a>1.3 析取式（Disjunction）</h2><p>多个约束通过逻辑 <strong>或（||）</strong> 连接，表示满足任一条件即可。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Number = Integral&lt;T&gt; || std::is_floating_point_v&lt;T&gt;;</span><br></pre></td></tr></table></figure>
+
+<p><code>Number</code> 对整数或浮点类型都成立。</p>
+<blockquote>
+<p>⚠️ 注意：C++ 标准规定，<strong>合取式的优先级高于析取式</strong>，类似于逻辑运算符的常规优先级。但为了代码清晰，建议使用括号显式分组。</p>
+</blockquote>
+<h1 id="2-requires-表达式（Requires-Expression）"><a href="#2-requires-表达式（Requires-Expression）" class="headerlink" title="2 requires 表达式（Requires Expression）"></a>2 <code>requires</code> 表达式（Requires Expression）</h1><p>这是一种特殊的布尔表达式，用于检查一组操作是否对给定类型合法。其语法如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">requires</span> (参数列表) &#123; <span class="comment">// 表达式结果必须为 bool 类型</span></span><br><span class="line">    要求满足的表达式<span class="number">1</span>（称为“requirement”）</span><br><span class="line">    要求满足的表达式<span class="number">2</span></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>常见 requirement 类型包括：</p>
+<ul>
+<li><strong>Simple requirement</strong>：直接写表达式，如 <code>x + y;</code>。这类要求只验证表达式是否能够合法编译，而不关心其执行结果或返回值类型。它主要用于确保某些操作符或函数调用对给定类型是有效的。</li>
+<li><strong>Type requirement</strong>：<code>typename T::value_type;</code>。用于验证某个类型是否有效存在，比如检查模板参数是否具有特定的嵌套类型别名。</li>
+<li><strong>Compound requirement</strong>：带返回类型约束，如 <code>&#123; x.size() &#125; -&gt; std::same_as&lt;std::size_t&gt;;</code>。不仅验证表达式是否合法，还进一步约束其返回值类型。</li>
+<li><strong>Nested requirement</strong>：嵌套的 <code>requires</code> 表达式。允许在 requirements 中使用更复杂的编译期布尔表达式。</li>
+</ul>
+<h2 id="2-1-Simple-Requirements"><a href="#2-1-Simple-Requirements" class="headerlink" title="2.1 Simple Requirements"></a>2.1 Simple Requirements</h2><p><code>Simple requirements</code> 是最基本的约束形式，其唯一目的是验证表达式在给定类型上是否能够通过编译。需要注意的是，这些表达式实际上并不会被执行，它们仅仅用于编译期检查。</p>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Hashable = <span class="built_in">requires</span>(T a) &#123;</span><br><span class="line">    &#123; std::hash&lt;T&gt;&#123;&#125;(a) &#125;; <span class="comment">// 确保可以使用 std::hash 计算 T 的哈希值</span></span><br><span class="line">    a + a;                 <span class="comment">// 确保支持 operator+</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 此处 a + a 并不会真正执行，只是验证这个表达式对类型 T 是有效的</span></span><br></pre></td></tr></table></figure>
+<p>重要的是要理解，<code>simple requirement</code> 的结果值并不重要，也不会被捕获或使用。它的作用仅仅是让编译器验证相关表达式是否符合语法规则且能够成功完成名字查找和模板参数替换等编译过程。</p>
+<h2 id="2-2-Type-Requirements"><a href="#2-2-Type-Requirements" class="headerlink" title="2.2 Type Requirements"></a>2.2 Type Requirements</h2><p><code>Type requirements</code> 用来检查某个类型是否存在。这对于验证模板参数是否具备某些嵌套类型非常有用。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Container = <span class="keyword">requires</span> &#123;</span><br><span class="line">    <span class="keyword">typename</span> T::value_type;     <span class="comment">// 要求 T 有一个 value_type 类型别名</span></span><br><span class="line">    <span class="keyword">typename</span> T::iterator;       <span class="comment">// 要求 T 有一个 iterator 类型别名</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-Compound-Requirements"><a href="#2-3-Compound-Requirements" class="headerlink" title="2.3 Compound Requirements"></a>2.3 Compound Requirements</h2><p><code>Compound requirements</code> 不仅验证表达式的合法性，还可以指定表达式的返回类型。这使得我们可以更加精确地约束接口行为。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Addable = <span class="built_in">requires</span>(T a, T b) &#123;</span><br><span class="line">    a + b;                          <span class="comment">// simple requirement</span></span><br><span class="line">    &#123; a += b &#125; -&gt; std::same_as&lt;T&amp;&gt;; <span class="comment">// compound requirement - 返回 T&amp;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>在这个例子中，<code>&#123; a += b &#125; -&gt; std::same_as&lt;T&amp;&gt;</code> 不仅验证 <code>a += b</code> 是合法的，还要求该表达式返回 <code>T&amp;</code> 类型。</p>
+<h2 id="2-4-Nested-requirement"><a href="#2-4-Nested-requirement" class="headerlink" title="2.4 Nested requirement"></a>2.4 Nested requirement</h2><p><code>Nested requirements</code> 是在 <code>requires</code> 表达式内部使用 <code>requires</code> 子句的形式，它允许我们在 <code>requirements</code> 中引入更复杂的编译期断言。这种形式特别适用于需要基于模板参数的编译期计算来建立约束的情况。</p>
+<p><code>Nested requirements</code> 的基本语法是：<code>requires constant-expression</code>，其中 <code>constant-expression</code> 必须是一个可以在编译期求值的布尔表达式。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_twice</span><span class="params">(T x)</span> <span class="keyword">requires</span> Addable&lt;T&gt; </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; x + x &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>也可以直接内联写 <code>requires</code> 表达式：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo</span><span class="params">(T x)</span> <span class="keyword">requires</span> <span class="title">requires</span><span class="params">(T t)</span> </span>&#123; t.<span class="built_in">begin</span>(); t.<span class="built_in">end</span>(); &#125; &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 提示：虽然语法上允许 <code>requires requires</code>，但建议将复杂的 <code>requires</code> 表达式封装为命名 concept 以提高可读性。</p>
+</blockquote>
+<h1 id="3-多个模板约束之间的优先级判断"><a href="#3-多个模板约束之间的优先级判断" class="headerlink" title="3. 多个模板约束之间的优先级判断"></a>3. 多个模板约束之间的优先级判断</h1><p>当存在多个重载模板且都满足调用条件时，C++ 编译器会根据 <strong>约束的严格程度（constraint subsumption）</strong> 来选择最匹配的一个。</p>
+<h2 id="3-1-约束蕴含（Subsumption）"><a href="#3-1-约束蕴含（Subsumption）" class="headerlink" title="3.1 约束蕴含（Subsumption）"></a>3.1 约束蕴含（Subsumption）</h2><p>如果约束 A <strong>逻辑上蕴含</strong> 约束 B（即 A 成立 ⇒ B 成立），则称 A <strong>比 B 更严格</strong>，优先选择 A。</p>
+<p>例如：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Animal = <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Mammal = Animal&lt;T&gt; &amp;&amp; <span class="comment">/* 其他条件 */</span>;</span><br></pre></td></tr></table></figure>
+
+<p>那么 <code>Mammal</code> 蕴含 <code>Animal</code>，因此对于同时满足两者的类型，编译器会选择 <code>Mammal</code> 版本。</p>
+<h2 id="3-2-实际规则"><a href="#3-2-实际规则" class="headerlink" title="3.2 实际规则"></a>3.2 实际规则</h2><ul>
+<li>编译器会尝试找出 <strong>最特殊化（most constrained）</strong> 的候选。</li>
+<li>如果两个约束互不蕴含（即无法比较严格程度），则产生二义性错误。</li>
+</ul>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T)</span> <span class="keyword">requires</span> Integral&lt;T&gt; </span>&#123; std::cout &lt;&lt; <span class="string">&quot;Integral\n&quot;</span>; &#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">f</span><span class="params">(T)</span> <span class="keyword">requires</span> Number&lt;T&gt; </span>&#123; std::cout &lt;&lt; <span class="string">&quot;Number\n&quot;</span>; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用 <code>f(42)</code> 时，因为 <code>Integral&lt;int&gt;</code> 蕴含于 <code>Number&lt;int&gt;</code>（<code>Integral ⇒ Number</code>），所以选择第一个版本。</p>
+<blockquote>
+<p>🔍 注意：蕴含关系仅在 <strong>同一表达式结构下</strong> 才能自动推导。复杂逻辑（如涉及 <code>||</code>）可能无法被正确识别，此时需谨慎设计 concept 层次。</p>
+</blockquote>
+<h2 id="4-C-标准库中的常见类型特征（Type-Traits）与变量模板"><a href="#4-C-标准库中的常见类型特征（Type-Traits）与变量模板" class="headerlink" title="4. C++ 标准库中的常见类型特征（Type Traits）与变量模板"></a>4. C++ 标准库中的常见类型特征（Type Traits）与变量模板</h2><p>C++ 标准库在 <code>&lt;type_traits&gt;</code> 头文件中提供了大量用于编译期类型查询和变换的 <strong>类型特征类模板（trait class templates）</strong>。从 C++17 开始，为每个返回布尔值的 trait 类模板都配套引入了同名的 <strong>变量模板（variable template）</strong>，后缀为 <code>_v</code>（针对 <code>value</code> 成员）或 <code>_t</code>（针对 <code>type</code> 成员）。</p>
+<p>这些工具是编写 <strong>约束（concepts）</strong>、<strong>SFINAE</strong> 和 <strong>泛型代码</strong> 的基础。</p>
+<h3 id="4-1-常见的布尔型类型特征（及其-v-变量模板）"><a href="#4-1-常见的布尔型类型特征（及其-v-变量模板）" class="headerlink" title="4.1 常见的布尔型类型特征（及其 _v 变量模板）"></a>4.1 常见的布尔型类型特征（及其 <code>_v</code> 变量模板）</h3><table>
+<thead>
+<tr>
+<th>原始形式类模板（C++11 起）</th>
+<th>对应的变量模板（C++17 起）</th>
+<th>功能说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>std::is_void&lt;T&gt;</code></td>
+<td><code>std::is_void_v&lt;T&gt;</code></td>
+<td>是否为 <code>void</code></td>
+</tr>
+<tr>
+<td><code>std::is_integral&lt;T&gt;</code></td>
+<td><code>std::is_integral_v&lt;T&gt;</code></td>
+<td>是否为整数类型（如 <code>int</code>, <code>char</code>, <code>bool</code>）</td>
+</tr>
+<tr>
+<td><code>std::is_floating_point&lt;T&gt;</code></td>
+<td><code>std::is_floating_point_v&lt;T&gt;</code></td>
+<td>是否为浮点类型（<code>float</code>, <code>double</code> 等）</td>
+</tr>
+<tr>
+<td><code>std::is_arithmetic&lt;T&gt;</code></td>
+<td><code>std::is_arithmetic_v&lt;T&gt;</code></td>
+<td>是否为算术类型（整数或浮点）</td>
+</tr>
+<tr>
+<td><code>std::is_pointer&lt;T&gt;</code></td>
+<td><code>std::is_pointer_v&lt;T&gt;</code></td>
+<td>是否为指针类型</td>
+</tr>
+<tr>
+<td><code>std::is_reference&lt;T&gt;</code></td>
+<td><code>std::is_reference_v&lt;T&gt;</code></td>
+<td>是否为引用类型</td>
+</tr>
+<tr>
+<td><code>std::is_lvalue_reference&lt;T&gt;</code></td>
+<td><code>std::is_lvalue_reference_v&lt;T&gt;</code></td>
+<td>是否为左值引用</td>
+</tr>
+<tr>
+<td><code>std::is_rvalue_reference&lt;T&gt;</code></td>
+<td><code>std::is_rvalue_reference_v&lt;T&gt;</code></td>
+<td>是否为右值引用</td>
+</tr>
+<tr>
+<td><code>std::is_const&lt;T&gt;</code></td>
+<td><code>std::is_const_v&lt;T&gt;</code></td>
+<td>是否为 const 限定类型</td>
+</tr>
+<tr>
+<td><code>std::is_volatile&lt;T&gt;</code></td>
+<td><code>std::is_volatile_v&lt;T&gt;</code></td>
+<td>是否为 volatile 限定类型</td>
+</tr>
+<tr>
+<td><code>std::is_trivial&lt;T&gt;</code></td>
+<td><code>std::is_trivial_v&lt;T&gt;</code></td>
+<td>是否为平凡类型</td>
+</tr>
+<tr>
+<td><code>std::is_standard_layout&lt;T&gt;</code></td>
+<td><code>std::is_standard_layout_v&lt;T&gt;</code></td>
+<td>是否为标准布局类型</td>
+</tr>
+<tr>
+<td><code>std::is_pod&lt;T&gt;</code></td>
+<td><code>std::is_pod_v&lt;T&gt;</code></td>
+<td>（C++20 起弃用）是否为 POD 类型</td>
+</tr>
+<tr>
+<td><code>std::is_empty&lt;T&gt;</code></td>
+<td><code>std::is_empty_v&lt;T&gt;</code></td>
+<td>是否为空类（无非静态成员）</td>
+</tr>
+<tr>
+<td><code>std::is_polymorphic&lt;T&gt;</code></td>
+<td><code>std::is_polymorphic_v&lt;T&gt;</code></td>
+<td>是否包含虚函数（多态类型）</td>
+</tr>
+<tr>
+<td><code>std::has_virtual_destructor&lt;T&gt;</code></td>
+<td><code>std::has_virtual_destructor_v&lt;T&gt;</code></td>
+<td>是否有虚析构函数</td>
+</tr>
+<tr>
+<td><code>std::is_abstract&lt;T&gt;</code></td>
+<td><code>std::is_abstract_v&lt;T&gt;</code></td>
+<td>是否为抽象类</td>
+</tr>
+<tr>
+<td><code>std::is_final&lt;T&gt;</code></td>
+<td><code>std::is_final_v&lt;T&gt;</code></td>
+<td>是否用 <code>final</code> 修饰（C++14 起）</td>
+</tr>
+<tr>
+<td><code>std::is_signed&lt;T&gt;</code></td>
+<td><code>std::is_signed_v&lt;T&gt;</code></td>
+<td>是否为有符号算术类型</td>
+</tr>
+<tr>
+<td><code>std::is_unsigned&lt;T&gt;</code></td>
+<td><code>std::is_unsigned_v&lt;T&gt;</code></td>
+<td>是否为无符号算术类型</td>
+</tr>
+</tbody></table>
+<p>原始形式（如 <code>std::is_integral&lt;T&gt;</code>）是一个 类模板，其内部有一个静态常量成员 <code>value</code>（类型为 bool）。<br><code>_v</code> 形式（如 <code>std::is_integral_v&lt;T&gt;</code>）是 C++17 引入的 变量模板，等价于 <code>std::is_integral&lt;T&gt;::value</code>。</p>
+<p>🔧 示例：使用传统形式 vs 变量模板形式</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;type_traits&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用原始形式（繁琐）</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">check_integral_old</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (std::is_integral&lt;T&gt;::value) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Type is integral (old style)\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 _v 变量模板（简洁）</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">check_integral_new</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (std::is_integral_v&lt;T&gt;) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">&quot;Type is integral (new style)\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">check_integral_old</span>&lt;<span class="type">int</span>&gt;();   <span class="comment">// 输出 &quot;Type is integral (old style)&quot;</span></span><br><span class="line">    <span class="built_in">check_integral_new</span>&lt;<span class="type">int</span>&gt;();   <span class="comment">// 输出 &quot;Type is integral (new style)&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>💡 几乎所有现代 C++ 泛型代码都应优先使用 _v 形式，特别是在 concept 定义中。</p>
+<h3 id="4-2-关系型类型特征"><a href="#4-2-关系型类型特征" class="headerlink" title="4.2 关系型类型特征"></a>4.2 关系型类型特征</h3><table>
+<thead>
+<tr>
+<th>原始形式类模板</th>
+<th>变量模板</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>std::is_same&lt;T, U&gt;</code></td>
+<td><code>std::is_same_v&lt;T, U&gt;</code></td>
+<td><code>T</code> 与 <code>U</code> 是否为同一类型</td>
+</tr>
+<tr>
+<td><code>std::is_base_of&lt;Base, Derived&gt;</code></td>
+<td><code>std::is_base_of_v&lt;Base, Derived&gt;</code></td>
+<td><code>Base</code> 是否是 <code>Derived</code> 的基类（含相同类型）</td>
+</tr>
+<tr>
+<td><code>std::is_convertible&lt;From, To&gt;</code></td>
+<td><code>std::is_convertible_v&lt;From, To&gt;</code></td>
+<td><code>From</code> 是否可隐式转换为 <code>To</code></td>
+</tr>
+<tr>
+<td><code>std::is_assignable&lt;T, U&gt;</code></td>
+<td><code>std::is_assignable_v&lt;T, U&gt;</code></td>
+<td>表达式 <code>declval&lt;T&gt;() = declval&lt;U&gt;()</code> 是否合法</td>
+</tr>
+<tr>
+<td><code>std::is_constructible&lt;T, Args...&gt;</code></td>
+<td><code>std::is_constructible_v&lt;T, Args...&gt;</code></td>
+<td><code>T</code> 是否可用 <code>Args...</code> 构造</td>
+</tr>
+<tr>
+<td><code>std::is_default_constructible&lt;T&gt;</code></td>
+<td><code>std::is_default_constructible_v&lt;T&gt;</code></td>
+<td>是否可默认构造</td>
+</tr>
+<tr>
+<td><code>std::is_copy_constructible&lt;T&gt;</code></td>
+<td><code>std::is_copy_constructible_v&lt;T&gt;</code></td>
+<td>是否可拷贝构造</td>
+</tr>
+<tr>
+<td><code>std::is_move_constructible&lt;T&gt;</code></td>
+<td><code>std::is_move_constructible_v&lt;T&gt;</code></td>
+<td>是否可移动构造</td>
+</tr>
+<tr>
+<td><code>std::is_copy_assignable&lt;T&gt;</code></td>
+<td><code>std::is_copy_assignable_v&lt;T&gt;</code></td>
+<td>是否可拷贝赋值</td>
+</tr>
+<tr>
+<td><code>std::is_move_assignable&lt;T&gt;</code></td>
+<td><code>std::is_move_assignable_v&lt;T&gt;</code></td>
+<td>是否可移动赋值</td>
+</tr>
+<tr>
+<td><code>std::is_destructible&lt;T&gt;</code></td>
+<td><code>std::is_destructible_v&lt;T&gt;</code></td>
+<td>是否可析构</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>✅ 注意：<code>is_base_of_v&lt;Base, Derived&gt;</code> 中，若 <code>Base == Derived</code>，结果也为 <code>true</code>。</p>
+</blockquote>
+<p>原始形式（如 <code>std::is_same&lt;T, U&gt;</code>）是一个 类模板，其内部有一个静态常量成员 <code>value</code>（类型为 <code>bool</code>）。 _v 形式（如 <code>std::is_same_v&lt;T, U&gt;</code>）是 C++17 引入的 变量模板，等价于 <code>std::is_same&lt;T, U&gt;::value</code>。</p>
+<p>🔧 示例：在模板约束中使用关系型类型特征</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;type_traits&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用原始形式（繁琐）</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</span><br><span class="line"><span class="keyword">typename</span> std::enable_if&lt;std::is_same&lt;T, U&gt;::value, <span class="type">void</span>&gt;::<span class="function">type</span></span><br><span class="line"><span class="function"><span class="title">print_if_same_old</span><span class="params">(<span class="type">const</span> T&amp; t, <span class="type">const</span> U&amp; u)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Same types: &quot;</span> &lt;&lt; t &lt;&lt; <span class="string">&quot; and &quot;</span> &lt;&lt; u &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 _v 变量模板（简洁）</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</span><br><span class="line">std::<span class="type">enable_if_t</span>&lt;std::is_same_v&lt;T, U&gt;&gt;</span><br><span class="line"><span class="built_in">print_if_same_new</span>(<span class="type">const</span> T&amp; t, <span class="type">const</span> U&amp; u) &#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Same types: &quot;</span> &lt;&lt; t &lt;&lt; <span class="string">&quot; and &quot;</span> &lt;&lt; u &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在 concept 中使用</span></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="keyword">concept</span> Integral = std::is_integral_v&lt;T&gt;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</span><br><span class="line"><span class="keyword">concept</span> SameType = std::is_same_v&lt;T, U&gt;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;Integral T, Integral U&gt;</span></span><br><span class="line"><span class="function"><span class="keyword">requires</span> SameType&lt;T, U&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">process_integers</span><span class="params">(<span class="type">const</span> T&amp; t, <span class="type">const</span> U&amp; u)</span> </span>&#123;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Processing same integer types: &quot;</span> &lt;&lt; t &lt;&lt; <span class="string">&quot; and &quot;</span> &lt;&lt; u &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">print_if_same_old</span>(<span class="number">1</span>, <span class="number">2</span>);        <span class="comment">// 输出 &quot;Same types: 1 and 2&quot;</span></span><br><span class="line">    <span class="built_in">print_if_same_new</span>(<span class="number">1</span>, <span class="number">2</span>);        <span class="comment">// 输出 &quot;Same types: 1 and 2&quot;</span></span><br><span class="line">    <span class="built_in">process_integers</span>(<span class="number">5</span>, <span class="number">10</span>);        <span class="comment">// 输出 &quot;Processing same integer types: 5 and 10&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-3-类型变换（Transformation-Traits）与-t-别名模板"><a href="#4-3-类型变换（Transformation-Traits）与-t-别名模板" class="headerlink" title="4.3 类型变换（Transformation Traits）与 _t 别名模板"></a>4.3 类型变换（Transformation Traits）与 <code>_t</code> 别名模板</h3><p>除了布尔判断，标准库还提供类型变换工具，通常配合 <code>_t</code> 使用：</p>
+<table>
+<thead>
+<tr>
+<th>类模板</th>
+<th>别名模板（C++14 起）</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>std::remove_cv&lt;T&gt;</code></td>
+<td><code>std::remove_cv_t&lt;T&gt;</code></td>
+<td>移除 const&#x2F;volatile</td>
+</tr>
+<tr>
+<td><code>std::remove_reference&lt;T&gt;</code></td>
+<td><code>std::remove_reference_t&lt;T&gt;</code></td>
+<td>移除引用</td>
+</tr>
+<tr>
+<td><code>std::decay&lt;T&gt;</code></td>
+<td><code>std::decay_t&lt;T&gt;</code></td>
+<td>应用退化规则（如数组转指针，函数转函数指针）</td>
+</tr>
+<tr>
+<td><code>std::add_const&lt;T&gt;</code></td>
+<td><code>std::add_const_t&lt;T&gt;</code></td>
+<td>添加 const</td>
+</tr>
+<tr>
+<td><code>std::make_signed&lt;T&gt;</code></td>
+<td><code>std::make_signed_t&lt;T&gt;</code></td>
+<td>转为对应的有符号类型</td>
+</tr>
+<tr>
+<td><code>std::underlying_type&lt;T&gt;</code></td>
+<td><code>std::underlying_type_t&lt;T&gt;</code></td>
+<td>获取枚举的底层类型</td>
+</tr>
+<tr>
+<td><code>std::enable_if&lt;B, T&gt;</code></td>
+<td><code>std::enable_if_t&lt;B, T&gt;</code></td>
+<td>SFINAE 控制重载（当 <code>B</code> 为 true 时类型为 <code>T</code>）</td>
+</tr>
+</tbody></table>
+<p>原始形式（如 <code>std::remove_reference&lt;T&gt;</code>）是一个 类模板，其内部定义了一个 <code>type</code> 成员类型（如 using type &#x3D; …;）。<br><code>_t</code> 形式（如 <code>std::remove_reference_t&lt;T&gt;</code>）是 C++14 引入的 类型别名模板，等价于 <code>typename std::remove_reference&lt;T&gt;::type</code>。</p>
+<p>🔧 示例：实现通用的值传递函数（去除引用）</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">编辑</span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;type_traits&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用原始形式（繁琐）</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo_old</span><span class="params">(T&amp;&amp; arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> Decayed = <span class="keyword">typename</span> std::decay&lt;<span class="keyword">typename</span> std::remove_reference&lt;T&gt;::type&gt;::type;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;Old style: &quot;</span> &lt;&lt; <span class="built_in">typeid</span>(Decayed).<span class="built_in">name</span>() &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 _t 别名模板（简洁）</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">foo_new</span><span class="params">(T&amp;&amp; arg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">using</span> CleanType = std::<span class="type">decay_t</span>&lt;std::<span class="type">remove_reference_t</span>&lt;T&gt;&gt;;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">&quot;New style: &quot;</span> &lt;&lt; <span class="built_in">typeid</span>(CleanType).<span class="built_in">name</span>() &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> x = <span class="number">42</span>;</span><br><span class="line">    <span class="built_in">foo_old</span>(x);   <span class="comment">// 输出 int</span></span><br><span class="line">    <span class="built_in">foo_new</span>(x);   <span class="comment">// 输出 int</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>💡 几乎所有现代 C++ 泛型代码都应优先使用 <code>_t</code> 形式。</p>
+<h2 id="使用示例"><a href="#使用示例" class="headerlink" title="使用示例"></a>使用示例</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keyword">typename</span> U&gt;</span><br><span class="line"><span class="keyword">concept</span> DerivedFrom = std::is_base_of_v&lt;T, U&gt;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> Base, <span class="keyword">typename</span> Derived&gt;</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">check_inheritance</span><span class="params">()</span> <span class="keyword">requires</span> DerivedFrom&lt;Base, Derived&gt; </span>&#123;</span><br><span class="line">    <span class="built_in">static_assert</span>(std::is_base_of_v&lt;Base, Derived&gt;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这些变量模板不仅简洁，而且在编译期求值，零运行时开销，是构建高质量 concept 的基石。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ul>
+<li><strong>Concepts</strong> 让模板约束变得清晰、安全、可组合。</li>
+<li><strong>原子约束、合取、析取</strong> 构成了约束表达式的基本逻辑。</li>
+<li><strong><code>requires</code> 表达式</strong> 可验证类型是否支持特定操作。</li>
+<li><strong>约束优先级</strong> 由蕴含关系决定，影响重载解析。</li>
+<li><strong>标准库变量模板</strong>（如 <code>is_base_of_v</code>）是编写 concept 的得力助手。</li>
+</ul>
+<p>掌握这些知识，你就能写出更具表达力、更易维护的泛型 C++ 代码。随着 C++20&#x2F;23 的普及，模板约束正成为现代 C++ 开发的必备技能。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Concept-%E7%9A%84%E7%BA%A6%E6%9D%9F%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%9A%E5%8E%9F%E5%AD%90%E7%BA%A6%E6%9D%9F%E3%80%81%E5%90%88%E5%8F%96%E5%BC%8F%E4%B8%8E%E6%9E%90%E5%8F%96%E5%BC%8F"><span class="toc-number">1.</span> <span class="toc-text">1. Concept 的约束表达式：原子约束、合取式与析取式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E5%AD%90%E7%BA%A6%E6%9D%9F%EF%BC%88Atomic-Constraint%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原子约束（Atomic Constraint）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E5%90%88%E5%8F%96%E5%BC%8F%EF%BC%88Conjunction%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 合取式（Conjunction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-%E6%9E%90%E5%8F%96%E5%BC%8F%EF%BC%88Disjunction%EF%BC%89"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 析取式（Disjunction）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-requires-%E8%A1%A8%E8%BE%BE%E5%BC%8F%EF%BC%88Requires-Expression%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">2 requires 表达式（Requires Expression）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Simple-Requirements"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Simple Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Type-Requirements"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Type Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Compound-Requirements"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Compound Requirements</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-Nested-requirement"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 Nested requirement</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%A4%9A%E4%B8%AA%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E4%B9%8B%E9%97%B4%E7%9A%84%E4%BC%98%E5%85%88%E7%BA%A7%E5%88%A4%E6%96%AD"><span class="toc-number">3.</span> <span class="toc-text">3. 多个模板约束之间的优先级判断</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%BA%A6%E6%9D%9F%E8%95%B4%E5%90%AB%EF%BC%88Subsumption%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 约束蕴含（Subsumption）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%9E%E9%99%85%E8%A7%84%E5%88%99"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 实际规则</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-C-%E6%A0%87%E5%87%86%E5%BA%93%E4%B8%AD%E7%9A%84%E5%B8%B8%E8%A7%81%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81%EF%BC%88Type-Traits%EF%BC%89%E4%B8%8E%E5%8F%98%E9%87%8F%E6%A8%A1%E6%9D%BF"><span class="toc-number">3.3.</span> <span class="toc-text">4. C++ 标准库中的常见类型特征（Type Traits）与变量模板</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%B8%B8%E8%A7%81%E7%9A%84%E5%B8%83%E5%B0%94%E5%9E%8B%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81%EF%BC%88%E5%8F%8A%E5%85%B6-v-%E5%8F%98%E9%87%8F%E6%A8%A1%E6%9D%BF%EF%BC%89"><span class="toc-number">3.3.1.</span> <span class="toc-text">4.1 常见的布尔型类型特征（及其 _v 变量模板）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%85%B3%E7%B3%BB%E5%9E%8B%E7%B1%BB%E5%9E%8B%E7%89%B9%E5%BE%81"><span class="toc-number">3.3.2.</span> <span class="toc-text">4.2 关系型类型特征</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E7%B1%BB%E5%9E%8B%E5%8F%98%E6%8D%A2%EF%BC%88Transformation-Traits%EF%BC%89%E4%B8%8E-t-%E5%88%AB%E5%90%8D%E6%A8%A1%E6%9D%BF"><span class="toc-number">3.3.3.</span> <span class="toc-text">4.3 类型变换（Transformation Traits）与 _t 别名模板</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.4.</span> <span class="toc-text">使用示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&text=C++ 模板约束进阶指南"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&is_video=false&description=C++ 模板约束进阶指南"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++ 模板约束进阶指南&body=Check out this article: http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&title=C++ 模板约束进阶指南"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&name=C++ 模板约束进阶指南&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/23/C++/C++%20%E6%A8%A1%E6%9D%BF%E7%BA%A6%E6%9D%9F%E8%BF%9B%E9%98%B6%E6%8C%87%E5%8D%97/&t=C++ 模板约束进阶指南"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

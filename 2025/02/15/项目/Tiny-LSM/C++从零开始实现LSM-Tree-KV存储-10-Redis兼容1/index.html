@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一小节我们基于已有的LSM Tree接口, 来设计一个兼容Redis协议的服务层, 使其能替代redis-server处理redis-cli的请求. 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 欢迎点个Star 1 Resp协议简介这里就不再对Redis本身的基础概念进行介绍了, 毕竟Redis是校招八股必背知识点, 大家想必都非常熟悉了. 但">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1">
+<meta property="og:url" content="http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一小节我们基于已有的LSM Tree接口, 来设计一个兼容Redis协议的服务层, 使其能替代redis-server处理redis-cli的请求. 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 欢迎点个Star 1 Resp协议简介这里就不再对Redis本身的基础概念进行介绍了, 毕竟Redis是校招八股必背知识点, 大家想必都非常熟悉了. 但">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-02-15T03:13:47.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.668Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/02/16/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-00-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/02/14/Rust%E9%9A%8F%E7%AC%94/Rust%E7%BB%93%E6%9E%84%E4%BD%93%E8%87%AA%E5%BC%95%E7%94%A8%E8%A7%A3%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&text=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1&body=Check out this article: http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&name=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&t=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Resp%E5%8D%8F%E8%AE%AE%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Resp协议简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 一个简单的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%AF%AD%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 数据类型语法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Redis%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 Redis实现思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E5%B0%81%E8%A3%85"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础封装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-TTL%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 TTL设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E8%80%83%E8%99%91%E4%BA%86TTL%E7%9A%84set-get"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 考虑了TTL的set&#x2F;get</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-TTL-EXPIRE"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 TTL&#x2F;EXPIRE</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%90%8E%E7%AB%AF%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 后端服务器实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%B7%BB%E5%8A%A0%E4%BE%9D%E8%B5%96"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 添加依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Muduo-%E7%BD%91%E7%BB%9C%E5%B1%82%E5%B0%81%E8%A3%85"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Muduo 网络层封装</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-02-15T03:13:47.000Z" class="dt-published" itemprop="datePublished">2025-02-15</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一小节我们基于已有的<code>LSM Tree</code>接口, 来设计一个兼容<code>Redis</code>协议的服务层, 使其能替代<code>redis-server</code>处理<code>redis-cli</code>的请求.</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">https://github.com/Vanilla-Beauty/tiny-lsm</a></p>
+<p>欢迎点个Star</p>
+<h1 id="1-Resp协议简介"><a href="#1-Resp协议简介" class="headerlink" title="1 Resp协议简介"></a>1 Resp协议简介</h1><p>这里就不再对<code>Redis</code>本身的基础概念进行介绍了, 毕竟<code>Redis</code>是校招八股必背知识点, 大家想必都非常熟悉了. 但大多数朋友可能对<code>Redis</code>通信的<code>Resp</code>协议完全不熟悉, 这里简单介绍一下<code>Resp</code>协议.</p>
+<p>Redis的RESP（REdis Serialization Protocol）是Redis客户端与服务器之间通信的协议, 也就是<code>redis-cli</code>和<code>redis-server</code>之间进行通信的协议，它简单、高效，支持多种数据类型。因此, 其只需要描述<code>Redis</code>中的数据类型和请求类型就可以了。</p>
+<p>需要说明的是, <code>Resp</code>协议应该属于<code>TCP</code>这一层的协议, 其没有<code>HTTP</code>等协议的头, 实现时我们也不需要<code>http</code>层的框架</p>
+<h2 id="1-1-一个简单的案例"><a href="#1-1-一个简单的案例" class="headerlink" title="1.1 一个简单的案例"></a>1.1 一个简单的案例</h2><p>假设你在 <code>redis-cli</code> 中输入了以下命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">SET k1 v1</span><br></pre></td></tr></table></figure>
+<p><code>redis-cli</code>客户端会将该命令转换为 <code>RESP</code> 协议格式并发送给 <code>Redis</code> 服务器。具体表示如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">*3</span><br><span class="line">$3</span><br><span class="line">SET</span><br><span class="line">$2</span><br><span class="line">k1</span><br><span class="line">$2</span><br><span class="line">v1</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这里其实显式地表达了换行符<code>\r\n</code>, 真实的内容是: <code>*3\r\n$3\r\nSET\r\n$2\r\nk1\r\n$2\r\nv1\r\n</code></p>
+</blockquote>
+<p><strong>解释：</strong></p>
+<ul>
+<li><code>*3</code>：表示这是一个包含 3 个元素的数组。</li>
+<li><code>$3</code>：表示第一个元素是一个长度为 3 的批量字符串（Bulk String），内容为 <code>SET</code>。</li>
+<li><code>$2</code>：表示第二个元素是一个长度为 2 的批量字符串，内容为 <code>k1</code>。</li>
+<li><code>$2</code>：表示第三个元素是一个长度为 2 的批量字符串，内容为 <code>v1</code>。</li>
+</ul>
+<blockquote>
+<p><code>\r\n</code>为不同字段之间的分隔符, 且不计入长度</p>
+</blockquote>
+<p><code>Redis</code> 服务器接收到上述请求后，执行 <code>SET k1 v1</code> 操作，并返回响应。例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">+OK</span><br></pre></td></tr></table></figure>
+
+<p><strong>解释：</strong></p>
+<ul>
+<li><code>+OK</code>：表示这是一个简单字符串（Simple String），值为 <code>OK</code>，表示操作成功。</li>
+</ul>
+<p>如果客户端发送的命令或参数有误，<code>Redis</code> 服务器可能会返回错误信息。例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-ERR syntax error</span><br></pre></td></tr></table></figure>
+
+<p><strong>解释：</strong></p>
+<ul>
+<li><code>-ERR</code>：表示这是一个错误消息（Error），内容为 <code>syntax error</code>。</li>
+</ul>
+<h2 id="1-2-数据类型语法"><a href="#1-2-数据类型语法" class="headerlink" title="1.2 数据类型语法"></a>1.2 数据类型语法</h2><p>通过之前的案例我们可以看到, <code>RESP</code>使用一些符号来对数据类型进行标记, 这里简单总结如下:</p>
+<ul>
+<li><strong>简单字符串（Simple Strings）</strong>：以”+”开头，如<code>+OK\r\n</code>。</li>
+<li><strong>错误（Errors）</strong>：以”-“开头，如<code>-ERR unknown command\r\n</code>。</li>
+<li><strong>整数（Integers）</strong>：以”:”开头，如<code>:1000\r\n</code>。</li>
+<li><strong>批量字符串（Bulk Strings）</strong>：以”$”开头，如<code>$6\r\nfoobar\r\n</code>。</li>
+<li><strong>数组（Arrays）</strong>：以”*”开头，如<code>*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n</code>。</li>
+</ul>
+<h1 id="2-Redis实现思路"><a href="#2-Redis实现思路" class="headerlink" title="2 Redis实现思路"></a>2 Redis实现思路</h1><p>这里我们将利用自身的<code>LSM Tree</code>接口来设计一个兼容<code>Redis</code>协议的服务层, 使其能替代<code>redis-server</code>处理<code>redis-cli</code>的请求.</p>
+<p>首先我们回顾一下我们的<code>LSM Tree</code>接口支持什么api:</p>
+<ol>
+<li><code>Put(key, value)</code>: 将键值对插入到数据库中。</li>
+<li><code>Get(key)</code>: 根据键获取对应的值。</li>
+<li><code>Delete(key)</code>: 根据键删除对应的值。</li>
+<li><code>Scan(start_key, end_key)</code>: 根据起始键和结束键范围获取键值对。(就是上一章实现的谓词查询, 这里的<code>Scan</code>是一个虚拟的接口)</li>
+</ol>
+<p>然后我们想一下<code>Redsis</code>的不同数据结构的接口</p>
+<ol>
+<li><strong>字符串（String）</strong>：和<code>LSM Tree</code>一样, 我们也只需要实现<code>Put(key, value)</code>和<code>Get(key)</code>即可</li>
+<li><strong>列表（List）</strong>：相当于不同字符串之间有连接</li>
+<li><strong>哈希（Hash）</strong>：一个哈希的<code>key</code>由很多个<code>filed</code>即<code>value</code>组成</li>
+<li><strong>集合（Set）</strong>: 一个集合的<code>key</code>由很多个<code>member</code>, 但不需要排序</li>
+<li><strong>有序集合（Sorted Set）</strong>: 集合的<code>key</code>由很多个<code>member</code>和<code>score</code>组成, 并且需要按照<code>score</code>排序</li>
+</ol>
+<p>同时很多<code>key</code>还有一些基础属性, 最常用的就是<code>TTL</code>(过期时间), 当<code>TTL</code>过期时, 该<code>key</code>将不再存在, 我们也可以通过<code>TTL</code>来判断一个<code>key</code>是否过期, 也可以使用<code>EXPIRE</code>来设置一个<code>key</code>的过期时间</p>
+<p>其实本质上, 由于我们的存储引擎是<code>KV</code>存储, 我们的哈希的所有数据都将作为基础的<code>key</code>和<code>value</code>进行存储, 这与<code>Redis</code>中的<code>字符串</code>是一致的。而<code>List</code>, <code>Set</code>, <code>Sorted Set</code>等数据结构就需要将多对<code>key</code>进行组合, 并且需要根据一定的规则进行排序, 而且回想我的<code>LSM Tree</code>接口支持的api, 核心思路就只有2类:</p>
+<ol>
+<li><code>List</code>, <code>Set</code>, <code>Sorted Set</code>等数据结构的<code>key</code>的<code>value</code>中要记录所管理成员的元信息</li>
+<li>归属于某个大数据结构(<code>List</code>, <code>Set</code>, <code>Sorted Set</code>等)的成员的<code>key</code>需要包含统一的前缀, 这样才能通过我的的存储引擎进行前缀查询</li>
+</ol>
+<p>接下来, 本小节将基于上述的思路首先介绍<code>Redis</code>基础字符串(这一部分大概分2-3章吧, 内容有点多)</p>
+<h1 id="3-代码实现"><a href="#3-代码实现" class="headerlink" title="3 代码实现"></a>3 代码实现</h1><h2 id="3-1-基础封装"><a href="#3-1-基础封装" class="headerlink" title="3.1 基础封装"></a>3.1 基础封装</h2><p>我们新建一个<code>include/redis_wrapper/redis_wrapper.h</code>和<code>src/redis_wrapper/redis_wrapper.cpp</code>文件来对我们的存储引擎进行封装:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/redis_wrapper/redis_wrapper.h</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RedisWrapper</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  std::unique_ptr&lt;LSM&gt; lsm;</span><br><span class="line">  std::shared_mutex redis_mtx;</span><br><span class="line"></span><br><span class="line">   <span class="comment">// 参数校验部分</span></span><br><span class="line">  <span class="function">std::string <span class="title">set</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">get</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">incr</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">decr</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">expire</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">del</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">ttl</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 实际执行部分</span></span><br><span class="line">  <span class="function">std::string <span class="title">redis_incr</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_decr</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_expire</span><span class="params">(<span class="type">const</span> std::string &amp;key, std::string seconds_count)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_set</span><span class="params">(std::string &amp;key, std::string &amp;value)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_get</span><span class="params">(std::string &amp;key)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_del</span><span class="params">(std::vector&lt;std::string&gt; &amp;args)</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">redis_ttl</span><span class="params">(std::string &amp;key)</span></span>;</span><br><span class="line"></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里以<code>redis_set</code>为例, 我们很容易写出下面的代码:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::string <span class="title">RedisWrapper::redis_set</span><span class="params">(std::string &amp;key, std::string &amp;value)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line">  <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">put</span>(key, value);</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;+OK\r\n&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>但这样会有一个问题, 如果这个<code>key</code>原来就存在, 且是有<code>ttl</code>的呢? <code>Redis</code>默认的 <code>SET key value</code> 命令对已存在的 <code>key</code> <code>进行设置，Redis</code> 会覆盖该 <code>key</code> 的值，并移除原有的 <code>TTL</code>，使该 <code>key</code> 成为一个持久化的 <code>key</code>（永不过期）。但上述代码则缺乏对<code>TTL</code>的考虑, 因此我们需要引入<code>TTL</code>。</p>
+<h2 id="3-2-TTL设计"><a href="#3-2-TTL设计" class="headerlink" title="3.2 TTL设计"></a>3.2 TTL设计</h2><p>首先我们的每个<code>key</code>都可能伴随着一个过期时间, 这个过期时间我们只需要为其加上一个固定的前缀, 就可以与真实的<code>key</code>关联起来, 称为<code>expire_key</code>, 同时其<code>value</code>直接为时间戳即可，如果这个<code>key</code>对应的<code>expire_key</code>不存在, 则表示该<code>key</code>没有过期时间.</p>
+<p>另一方面, 原本的<code>Redis</code>支持<code>后台线程定期清理</code> 和 <code>查询时延迟检查清理</code> 2种检查<code>TTL</code>的方式, 这里为了实现简单, 我们选择<code>查询时延迟检查清理</code>的方式, 在后续查询或写入时检查<code>expire_key</code>的<code>value</code>, 如果发现<code>value</code>小于当前时间戳, 则进行相应的操作.</p>
+<h2 id="3-3-考虑了TTL的set-get"><a href="#3-3-考虑了TTL的set-get" class="headerlink" title="3.3 考虑了TTL的set&#x2F;get"></a>3.3 考虑了TTL的set&#x2F;get</h2><p>所以这里我们首选需要对<code>set</code>进行如下修改:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> std::string <span class="title">get_explire_key</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> REDIS_EXPIRE_HEADER + key;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">std::string <span class="title">RedisWrapper::redis_set</span><span class="params">(std::string &amp;key, std::string &amp;value)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line">  <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">put</span>(key, value);</span><br><span class="line">  <span class="comment">// 同时如果设置有过期时间, 需要删除过期时间</span></span><br><span class="line">  std::string expire_key = <span class="built_in">get_explire_key</span>(key);</span><br><span class="line">  <span class="keyword">if</span> (<span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">get</span>(expire_key).<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">remove</span>(expire_key);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;+OK\r\n&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在<code>get</code>时, 也需要检查<code>TTL</code>:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::string <span class="title">RedisWrapper::redis_get</span><span class="params">(std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::shared_lock&lt;std::shared_mutex&gt; <span class="title">rlock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 读锁</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> key_query = <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">get</span>(key);</span><br><span class="line"></span><br><span class="line">  std::string expire_key = <span class="built_in">get_explire_key</span>(key);</span><br><span class="line">  <span class="keyword">auto</span> expire_query = <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">get</span>(expire_key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (key_query.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    <span class="comment">// 还需要检测 TTL</span></span><br><span class="line">    <span class="keyword">if</span> (expire_query.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 检查是否过期</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">is_expired</span>(expire_query, <span class="literal">nullptr</span>)) &#123;</span><br><span class="line">        <span class="comment">// 过期了, 先进行锁升级, 再清理数据</span></span><br><span class="line">        rlock.<span class="built_in">unlock</span>();                                       <span class="comment">// 解锁读锁</span></span><br><span class="line">        <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">wlock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line">        <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">remove</span>(key);</span><br><span class="line">        <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">remove</span>(expire_key);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;$-1\r\n&quot;</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 没有过期</span></span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;$&quot;</span> + std::<span class="built_in">to_string</span>(key_query.<span class="built_in">value</span>().<span class="built_in">size</span>()) + <span class="string">&quot;\r\n&quot;</span> +</span><br><span class="line">               key_query.<span class="built_in">value</span>() + <span class="string">&quot;\r\n&quot;</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 没有设置过期时间, 直接返回</span></span><br><span class="line">      <span class="keyword">return</span> <span class="string">&quot;$&quot;</span> + std::<span class="built_in">to_string</span>(key_query.<span class="built_in">value</span>().<span class="built_in">size</span>()) + <span class="string">&quot;\r\n&quot;</span> +</span><br><span class="line">             key_query.<span class="built_in">value</span>() + <span class="string">&quot;\r\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// key 不存在, 有必要的话清理 expire_key</span></span><br><span class="line">    <span class="keyword">if</span> (expire_query.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">      <span class="comment">// 先进行锁升级, 再清理数据</span></span><br><span class="line">      rlock.<span class="built_in">unlock</span>();                                       <span class="comment">// 解锁读锁</span></span><br><span class="line">      <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">wlock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line">      <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">remove</span>(expire_key);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;$-1\r\n&quot;</span>; <span class="comment">// 表示键不存在</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里还有一个易错点, 我们检查<code>TTL</code>和查询<code>key</code>都是读操作, 因此获取的是读锁, 但我们在由于<code>TTL</code>超时导致<code>key</code>不存在时, 需要清理<code>expire_key</code>和<code>key</code>, 这需要我们进行写锁的升级, 需要先释放读锁, 然获取写锁.</p>
+<p>而且<code>get</code>操作比<code>set</code>要复杂, 具体的流程代码里面的注释很清楚了, 就不多说了</p>
+<h2 id="3-4-TTL-EXPIRE"><a href="#3-4-TTL-EXPIRE" class="headerlink" title="3.4 TTL&#x2F;EXPIRE"></a>3.4 TTL&#x2F;EXPIRE</h2><p>这里的<code>expire</code>操作就是简单插入一个<code>expire_key</code>和<code>value</code>即可, <code>value</code>为当前时间戳加上<code>seconds_count</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::string <span class="title">RedisWrapper::redis_expire</span><span class="params">(<span class="type">const</span> std::string &amp;key,</span></span></span><br><span class="line"><span class="params"><span class="function">                                       std::string seconds_count)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line">  std::string expire_key = <span class="built_in">get_explire_key</span>(key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> expire_time_str = <span class="built_in">get_expire_time</span>(seconds_count);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 存储过期时间</span></span><br><span class="line">  <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">put</span>(expire_key, expire_time_str);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="string">&quot;:1\r\n&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>TTL</code>则是直接获取<code>expire_key</code>的<code>value</code>即可, 这里需要注意的是, 如果<code>expire_key</code>不存在, 则表示该<code>key</code>没有过期时间, 因此返回<code>-1</code>即可, 当<code>expire_key</code>存在, 则需要判断是否过期, 如果过期, 则返回<code>-2</code>表示<code>key</code>不存在, 如果没有过期, 则返回剩余的过期时间即可</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::string <span class="title">RedisWrapper::redis_ttl</span><span class="params">(std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::shared_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(redis_mtx)</span></span>; <span class="comment">// 读锁</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> key_query = <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">get</span>(key);</span><br><span class="line"></span><br><span class="line">  std::string expire_key = <span class="built_in">get_explire_key</span>(key);</span><br><span class="line">  <span class="keyword">auto</span> expire_query = <span class="keyword">this</span>-&gt;lsm-&gt;<span class="built_in">get</span>(expire_key);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (key_query.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    <span class="comment">// key 存在, 判断是否过期</span></span><br><span class="line">    <span class="keyword">if</span> (expire_query.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">      std::<span class="type">time_t</span> <span class="type">now_time_t</span>;</span><br><span class="line">      <span class="comment">// 检查是否过期</span></span><br><span class="line">      <span class="keyword">if</span> (<span class="built_in">is_expired</span>(expire_query, &amp;<span class="type">now_time_t</span>)) &#123;</span><br><span class="line">        <span class="comment">// 过期了, key不存在</span></span><br><span class="line">        <span class="comment">// 过期了也不删除, ttl这里设计为只读, 删除在之后进行</span></span><br><span class="line">        <span class="comment">// -2 表示 key 不存在</span></span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;:-2\r\n&quot;</span>;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 没有过期</span></span><br><span class="line">        <span class="keyword">auto</span> now = std::chrono::system_clock::<span class="built_in">now</span>();</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;:&quot;</span> +</span><br><span class="line">               std::<span class="built_in">to_string</span>(std::<span class="built_in">stoll</span>(expire_query.<span class="built_in">value</span>()) - <span class="type">now_time_t</span>) +</span><br><span class="line">               <span class="string">&quot;\r\n&quot;</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 没有设置过期时间, 返回 -1</span></span><br><span class="line">      <span class="keyword">return</span> <span class="string">&quot;:-1\r\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// key 不存在</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;:-1\r\n&quot;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其他的常规接口, 如<code>incr</code>, <code>del</code>等很简单, 逻辑也都差不多, 就不展开介绍了, 可以看源码</p>
+<h1 id="4-后端服务器实现"><a href="#4-后端服务器实现" class="headerlink" title="4 后端服务器实现"></a>4 后端服务器实现</h1><p>完成了基础的封装后, 我们需要设置一个网络服务器来接受<code>redis-cli</code>的请求, 这里我选择<code>muduo</code>网络库进行网络层的封装, 服务器的代码在<code>server</code>文件夹下</p>
+<h2 id="4-1-添加依赖"><a href="#4-1-添加依赖" class="headerlink" title="4.1 添加依赖"></a>4.1 添加依赖</h2><p>这里建议直接使用<code>xmake</code>提供的<code>muduo</code>库, 并定义<code>server</code>依赖:</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 添加Muduo库</span></span><br><span class="line">add_requires(<span class="string">&quot;muduo&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- ...</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 定义server</span></span><br><span class="line">target(<span class="string">&quot;server&quot;</span>)</span><br><span class="line">    set_kind(<span class="string">&quot;binary&quot;</span>)</span><br><span class="line">    add_files(<span class="string">&quot;server/src/*.cpp&quot;</span>)</span><br><span class="line">    add_deps(<span class="string">&quot;redis&quot;</span>)</span><br><span class="line">    add_includedirs(<span class="string">&quot;include&quot;</span>, &#123;public = <span class="literal">true</span>&#125;)</span><br><span class="line">    add_packages(<span class="string">&quot;muduo&quot;</span>) <span class="comment">-- 添加muduo依赖</span></span><br><span class="line">    set_targetdir(<span class="string">&quot;$(buildir)/bin&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>如果不想使用<code>xmake</code>提供的<code>muduo</code>库, 也可以手动添加依赖, 具体可以参考<code>muduo</code>的文档: <a target="_blank" rel="noopener" href="https://github.com/chenshuo/muduo-tutorial">https://github.com/chenshuo/muduo-tutorial</a></p>
+<h2 id="4-2-Muduo-网络层封装"><a href="#4-2-Muduo-网络层封装" class="headerlink" title="4.2 Muduo 网络层封装"></a>4.2 Muduo 网络层封装</h2><p>这里直接用代码简单介绍下<code>muduo</code>的使用:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../../include/redis_wrapper/redis_wrapper.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/handler.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cstddef&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/base/Logging.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/EventLoop.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/InetAddress.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/TcpConnection.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/TcpServer.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;unordered_map&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;vector&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> muduo;</span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> muduo::net;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">RedisServer</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="built_in">RedisServer</span>(EventLoop *loop, <span class="type">const</span> InetAddress &amp;listenAddr)</span><br><span class="line">      : <span class="built_in">server_</span>(loop, listenAddr, <span class="string">&quot;RedisServer&quot;</span>), <span class="built_in">redis</span>(<span class="string">&quot;example_db&quot;</span>) &#123;</span><br><span class="line">    server_.<span class="built_in">setConnectionCallback</span>(</span><br><span class="line">        std::<span class="built_in">bind</span>(&amp;RedisServer::onConnection, <span class="keyword">this</span>, std::placeholders::_1));</span><br><span class="line">    server_.<span class="built_in">setMessageCallback</span>(</span><br><span class="line">        std::<span class="built_in">bind</span>(&amp;RedisServer::onMessage, <span class="keyword">this</span>, std::placeholders::_1,</span><br><span class="line">                  std::placeholders::_2, std::placeholders::_3));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123; server_.<span class="built_in">start</span>(); &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// private:</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">onConnection</span><span class="params">(<span class="type">const</span> TcpConnectionPtr &amp;conn)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (conn-&gt;<span class="built_in">connected</span>()) &#123;</span><br><span class="line">      LOG_INFO &lt;&lt; <span class="string">&quot;Connection from &quot;</span> &lt;&lt; conn-&gt;<span class="built_in">peerAddress</span>().<span class="built_in">toIpPort</span>();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      LOG_INFO &lt;&lt; <span class="string">&quot;Connection closed from &quot;</span> &lt;&lt; conn-&gt;<span class="built_in">peerAddress</span>().<span class="built_in">toIpPort</span>();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">onMessage</span><span class="params">(<span class="type">const</span> TcpConnectionPtr &amp;conn, Buffer *buf, Timestamp time)</span> </span>&#123;</span><br><span class="line">    <span class="function">std::string <span class="title">msg</span><span class="params">(buf-&gt;retrieveAllAsString())</span></span>;</span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;Received message at &quot;</span> &lt;&lt; time.<span class="built_in">toString</span>() &lt;&lt; <span class="string">&quot;:\n&quot;</span> &lt;&lt; msg;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析并处理请求</span></span><br><span class="line">    std::string response = <span class="built_in">handleRequest</span>(msg);</span><br><span class="line">    conn-&gt;<span class="built_in">send</span>(response);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function">std::string <span class="title">handleRequest</span><span class="params">(<span class="type">const</span> std::string &amp;request)</span> </span>&#123;</span><br><span class="line">    <span class="type">size_t</span> pos = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (request.<span class="built_in">empty</span>() || request[pos] != <span class="string">&#x27;*&#x27;</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="string">&quot;-ERR Protocol error: expected &#x27;*&#x27;\r\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> numElements = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      numElements = std::<span class="built_in">stoi</span>(request.<span class="built_in">substr</span>(pos + <span class="number">1</span>)); <span class="comment">// 跳过 &#x27;*&#x27;</span></span><br><span class="line">    &#125; <span class="built_in">catch</span> (<span class="type">const</span> std::exception &amp;) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="string">&quot;-ERR Protocol error: invalid number of elements\r\n&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    pos = request.<span class="built_in">find</span>(<span class="string">&#x27;\n&#x27;</span>, pos) + <span class="number">1</span>; <span class="comment">// 跳过 &#x27;\r\n&#x27;</span></span><br><span class="line"></span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;request: &quot;</span> &lt;&lt; request &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;Number of elements: &quot;</span> &lt;&lt; numElements &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    std::vector&lt;std::string&gt; args;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; numElements; ++i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (pos &gt;= request.<span class="built_in">size</span>() || request[pos] != <span class="string">&#x27;$&#x27;</span>) &#123;</span><br><span class="line">        LOG_INFO &lt;&lt; <span class="string">&quot;pos = &quot;</span> &lt;&lt; pos &lt;&lt; <span class="string">&quot;, i = &quot;</span> &lt;&lt; i</span><br><span class="line">                 &lt;&lt; <span class="string">&quot;, last args = &quot;</span> &lt;&lt; args.<span class="built_in">back</span>() &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line">        LOG_INFO &lt;&lt; <span class="string">&quot;-ERR Protocol error: expected &#x27;$&#x27;\r\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;-ERR Protocol error: expected &#x27;$&#x27;\r\n&quot;</span>;</span><br><span class="line">      &#125;</span><br><span class="line"></span><br><span class="line">      <span class="type">int</span> len = <span class="number">0</span>;</span><br><span class="line">      std::string value_len;</span><br><span class="line">      <span class="type">int</span> next_n_pos;</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        next_n_pos = request.<span class="built_in">find</span>(<span class="string">&#x27;\n&#x27;</span>, pos);</span><br><span class="line">        len = std::<span class="built_in">stoi</span>(request.<span class="built_in">substr</span>(pos + <span class="number">1</span>)); <span class="comment">// 跳过 &#x27;$&#x27;</span></span><br><span class="line">      &#125; <span class="built_in">catch</span> (<span class="type">const</span> std::exception &amp;) &#123;</span><br><span class="line">        LOG_INFO &lt;&lt; <span class="string">&quot;-ERR Protocol error: invalid bulk string length\r\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;-ERR Protocol error: invalid bulk string length\r\n&quot;</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      pos = next_n_pos + <span class="number">1</span>; <span class="comment">// 跳过 &#x27;$&#x27; 值 \r\n</span></span><br><span class="line">      <span class="keyword">if</span> (pos + len &gt; request.<span class="built_in">size</span>()) &#123;</span><br><span class="line">        LOG_INFO &lt;&lt; <span class="string">&quot;-ERR Protocol error: bulk string length exceeds request &quot;</span></span><br><span class="line">                    <span class="string">&quot;size\r\n&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;-ERR Protocol error: bulk string length exceeds request &quot;</span></span><br><span class="line">               <span class="string">&quot;size\r\n&quot;</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      args.<span class="built_in">push_back</span>(request.<span class="built_in">substr</span>(pos, len));</span><br><span class="line">      next_n_pos = request.<span class="built_in">find</span>(<span class="string">&#x27;\n&#x27;</span>, pos);</span><br><span class="line">      pos = next_n_pos + <span class="number">1</span>; <span class="comment">// 跳过数据和/r/n</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;Request: &quot;</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span> &amp;arg : args) &#123;</span><br><span class="line">      LOG_INFO &lt;&lt; arg &lt;&lt; <span class="string">&quot; &quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&#x27;\n&#x27;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 处理命令</span></span><br><span class="line">    <span class="keyword">switch</span> (<span class="built_in">string2Ops</span>(args[<span class="number">0</span>])) &#123;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">save_handler</span>(redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::SET:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">set_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::GET:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">get_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::DEL:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">del_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::INCR:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">incr_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::DECR:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">decr_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::EXPIRE:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">expire_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::TTL:</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">ttl_handler</span>(args, redis);</span><br><span class="line">    <span class="keyword">case</span> OPS::HSET:</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  TcpServer server_;</span><br><span class="line">  RedisWrapper redis; <span class="comment">// 简单的键值存储</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  EventLoop loop;</span><br><span class="line">  <span class="function">InetAddress <span class="title">listenAddr</span><span class="params">(<span class="number">6379</span>)</span></span>; <span class="comment">// Redis默认端口</span></span><br><span class="line">  <span class="function">RedisServer <span class="title">server</span><span class="params">(&amp;loop, listenAddr)</span></span>;</span><br><span class="line"></span><br><span class="line">  server.<span class="built_in">start</span>();</span><br><span class="line">  loop.<span class="built_in">loop</span>(); <span class="comment">// 进入事件循环</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>handleRequest</code>就是处理<code>Resp</code>协议的函数, 其目前只支持一些基础指令的解析, 这里的解析也是比较繁琐的, 不好说清楚, 有兴趣直接单步调试看看吧, 这里的<code>RedisWrapper</code>就是我们之前实现的<code>Redis</code>的封装, 这里的<code>RedisWrapper</code>就是我们之前实现的<code>LSM Tree Engine</code>的封装。这里重点介绍<code>muduo</code>的使用:</p>
+<p><code>muduo</code> 是一个基于 Reactor 模式的 C++ 网络库，由陈硕开发，广泛应用于高性能网络编程。它提供了简单易用的接口，能够帮助开发者快速构建高性能的 TCP 服务器。以下是如何使用 <code>muduo</code> 的基本步骤，基于你提供的代码进行说明。</p>
+<p><strong>引入 muduo 头文件</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/base/Logging.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/EventLoop.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/InetAddress.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/TcpConnection.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;muduo/net/TcpServer.h&gt;</span></span></span><br></pre></td></tr></table></figure>
+<p>这些头文件分别提供了日志、事件循环、网络地址、TCP 连接和 TCP 服务器的功能。</p>
+<p><strong>创建 EventLoop</strong></p>
+<p><code>EventLoop</code> 是 <code>muduo</code> 的核心组件，负责事件循环和事件分发。每个 <code>muduo</code> 服务器都需要一个 <code>EventLoop</code> 对象。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EventLoop loop;</span><br></pre></td></tr></table></figure>
+<p><code>loop.loop()</code> 会启动事件循环，等待事件的发生。</p>
+<p><strong>定义服务器地址</strong></p>
+<p>使用 <code>InetAddress</code> 来指定服务器的监听地址和端口。例如，监听本地 6379 端口：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">InetAddress <span class="title">listenAddr</span><span class="params">(<span class="number">6379</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong>创建 TcpServer</strong></p>
+<p><code>TcpServer</code> 是 <code>muduo</code> 提供的 TCP 服务器类。需要传入 <code>EventLoop</code> 和监听地址来初始化它：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">TcpServer <span class="title">server</span><span class="params">(&amp;loop, listenAddr, <span class="string">&quot;RedisServer&quot;</span>)</span></span>;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>第一个参数是 <code>EventLoop</code> 对象。</li>
+<li>第二个参数是 <code>InetAddress</code>，表示服务器的监听地址。</li>
+<li>第三个参数是服务器的名称（可选）。</li>
+</ul>
+<p>这里的<code>TcpServer</code>放入了<code>RedisServer</code>类中，并在类的构造函数中初始化。</p>
+<p><strong>设置回调函数</strong></p>
+<p><code>muduo</code> 是一个事件驱动的网络库，通过回调函数处理连接和消息事件。你需要为 <code>TcpServer</code> 设置以下回调函数：<br>连接回调</p>
+<p>当有客户端连接或断开时，会触发连接回调函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">server.<span class="built_in">setConnectionCallback</span>(</span><br><span class="line">    std::<span class="built_in">bind</span>(&amp;RedisServer::onConnection, <span class="keyword">this</span>, std::placeholders::_1));</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>onConnection</code> 是一个成员函数，用于处理连接事件。</li>
+<li><code>std::placeholders::_1</code> 表示回调函数的第一个参数（<code>TcpConnectionPtr</code>）。</li>
+</ul>
+<p>消息回调<br>当接收到客户端发送的数据时，会触发消息回调函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">server.<span class="built_in">setMessageCallback</span>(</span><br><span class="line">    std::<span class="built_in">bind</span>(&amp;RedisServer::onMessage, <span class="keyword">this</span>, std::placeholders::_1,</span><br><span class="line">              std::placeholders::_2, std::placeholders::_3));</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>onMessage</code> 是一个成员函数，用于处理接收到的消息。</li>
+<li><code>std::placeholders::_1</code> 是 <code>TcpConnectionPtr</code>，表示连接对象。</li>
+<li><code>std::placeholders::_2</code> 是 <code>Buffer*</code>，表示接收到的数据缓冲区。</li>
+<li><code>std::placeholders::_3</code> 是 <code>Timestamp</code>，表示消息到达的时间。</li>
+</ul>
+<p><strong>实现回调函数</strong></p>
+<p>需要实现 <code>onConnection</code> 和 <code>onMessage</code> 回调函数。<br>(1) <strong>onConnection</strong>处理连接事件：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">onConnection</span><span class="params">(<span class="type">const</span> TcpConnectionPtr &amp;conn)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (conn-&gt;<span class="built_in">connected</span>()) &#123;</span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;Connection from &quot;</span> &lt;&lt; conn-&gt;<span class="built_in">peerAddress</span>().<span class="built_in">toIpPort</span>();</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    LOG_INFO &lt;&lt; <span class="string">&quot;Connection closed from &quot;</span> &lt;&lt; conn-&gt;<span class="built_in">peerAddress</span>().<span class="built_in">toIpPort</span>();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>conn-&gt;connected()</code> 判断连接是建立还是断开。</li>
+<li><code>conn-&gt;peerAddress().toIpPort()</code> 获取客户端的 IP 和端口。</li>
+</ul>
+<p>(2) <strong>onMessage</strong>处理接收到的消息：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">onMessage</span><span class="params">(<span class="type">const</span> TcpConnectionPtr &amp;conn, Buffer *buf, Timestamp time)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::string <span class="title">msg</span><span class="params">(buf-&gt;retrieveAllAsString())</span></span>; <span class="comment">// 从缓冲区中提取数据</span></span><br><span class="line">  LOG_INFO &lt;&lt; <span class="string">&quot;Received message at &quot;</span> &lt;&lt; time.<span class="built_in">toString</span>() &lt;&lt; <span class="string">&quot;:\n&quot;</span> &lt;&lt; msg;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理消息并发送响应</span></span><br><span class="line">  std::string response = <span class="built_in">handleRequest</span>(msg);</span><br><span class="line">  conn-&gt;<span class="built_in">send</span>(response); <span class="comment">// 发送响应给客户端</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>buf-&gt;retrieveAllAsString()</code> 从缓冲区中提取所有数据并转换为字符串。</li>
+<li><code>conn-&gt;send(response)</code> 将响应发送给客户端。</li>
+</ul>
+<p><strong>启动服务器</strong></p>
+<p>调用 <code>TcpServer::start()</code> 启动服务器，然后进入事件循环：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">server.<span class="built_in">start</span>(); <span class="comment">// 启动服务器</span></span><br><span class="line">loop.<span class="built_in">loop</span>();    <span class="comment">// 进入事件循环</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>日志功能</strong></p>
+<p><code>muduo</code> 提供了内置的日志功能，可以通过 <code>LOG_INFO</code>、<code>LOG_ERROR</code> 等宏记录日志：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LOG_INFO &lt;&lt; <span class="string">&quot;Received message at &quot;</span> &lt;&lt; time.<span class="built_in">toString</span>() &lt;&lt; <span class="string">&quot;:\n&quot;</span> &lt;&lt; msg;</span><br></pre></td></tr></table></figure>
+
+<h1 id="5-小节"><a href="#5-小节" class="headerlink" title="5 小节"></a>5 小节</h1><p>这章引入了一个简单的<code>Redis</code>服务器和基于<code>Redis</code>对<code>LSM Tree</code>的封装，<code>Redis</code>服务器和使用<code>muduo</code>库来处理TCP连接和消息; 封装的<code>Redis_wrapper</code>实现了一些基本的<code>Redis</code>命令，如<code>GET、SET、DEL</code>等。由于这一章还介绍了<code>Resp</code>和<code>muduo</code>, <code>Redis</code>命令的实现只包括了简单字符串和<code>TTL</code>, 后续章节将视线更复杂的<code>set</code>, <code>hash</code>, <code>list</code>, <code>zset</code> 等命令。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Resp%E5%8D%8F%E8%AE%AE%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 Resp协议简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95%E7%9A%84%E6%A1%88%E4%BE%8B"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 一个简单的案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E8%AF%AD%E6%B3%95"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 数据类型语法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Redis%E5%AE%9E%E7%8E%B0%E6%80%9D%E8%B7%AF"><span class="toc-number">2.</span> <span class="toc-text">2 Redis实现思路</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E5%B0%81%E8%A3%85"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础封装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-TTL%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 TTL设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E8%80%83%E8%99%91%E4%BA%86TTL%E7%9A%84set-get"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 考虑了TTL的set&#x2F;get</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-TTL-EXPIRE"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 TTL&#x2F;EXPIRE</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%90%8E%E7%AB%AF%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 后端服务器实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%B7%BB%E5%8A%A0%E4%BE%9D%E8%B5%96"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 添加依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-Muduo-%E7%BD%91%E7%BB%9C%E5%B1%82%E5%B0%81%E8%A3%85"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 Muduo 网络层封装</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">5 小节</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&text=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1&body=Check out this article: http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&title=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&name=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-10-Redis%E5%85%BC%E5%AE%B91/&t=C++从零开始实现LSM-Tree-KV存储-10-Redis兼容1"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

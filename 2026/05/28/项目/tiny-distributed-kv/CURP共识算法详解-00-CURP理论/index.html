@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。 1 概述CURP（Cons">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CURP共识算法详解-00-CURP理论">
+<meta property="og:url" content="http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。 1 概述CURP（Cons">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-28T07:45:00.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:41:54.318Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="共识协议">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>CURP共识算法详解-00-CURP理论</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&text=CURP共识算法详解-00-CURP理论"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&is_video=false&description=CURP共识算法详解-00-CURP理论"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-00-CURP理论&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&name=CURP共识算法详解-00-CURP理论&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&t=CURP共识算法详解-00-CURP理论"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%B8%E5%BF%83%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 核心目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%EF%BC%88%E8%AE%BA%E6%96%87%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 性能提升（论文实测）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.</span> <span class="toc-text">2 核心思想：分离持久性与排序</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统复制的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-CURP-%E7%9A%84%E5%88%9B%E6%96%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 CURP 的创新</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9E%B6%E6%9E%84%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">3 架构组件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 节点角色</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%B9%E9%94%99%E8%83%BD%E5%8A%9B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 容错能力</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%AD%A3%E5%B8%B8%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 正常操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Witness-%E8%AF%A6%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 Witness 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Witness-%E7%9A%84%E8%81%8C%E8%B4%A3"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Witness 的职责</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 可交换性检查</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Master-%E8%AF%A6%E8%A7%A3"><span class="toc-number">6.</span> <span class="toc-text">6 Master 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%8E%A8%E6%B5%8B%E6%89%A7%E8%A1%8C%EF%BC%88Speculative-Execution%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 推测执行（Speculative Execution）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%EF%BC%88Async-Sync%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 异步同步（Async Sync）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">7.</span> <span class="toc-text">7 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">8.</span> <span class="toc-text">8 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-Raft-%E5%88%B0-CURP-%E7%9A%84%E6%BC%94%E8%BF%9B%E6%80%9D%E8%B7%AF"><span class="toc-number">8.0.1.</span> <span class="toc-text">从 Raft 到 CURP 的演进思路</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">10.</span> <span class="toc-text">参考资料</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CURP共识算法详解-00-CURP理论
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2026-05-28T07:45:00.000Z" class="dt-published" itemprop="datePublished">2026-05-28</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/">tiny-distributed-kv</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%85%B1%E8%AF%86%E5%8D%8F%E8%AE%AE/" rel="tag">共识协议</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <blockquote>
+<p><strong>论文来源</strong>: <em>Exploiting Commutativity For Practical Fast Replication</em><br><strong>作者</strong>: Seo Jin Park, John Ousterhout (Stanford University)<br><strong>会议</strong>: NSDI ‘19</p>
+</blockquote>
+<p>本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。</p>
+<h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h1><p>CURP（Consistent Unordered Replication Protocol）是一种创新的复制协议，<strong>将大多数写操作的延迟从 2 RTT 降低到 1 RTT</strong>。</p>
+<h2 id="1-1-核心目标"><a href="#1-1-核心目标" class="headerlink" title="1.1 核心目标"></a>1.1 核心目标</h2><ul>
+<li><strong>线性一致性</strong>：保证强一致性</li>
+<li><strong>低延迟</strong>：正常情况下 1 RTT 完成</li>
+<li><strong>容错性</strong>：支持 f 个节点故障</li>
+<li><strong>通用性</strong>：可应用于 primary-backup 和 consensus 系统</li>
+</ul>
+<h2 id="1-2-性能提升（论文实测）"><a href="#1-2-性能提升（论文实测）" class="headerlink" title="1.2 性能提升（论文实测）"></a>1.2 性能提升（论文实测）</h2><table>
+<thead>
+<tr>
+<th>系统</th>
+<th>无复制</th>
+<th>传统复制</th>
+<th>CURP 复制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RAMCloud 写延迟</td>
+<td>6.1 µs</td>
+<td>14 µs</td>
+<td><strong>7.1 µs</strong></td>
+</tr>
+<tr>
+<td>Redis</td>
+<td>非持久化</td>
+<td>高开销持久化</td>
+<td><strong>低开销持久化</strong></td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="2-核心思想：分离持久性与排序"><a href="#2-核心思想：分离持久性与排序" class="headerlink" title="2 核心思想：分离持久性与排序"></a>2 核心思想：分离持久性与排序</h1><h2 id="2-1-传统复制的问题"><a href="#2-1-传统复制的问题" class="headerlink" title="2.1 传统复制的问题"></a>2.1 传统复制的问题</h2><p>传统复制协议（Raft、Paxos、primary-backup）必须：</p>
+<ol>
+<li><strong>先排序</strong>：确定操作的执行顺序</li>
+<li><strong>再持久化</strong>：将有序操作复制到副本</li>
+</ol>
+<p>这导致 <strong>至少 2 RTT</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Client → Master (1 RTT)</span><br><span class="line">Master → Backup (1 RTT)</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-CURP-的创新"><a href="#2-2-CURP-的创新" class="headerlink" title="2.2 CURP 的创新"></a>2.2 CURP 的创新</h2><p>CURP 发现：<strong>如果操作是可交换的（commutative），它们的执行顺序就不重要！</strong></p>
+<p>因此：</p>
+<ul>
+<li><strong>持久性可以独立完成</strong>（无需等待排序）</li>
+<li><strong>排序可以延迟执行</strong>（异步进行）</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Client → Master + Witness (并行，1 RTT)</span><br><span class="line">Master → Backup (异步，不影响客户端)</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="3-架构组件"><a href="#3-架构组件" class="headerlink" title="3 架构组件"></a>3 架构组件</h1><p>CURP 在传统 primary-backup 基础上引入 <strong>Witness（见证者）</strong>。</p>
+<h2 id="3-1-节点角色"><a href="#3-1-节点角色" class="headerlink" title="3.1 节点角色"></a>3.1 节点角色</h2><table>
+<thead>
+<tr>
+<th>角色</th>
+<th>数量</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Master</strong></td>
+<td>1</td>
+<td>接收请求、执行操作、协调复制</td>
+</tr>
+<tr>
+<td><strong>Backup</strong></td>
+<td>f</td>
+<td>存储有序数据，用于恢复</td>
+</tr>
+<tr>
+<td><strong>Witness</strong></td>
+<td>f</td>
+<td>临时存储未排序请求，保证持久性</td>
+</tr>
+</tbody></table>
+<h2 id="3-2-容错能力"><a href="#3-2-容错能力" class="headerlink" title="3.2 容错能力"></a>3.2 容错能力</h2><ul>
+<li><strong>f + 1 replicas</strong>（Master + f Backups）</li>
+<li><strong>f witnesses</strong></li>
+<li>系统可容忍 <strong>f 个任意节点故障</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">            ┌─────────────┐</span><br><span class="line">            │   Witness   │ × f  (无序持久化)</span><br><span class="line">            └─────────────┘</span><br><span class="line">                  ↓</span><br><span class="line">┌─────────────────────────────────────┐</span><br><span class="line">│              Client                 │</span><br><span class="line">└─────────────────────────────────────┘</span><br><span class="line">          ↓               ↓</span><br><span class="line">    ┌──────────┐    ┌──────────┐</span><br><span class="line">    │  Master  │ →  │  Backup  │ × f  (有序持久化)</span><br><span class="line">    └──────────┘    └──────────┘</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="4-正常操作流程"><a href="#4-正常操作流程" class="headerlink" title="4 正常操作流程"></a>4 正常操作流程</h1><h2 id="4-1-快速路径（Fast-Path）-1-RTT"><a href="#4-1-快速路径（Fast-Path）-1-RTT" class="headerlink" title="4.1 快速路径（Fast Path）- 1 RTT"></a>4.1 快速路径（Fast Path）- 1 RTT</h2><p><strong>条件</strong>：操作与所有未同步操作可交换</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Witness</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── update request ────→│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │───── record request ───────────────────────────→│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── execute (speculative) │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── response ─────────│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←─── ACCEPTED ───────────────────────────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │  ✓ 操作完成             │                         │</span><br><span class="line">  │                         │─── async sync ─────────→│ Backup</span><br></pre></td></tr></table></figure>
+
+<p><strong>步骤</strong>：</p>
+<ol>
+<li>Client <strong>并行发送</strong>请求到 Master 和所有 Witness</li>
+<li>Witness 检查可交换性，接受则返回 ACCEPTED</li>
+<li>Master <strong>推测执行</strong>（speculative execution），立即响应</li>
+<li>Client 收到 Master 响应 + 所有 Witness ACCEPTED → <strong>完成</strong></li>
+<li>Master <strong>异步同步</strong>到 Backup</li>
+</ol>
+<h2 id="4-2-慢速路径（Slow-Path）-2-RTT"><a href="#4-2-慢速路径（Slow-Path）-2-RTT" class="headerlink" title="4.2 慢速路径（Slow Path）- 2 RTT"></a>4.2 慢速路径（Slow Path）- 2 RTT</h2><p><strong>触发条件</strong>：</p>
+<ul>
+<li>Witness 拒绝（可交换性冲突或空间不足）</li>
+<li>Master 发现冲突（操作与未同步操作不可交换）</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Backup</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── update request ────→│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── CONFLICT ─────────│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │────── sync request ────→│                         │</span><br><span class="line">  │                         │──── sync ──────────────→│</span><br><span class="line">  │                         │←─── ack ───────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── synced response ──│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │  ✓ 操作完成             │                         │</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="5-Witness-详解"><a href="#5-Witness-详解" class="headerlink" title="5 Witness 详解"></a>5 Witness 详解</h1><h2 id="5-1-Witness-的职责"><a href="#5-1-Witness-的职责" class="headerlink" title="5.1 Witness 的职责"></a>5.1 Witness 的职责</h2><p>Witness 是 <strong>轻量级的临时持久化存储</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>record</strong></td>
+<td>接收并存储客户端请求（检查可交换性）</td>
+</tr>
+<tr>
+<td><strong>gc</strong></td>
+<td>清理已同步到 Backup 的请求</td>
+</tr>
+<tr>
+<td><strong>getRecoveryData</strong></td>
+<td>恢复时返回所有存储的请求</td>
+</tr>
+</tbody></table>
+<h2 id="5-2-可交换性检查"><a href="#5-2-可交换性检查" class="headerlink" title="5.2 可交换性检查"></a>5.2 可交换性检查</h2><p><strong>Witness 只接受与已存储操作可交换的新操作</strong>。</p>
+<p>对于 KV 存储：</p>
+<ul>
+<li>操作不同 key → 可交换 ✓</li>
+<li>操作相同 key → 不可交换 ✗</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 示例：Witness 检查逻辑</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Witness::canAccept</span><span class="params">(<span class="type">const</span> Request&amp; new_req)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; saved : saved_requests) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">isCommutative</span>(new_req, saved)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 拒绝</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;  <span class="comment">// 接受</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">isCommutative</span><span class="params">(<span class="type">const</span> Request&amp; a, <span class="type">const</span> Request&amp; b)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 不同 key 的写操作可交换</span></span><br><span class="line">    <span class="keyword">return</span> a.keys != b.keys;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="6-Master-详解"><a href="#6-Master-详解" class="headerlink" title="6 Master 详解"></a>6 Master 详解</h1><h2 id="6-1-推测执行（Speculative-Execution）"><a href="#6-1-推测执行（Speculative-Execution）" class="headerlink" title="6.1 推测执行（Speculative Execution）"></a>6.1 推测执行（Speculative Execution）</h2><p>Master 可以 <strong>在同步 Backup 之前响应客户端</strong>。</p>
+<p><strong>安全条件</strong>：</p>
+<ul>
+<li>该操作与所有未同步（unsynced）操作可交换</li>
+<li>否则必须先 sync</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">未同步操作队列（unsynced）:</span><br><span class="line">[op1, op2, op3, ..., op_n] ← 尾部是未同步的</span><br><span class="line"></span><br><span class="line">新操作 op_new:</span><br><span class="line">- 如果 op_new 与 [op1...op_n] 全部可交换 → 推测执行 ✓</span><br><span class="line">- 否则 → 先 sync，再执行</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-2-异步同步（Async-Sync）"><a href="#6-2-异步同步（Async-Sync）" class="headerlink" title="6.2 异步同步（Async Sync）"></a>6.2 异步同步（Async Sync）</h2><p>Master <strong>批量同步</strong>到 Backup，提高吞吐量：</p>
+<ul>
+<li>减少 RPC 数量</li>
+<li>避免 CPU 空转等待</li>
+</ul>
+<hr>
+<h1 id="7-恢复机制"><a href="#7-恢复机制" class="headerlink" title="7 恢复机制"></a>7 恢复机制</h1><h2 id="7-1-恢复流程"><a href="#7-1-恢复流程" class="headerlink" title="7.1 恢复流程"></a>7.1 恢复流程</h2><p>Master 崩溃后，新 Master 恢复：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Phase 1: 从 Backup 恢复有序数据</span><br><span class="line">───────────────────────────────────</span><br><span class="line">New Master ← Backup (传统恢复机制)</span><br><span class="line"></span><br><span class="line">Phase 2: 从 Witness 重放无序请求</span><br><span class="line">───────────────────────────────────</span><br><span class="line">1. 选择一个可用 Witness</span><br><span class="line">2. 停止该 Witness 接收新请求</span><br><span class="line">3. 获取所有存储的请求</span><br><span class="line">4. 重放请求（任意顺序，因为可交换）</span><br><span class="line">5. 同步到 Backup</span><br><span class="line">6. 重置 Witness</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-2-防止重复执行"><a href="#7-2-防止重复执行" class="headerlink" title="7.2 防止重复执行"></a>7.2 防止重复执行</h2><p>问题：部分请求可能已同步到 Backup，但也在 Witness 中。</p>
+<p>解决方案：<strong>RIFL（Exactly-Once 语义）</strong></p>
+<ul>
+<li>每个请求有唯一 RPC ID</li>
+<li>检测并过滤已执行的请求</li>
+</ul>
+<hr>
+<h1 id="8-与-Raft-的对比"><a href="#8-与-Raft-的对比" class="headerlink" title="8 与 Raft 的对比"></a>8 与 Raft 的对比</h1><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Raft</th>
+<th>CURP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>延迟</strong></td>
+<td>2 RTT</td>
+<td>1 RTT（快速路径）</td>
+</tr>
+<tr>
+<td><strong>排序时机</strong></td>
+<td>先排序</td>
+<td>排序延迟&#x2F;异步</td>
+</tr>
+<tr>
+<td><strong>持久性</strong></td>
+<td>排序后持久化</td>
+<td>排序前持久化</td>
+</tr>
+<tr>
+<td><strong>可交换性</strong></td>
+<td>不利用</td>
+<td>核心依赖</td>
+</tr>
+<tr>
+<td><strong>额外组件</strong></td>
+<td>无</td>
+<td>Witness</td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>通用</td>
+<td>操作可判断可交换性</td>
+</tr>
+</tbody></table>
+<h3 id="从-Raft-到-CURP-的演进思路"><a href="#从-Raft-到-CURP-的演进思路" class="headerlink" title="从 Raft 到 CURP 的演进思路"></a>从 Raft 到 CURP 的演进思路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Raft:</span><br><span class="line">Client → Leader → Log → Majority → Execute → Response</span><br><span class="line"></span><br><span class="line">CURP:</span><br><span class="line">Client → Master + Witness → Execute → Response</span><br><span class="line">       ↓</span><br><span class="line">       (异步) Master → Backup</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="9-总结"><a href="#9-总结" class="headerlink" title="9 总结"></a>9 总结</h1><p>CURP 的关键洞察：</p>
+<blockquote>
+<p><strong>如果操作可交换，顺序不重要；如果顺序不重要，持久化可以提前完成。</strong></p>
+</blockquote>
+<p>这打破了传统复制协议中 “排序 → 持久化” 的耦合，实现了 <strong>1 RTT 的线性一致性写操作</strong>。</p>
+<p>对于 KV 存储这类天然支持可交换性检查的系统，CURP 是理想的复制协议选择。</p>
+<hr>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
+<li>论文 PDF: <code>doc/curp-nsdi19.pdf</code></li>
+<li>论文文本: <code>doc/curp-nsdi19.txt</code></li>
+<li>NSDI ‘19 视频: <a target="_blank" rel="noopener" href="https://www.usenix.org/conference/nsdi19/presentation/park">https://www.usenix.org/conference/nsdi19/presentation/park</a></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%B8%E5%BF%83%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 核心目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%EF%BC%88%E8%AE%BA%E6%96%87%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 性能提升（论文实测）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.</span> <span class="toc-text">2 核心思想：分离持久性与排序</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统复制的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-CURP-%E7%9A%84%E5%88%9B%E6%96%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 CURP 的创新</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9E%B6%E6%9E%84%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">3 架构组件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 节点角色</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%B9%E9%94%99%E8%83%BD%E5%8A%9B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 容错能力</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%AD%A3%E5%B8%B8%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 正常操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Witness-%E8%AF%A6%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 Witness 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Witness-%E7%9A%84%E8%81%8C%E8%B4%A3"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Witness 的职责</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 可交换性检查</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Master-%E8%AF%A6%E8%A7%A3"><span class="toc-number">6.</span> <span class="toc-text">6 Master 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%8E%A8%E6%B5%8B%E6%89%A7%E8%A1%8C%EF%BC%88Speculative-Execution%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 推测执行（Speculative Execution）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%EF%BC%88Async-Sync%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 异步同步（Async Sync）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">7.</span> <span class="toc-text">7 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">8.</span> <span class="toc-text">8 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-Raft-%E5%88%B0-CURP-%E7%9A%84%E6%BC%94%E8%BF%9B%E6%80%9D%E8%B7%AF"><span class="toc-number">8.0.1.</span> <span class="toc-text">从 Raft 到 CURP 的演进思路</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">10.</span> <span class="toc-text">参考资料</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&text=CURP共识算法详解-00-CURP理论"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&is_video=false&description=CURP共识算法详解-00-CURP理论"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-00-CURP理论&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&title=CURP共识算法详解-00-CURP理论"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&name=CURP共识算法详解-00-CURP理论&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/&t=CURP共识算法详解-00-CURP理论"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

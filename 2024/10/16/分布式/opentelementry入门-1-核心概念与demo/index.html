@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 基本介绍OpenTelemetry 是一个帮助开发者 监控 和 追踪应用程序 的开源工具。它能收集应用程序的各种数据，比如 日志（应用程序的输出信息）、指标（比如请求数量、CPU 使用率）和 追踪信息（记录请求的整个过程）。这些数据可以用来了解应用的运行状况和性能问题。 OpenTelemetry 对程序员有什么用？ 发现问题：通过追踪应用中的请求流程，程序员可以快速找到性能瓶颈或异常。 监控">
+<meta property="og:type" content="article">
+<meta property="og:title" content="opentelementry入门-1-核心概念与demo">
+<meta property="og:url" content="http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 基本介绍OpenTelemetry 是一个帮助开发者 监控 和 追踪应用程序 的开源工具。它能收集应用程序的各种数据，比如 日志（应用程序的输出信息）、指标（比如请求数量、CPU 使用率）和 追踪信息（记录请求的整个过程）。这些数据可以用来了解应用的运行状况和性能问题。 OpenTelemetry 对程序员有什么用？ 发现问题：通过追踪应用中的请求流程，程序员可以快速找到性能瓶颈或异常。 监控">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/distributed/jaegertracing.png">
+<meta property="article:published_time" content="2024-10-16T10:00:57.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.665Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="链路追踪">
+<meta property="article:tag" content="opentelementry">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/distributed/jaegertracing.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>opentelementry入门-1-核心概念与demo</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/10/11/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/scoop--windows%E4%B8%8B%E7%9A%84%E8%BD%AF%E4%BB%B6%E5%8C%85%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&text=opentelementry入门-1-核心概念与demo"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&is_video=false&description=opentelementry入门-1-核心概念与demo"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=opentelementry入门-1-核心概念与demo&body=Check out this article: http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&name=opentelementry入门-1-核心概念与demo&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&t=opentelementry入门-1-核心概念与demo"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">1 基本介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#OpenTelemetry-%E5%AF%B9%E7%A8%8B%E5%BA%8F%E5%91%98%E6%9C%89%E4%BB%80%E4%B9%88%E7%94%A8%EF%BC%9F"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">OpenTelemetry 对程序员有什么用？</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="toc-number">2.</span> <span class="toc-text">2 核心概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Context-Propagation"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Context &amp; Propagation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Span"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Span</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Signals-Traces-Metrics-Logs-Baggage"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Signals (Traces, Metrics, Logs, Baggage)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-Traces-%E8%BF%BD%E8%B8%AA"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 Traces (追踪)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-Metrics-%E6%8C%87%E6%A0%87"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 Metrics (指标)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-3-Logs-%E6%97%A5%E5%BF%97"><span class="toc-number">2.3.3.</span> <span class="toc-text">2.3.3 Logs (日志)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-4-Baggage-%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BF%A1%E6%81%AF"><span class="toc-number">2.3.4.</span> <span class="toc-text">2.3.4 Baggage (上下文信息)</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E6%88%98"><span class="toc-number">3.</span> <span class="toc-text">3 实战</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%BE%9D%E8%B5%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%88%9D%E5%A7%8B%E5%8C%96provider%E5%92%8Cexporter"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 初始化provider和exporter</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-http%E4%B9%8B%E9%97%B4%E4%BC%A0%E9%80%92context"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 http之间传递context</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%88%B6%E5%AD%90Context%E5%85%B3%E7%B3%BB%E7%9A%84%E7%94%9F%E6%88%90"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 父子Context关系的生成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E8%AE%B0%E5%BD%95event%E5%92%8Cmetric"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 记录event和metric</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-1-event%E8%AE%B0%E5%BD%95%E4%BA%8B%E4%BB%B6"><span class="toc-number">3.5.1.</span> <span class="toc-text">3.5.1 event记录事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-2-metric%E8%AE%B0%E5%BD%95%E6%8C%87%E6%A0%87"><span class="toc-number">3.5.2.</span> <span class="toc-text">3.5.2 metric记录指标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-%E5%AF%BC%E5%87%BA%E6%95%B0%E6%8D%AE%E5%92%8C%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="toc-number">3.5.3.</span> <span class="toc-text">3.6 导出数据和可视化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">4 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        opentelementry入门-1-核心概念与demo
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-10-16T10:00:57.000Z" class="dt-published" itemprop="datePublished">2024-10-16</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/">分布式</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/opentelementry/" rel="tag">opentelementry</a>, <a class="p-category" href="/tags/%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" rel="tag">链路追踪</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-基本介绍"><a href="#1-基本介绍" class="headerlink" title="1 基本介绍"></a>1 基本介绍</h1><p><code>OpenTelemetry </code>是一个帮助开发者 <strong>监控</strong> 和 <strong>追踪应用程序</strong> 的开源工具。它能收集应用程序的各种数据，比如 <strong>日志</strong>（应用程序的输出信息）、<strong>指标</strong>（比如请求数量、CPU 使用率）和 <strong>追踪信息</strong>（记录请求的整个过程）。这些数据可以用来了解应用的运行状况和性能问题。</p>
+<h4 id="OpenTelemetry-对程序员有什么用？"><a href="#OpenTelemetry-对程序员有什么用？" class="headerlink" title="OpenTelemetry 对程序员有什么用？"></a>OpenTelemetry 对程序员有什么用？</h4><ul>
+<li><strong>发现问题</strong>：通过追踪应用中的请求流程，程序员可以快速找到性能瓶颈或异常。</li>
+<li><strong>监控应用健康状态</strong>：通过收集应用的日志和性能指标，帮助程序员实时监控应用的运行情况。</li>
+<li><strong>优化性能</strong>：根据收集的数据，程序员可以发现慢的操作或服务，进行针对性的优化。</li>
+</ul>
+<h1 id="2-核心概念"><a href="#2-核心概念" class="headerlink" title="2 核心概念"></a>2 核心概念</h1><p>在 OpenTelemetry 中，有几个核心概念对于实现分布式追踪、监控和日志记录至关重要，分别是 <code>Context &amp; Propagation</code>，<code>Span</code>，以及 <code>Signals</code>（包括 Traces、Metrics、Logs、Baggage）。以下是对这些概念的介绍：</p>
+<h2 id="2-1-Context-Propagation"><a href="#2-1-Context-Propagation" class="headerlink" title="2.1 Context &amp; Propagation"></a>2.1 Context &amp; Propagation</h2><ul>
+<li><strong>Context</strong>：在分布式系统中，<code>Context</code> 代表一个请求的上下文信息，用于在各个服务、进程或线程之间携带追踪信息。它允许不同服务在处理请求时共享同一条追踪线索。<code>Context</code> 中可以包含追踪的标识信息（如 <code>Trace ID</code>、<code>Span ID</code>），以及一些额外的数据（如 <code>Baggage</code>）。</li>
+<li><strong>Propagation</strong>：<code>Propagation</code> 是上下文的传播机制，用于在系统的不同部分之间传递追踪信息。它的主要作用是确保在请求跨越多个服务时，追踪信息能够继续传播，从而实现端到端的分布式追踪。OpenTelemetry 支持多种 Propagation 格式，例如 W3C Trace Context 和 Baggage 规范。</li>
+</ul>
+<h2 id="2-2-Span"><a href="#2-2-Span" class="headerlink" title="2.2 Span"></a>2.2 Span</h2><ul>
+<li><strong>Span</strong> 是 OpenTelemetry 中最基本的追踪单位，它表示系统中操作或事件的一个时段。每个 <code>Span</code> 都会记录以下关键信息：<ul>
+<li><strong>操作名称</strong>：描述当前操作或事件的名称。</li>
+<li><strong>开始时间和持续时间</strong>：记录操作从何时开始、进行了多长时间。</li>
+<li><strong>Span ID</strong> 和 <strong>Trace ID</strong>：唯一标识这个 <code>Span</code> 及其所属的整个追踪链（Trace）。</li>
+<li><strong>父级 Span</strong>：<code>Span</code> 可以是其他 <code>Span</code> 的子级，这样可以形成一个 <code>Span</code> 树，表示请求在各个服务或模块中的调用关系。</li>
+<li><strong>Attributes</strong>：描述 <code>Span</code> 的一些键值对属性，如 HTTP 状态码、请求路径等。</li>
+<li><strong>Events</strong>：记录在 <code>Span</code> 的生命周期中发生的特定事件。</li>
+<li><strong>Links</strong>：可以将当前 <code>Span</code> 与其他 <code>Span</code> 关联。</li>
+</ul>
+</li>
+</ul>
+<h2 id="2-3-Signals-Traces-Metrics-Logs-Baggage"><a href="#2-3-Signals-Traces-Metrics-Logs-Baggage" class="headerlink" title="2.3 Signals (Traces, Metrics, Logs, Baggage)"></a>2.3 Signals (Traces, Metrics, Logs, Baggage)</h2><p>在 OpenTelemetry 中，<code>Signals</code>（包括 <code>Traces</code>、<code>Metrics</code>、<code>Logs</code> 和 <code>Baggage</code>）是核心的观测数据类型。每种 <code>Signal</code> 的采集、处理和导出都依赖于 <code>Provider</code>、<code>Exporters</code> 等组件，而 <code>Span</code> 是 <code>Traces</code> 的基础单元。这些组件协作，确保系统的可观测性数据能够被正确采集和传输。以下是对 <code>Signals</code>、<code>Provider</code>、<code>Exporters</code> 和 <code>Span</code> 之间关系的详细说明：</p>
+<h3 id="2-3-1-Traces-追踪"><a href="#2-3-1-Traces-追踪" class="headerlink" title="2.3.1 Traces (追踪)"></a>2.3.1 <strong>Traces (追踪)</strong></h3><p>   <strong>Traces</strong> 是 OpenTelemetry 中用于跟踪单个请求或事务如何在分布式系统中流动的信号。<code>Trace</code> 由多个 <code>Span</code> 组成，每个 <code>Span</code> 代表一次操作的时间段。</p>
+<ul>
+<li><strong>Provider</strong>: 对于 <code>Traces</code> 来说，<code>TracerProvider</code> 是负责创建 <code>Tracer</code> 对象的组件。<code>Tracer</code> 用于创建和管理 <code>Span</code>。通常在应用程序的初始化过程中会设置一个全局的 <code>TracerProvider</code>。</li>
+<li><strong>Span</strong>: <code>Span</code> 是构成 <code>Trace</code> 的基础单位，包含该操作的开始时间、持续时间、父子关系等信息。开发者可以通过 <code>Tracer</code> 创建 <code>Span</code>，标识代码中某一段操作的开始和结束。</li>
+<li><strong>Exporters</strong>: <code>Span</code> 结束后，采集的数据会传递给 <code>Exporter</code>。<code>Exporter</code> 是将追踪数据（<code>Span</code>）发送到外部系统（如 Jaeger、Zipkin 或其他追踪平台）的组件。通过 <code>Exporter</code>，可以选择如何持久化或分析这些追踪信息。</li>
+</ul>
+<p>   举例来说，当一个 HTTP 请求到达服务器时，应用会生成一个 <code>Span</code> 来记录这个请求的处理过程。每当请求跨服务时，就会创建新的 <code>Span</code>，并将其与前一个 <code>Span</code> 链接形成完整的 <code>Trace</code>。最终，通过 <code>Exporter</code>，这些 <code>Trace</code> 会被发送到外部平台进行分析。</p>
+<h3 id="2-3-2-Metrics-指标"><a href="#2-3-2-Metrics-指标" class="headerlink" title="2.3.2 Metrics (指标)"></a>2.3.2 <strong>Metrics (指标)</strong></h3><p>   <strong>Metrics</strong> 用于监控系统的性能和行为。它们通过定量数据（如请求数、延迟、内存使用量等）来帮助开发人员理解系统的健康状况。</p>
+<ul>
+<li><strong>Provider</strong>: <code>MeterProvider</code> 是 <code>Metrics</code> 数据的核心提供者，它负责创建 <code>Meter</code> 对象。<code>Meter</code> 则是用于创建和记录 <code>Metrics</code> 的接口。</li>
+<li><strong>Metrics Instruments</strong>: <code>Meter</code> 允许开发者定义和操作不同类型的指标工具，例如 <code>Counter</code>（计数器），<code>Histogram</code>（直方图）和 <code>Gauge</code>（测量仪）。这些工具用于采集和聚合系统的运行数据。</li>
+<li><strong>Exporters</strong>: 采集到的 <code>Metrics</code> 需要通过 <code>MetricsExporter</code> 导出到外部监控平台（如 Prometheus、Datadog）。<code>Exporter</code> 可以定期将指标数据推送到外部系统，以便进行持续监控和报警。</li>
+</ul>
+<p>   例如，应用可以定义一个 <code>Counter</code> 来跟踪总请求数，使用 <code>Histogram</code> 来记录请求的延迟分布。这些数据通过 <code>Exporter</code> 发送到 Prometheus 等平台，可以实时监控应用的运行状态。</p>
+<h3 id="2-3-3-Logs-日志"><a href="#2-3-3-Logs-日志" class="headerlink" title="2.3.3 Logs (日志)"></a>2.3.3 <strong>Logs (日志)</strong></h3><p>   <strong>Logs</strong> 是时间序列事件的记录，通常用于捕获应用程序中的具体操作或错误。与 <code>Span</code> 和 <code>Metrics</code> 结构化的数据不同，日志通常是非结构化的，但在调试和故障排查中非常有价值。</p>
+<ul>
+<li><strong>Provider</strong>: 日志的管理由 <code>LoggerProvider</code> 负责，<code>LoggerProvider</code> 会生成 <code>Logger</code> 对象。开发者可以通过 <code>Logger</code> 记录应用的运行状态、异常信息等。</li>
+<li><strong>Logs Data Model</strong>: <code>OpenTelemetry</code> 的日志数据模型包括时间戳、事件描述和上下文信息，类似于 <code>Span</code> 的一些属性。<code>Logger</code> 可以将这些信息捕获并存储。</li>
+<li><strong>Exporters</strong>: 日志数据通过 <code>LogsExporter</code> 导出到外部系统（如 Elasticsearch、Splunk），从而实现集中化的日志存储与查询。</li>
+</ul>
+<p>   开发者可以在特定时间点记录日志信息，例如在发生错误时生成一条日志。这些日志可以与 <code>Traces</code> 和 <code>Metrics</code> 一起使用，以帮助更快速地定位系统问题。</p>
+<h3 id="2-3-4-Baggage-上下文信息"><a href="#2-3-4-Baggage-上下文信息" class="headerlink" title="2.3.4 Baggage (上下文信息)"></a>2.3.4 <strong>Baggage (上下文信息)</strong></h3><p>   <strong>Baggage</strong> 是 <code>OpenTelemetry</code> 中的一种特殊机制，用于跨服务传播键值对信息。与 <code>Span</code> 和 <code>Metrics</code> 不同，<code>Baggage</code> 通常不用于直接观测，而是携带与请求相关的元数据。</p>
+<ul>
+<li><strong>Propagation</strong>: <code>Baggage</code> 的数据随着 <code>Trace</code> 在分布式系统中传播。每个服务都可以在处理请求时读取或修改这些数据。<code>Baggage</code> 可以帮助服务之间共享一些全局上下文信息，例如用户 ID、地理位置等。</li>
+<li><strong>Provider</strong>: <code>Baggage</code> 并没有专门的 <code>Provider</code>，它作为 <code>Context</code> 机制的一部分，通常与 <code>Trace</code> 一起传播。</li>
+<li><strong>Exporters</strong>: <code>Baggage</code> 数据通常不会直接导出到外部系统，但可以作为 <code>Span</code> 的一部分包含在 <code>Trace</code> 数据中，通过 <code>Trace Exporter</code> 进行传递和分析。</li>
+</ul>
+<blockquote>
+<p>Provider、Exporters 与 Span 的关系:</p>
+<ul>
+<li><strong>Provider</strong>: 在每种信号的上下文中，<code>Provider</code> 是核心管理器，负责生成适当的 <code>Tracer</code>（用于 <code>Traces</code>）、<code>Meter</code>（用于 <code>Metrics</code>）或 <code>Logger</code>（用于 <code>Logs</code>）。<code>Provider</code> 控制整个信号的采集流程，定义了如何创建、记录和传递这些数据。</li>
+<li><strong>Exporters</strong>: 无论是 <code>Span</code>（<code>Traces</code>）、<code>Metrics</code> 还是 <code>Logs</code>，所有的观测数据最终都需要通过 <code>Exporter</code> 发送到外部的观测平台。<code>Exporter</code> 决定了数据的出口方向，比如将 <code>Span</code> 数据发送到 Jaeger，将 <code>Metrics</code> 发送到 Prometheus。</li>
+<li><strong>Span 的作用</strong>: 对于 <code>Traces</code> 而言，<code>Span</code> 是核心单位。它用于记录和表示请求的生命周期和调用链。通过 <code>Span</code> 的聚合，形成完整的 <code>Trace</code>，从而帮助开发者追踪和分析请求在分布式系统中的路径与延迟。</li>
+</ul>
+<p>这三者共同组成了 <code>OpenTelemetry</code> 的观测数据流程：**<code>Provider</code> 负责生成观测信号实例，<code>Span</code> 等信号用于记录和标识系统中的操作，<code>Exporter</code> 最终将这些数据发送到外部系统以供分析和监控。**</p>
+</blockquote>
+<h1 id="3-实战"><a href="#3-实战" class="headerlink" title="3 实战"></a>3 实战</h1><p>这里我使用<code>Rust</code>语言，使用<code>opentelemetry-rust</code>库，来实现一个简单的demo。官方的<code>Rust</code>的<a target="_blank" rel="noopener" href="https://opentelemetry.io/docs/languages/rust/getting-started/"><code>demo</code></a>太简陋了, 所以这里我基于官方的代码写了一个稍微复杂一点的<code>demo</code>。</p>
+<p><code>demo</code>主要演示作用:</p>
+<ol>
+<li>初始化<code>provider</code>和<code>exporter</code></li>
+<li><code>http</code>&#x2F;同线程的函数之间传递<code>context</code></li>
+<li><code>event</code>和<code>metric</code>的记录</li>
+<li>导出数据</li>
+</ol>
+<p><code>demo</code>完整代码: <a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/dice_server">dice_server</a></p>
+<h2 id="3-1-依赖"><a href="#3-1-依赖" class="headerlink" title="3.1 依赖"></a>3.1 依赖</h2><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[package]</span></span><br><span class="line"><span class="attr">name</span> = <span class="string">&quot;dice_server&quot;</span></span><br><span class="line"><span class="attr">version</span> = <span class="string">&quot;0.1.0&quot;</span></span><br><span class="line"><span class="attr">edition</span> = <span class="string">&quot;2021&quot;</span></span><br><span class="line"><span class="attr">publish</span> = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="section">[[bin]]</span></span><br><span class="line"><span class="attr">name</span> = <span class="string">&quot;dice_server&quot;</span></span><br><span class="line"><span class="attr">path</span> = <span class="string">&quot;src/dice_server.rs&quot;</span></span><br><span class="line"><span class="attr">doc</span> = <span class="literal">false</span></span><br><span class="line"></span><br><span class="line"><span class="section">[dependencies]</span></span><br><span class="line"><span class="attr">tokio</span> = &#123; version = <span class="string">&quot;1.40&quot;</span>, features = [<span class="string">&quot;full&quot;</span>] &#125; <span class="comment"># 异步运行时,提供全功能支持</span></span><br><span class="line"><span class="attr">actix-web</span> = <span class="string">&quot;4&quot;</span>                                   <span class="comment"># Web 框架</span></span><br><span class="line"><span class="attr">rand</span> = &#123; version = <span class="string">&quot;0.8&quot;</span> &#125;                        <span class="comment"># 随机数生成库</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># OpenTelemetry API,用于分布式追踪和度量</span></span><br><span class="line"><span class="attr">opentelemetry</span> = <span class="string">&quot;0.26.0&quot;</span></span><br><span class="line"><span class="comment"># OpenTelemetry SDK,包含 tokio 运行时支持</span></span><br><span class="line"><span class="attr">opentelemetry_sdk</span> = &#123; version = <span class="string">&quot;0.26&quot;</span>, features = [<span class="string">&quot;rt-tokio&quot;</span>] &#125;</span><br><span class="line"><span class="comment"># OpenTelemetry OTLP 导出器,使用 tonic 作为 gRPC 客户端</span></span><br><span class="line"><span class="attr">opentelemetry-otlp</span> = &#123; version = <span class="string">&quot;0.26&quot;</span>, features = [<span class="string">&quot;tonic&quot;</span>] &#125;</span><br><span class="line"><span class="comment"># OpenTelemetry 语义约定,定义标准属性和资源</span></span><br><span class="line"><span class="attr">opentelemetry-semantic-conventions</span> = &#123; version = <span class="string">&quot;0.26&quot;</span> &#125;</span><br><span class="line"><span class="comment"># OpenTelemetry HTTP 集成</span></span><br><span class="line"><span class="attr">opentelemetry-http</span> = <span class="string">&quot;0.26&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Actix Web 客户端,用于发送 HTTP 请求</span></span><br><span class="line"><span class="attr">awc</span> = <span class="string">&quot;3.0&quot;</span></span><br><span class="line"><span class="comment"># HTTP 类型和定义</span></span><br><span class="line"><span class="attr">http</span> = <span class="string">&quot;1.1&quot;</span></span><br><span class="line"><span class="attr">lazy_static</span> = <span class="string">&quot;1.4&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="3-2-初始化provider和exporter"><a href="#3-2-初始化provider和exporter" class="headerlink" title="3.2 初始化provider和exporter"></a>3.2 初始化<code>provider</code>和<code>exporter</code></h2><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">init_meter_provider</span>() <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;opentelemetry_sdk::metrics::SdkMeterProvider, MetricsError&gt; &#123;</span><br><span class="line">    opentelemetry_otlp::<span class="title function_ invoke__">new_pipeline</span>()</span><br><span class="line">        <span class="comment">// 使用 Tokio 运行时来处理异步操作</span></span><br><span class="line">        .<span class="title function_ invoke__">metrics</span>(runtime::Tokio)</span><br><span class="line">        <span class="comment">// 设置指标收集和导出的周期为5秒</span></span><br><span class="line">        .<span class="title function_ invoke__">with_period</span>(Duration::<span class="title function_ invoke__">from_secs</span>(<span class="number">5</span>))</span><br><span class="line">        <span class="comment">// 配置 OTLP 导出器</span></span><br><span class="line">        .<span class="title function_ invoke__">with_exporter</span>(</span><br><span class="line">            opentelemetry_otlp::<span class="title function_ invoke__">new_exporter</span>()</span><br><span class="line">                .<span class="title function_ invoke__">tonic</span>() <span class="comment">// 使用 Tonic 作为 gRPC 客户端</span></span><br><span class="line">                .<span class="title function_ invoke__">with_endpoint</span>(<span class="string">&quot;http://localhost:4317&quot;</span>), <span class="comment">// 设置 OTLP 接收器的地址</span></span><br><span class="line">        )</span><br><span class="line">        <span class="comment">// 构建并返回 MeterProvider</span></span><br><span class="line">        .<span class="title function_ invoke__">build</span>()</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始化追踪提供者 (Tracer Provider)，该函数返回一个全局的 `TracerProvider`</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">init_tracer_provider</span>() <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;opentelemetry_sdk::trace::TracerProvider, TraceError&gt; &#123;</span><br><span class="line">    opentelemetry_otlp::<span class="title function_ invoke__">new_pipeline</span>()</span><br><span class="line">        .<span class="title function_ invoke__">tracing</span>()</span><br><span class="line">        <span class="comment">// 配置一个 OTLP 导出器，用于将追踪数据发送到指定的后端（在这里是 Jaeger 或 OpenTelemetry Collector）</span></span><br><span class="line">        .<span class="title function_ invoke__">with_exporter</span>(</span><br><span class="line">            opentelemetry_otlp::<span class="title function_ invoke__">new_exporter</span>()</span><br><span class="line">                .<span class="title function_ invoke__">tonic</span>() <span class="comment">// 使用 Tonic 作为 gRPC 客户端</span></span><br><span class="line">                .<span class="title function_ invoke__">with_endpoint</span>(<span class="string">&quot;http://localhost:4317&quot;</span>), <span class="comment">// 指定 OTLP 接收器的地址</span></span><br><span class="line">        )</span><br><span class="line">        <span class="comment">// 配置追踪器的资源信息，例如服务名称等</span></span><br><span class="line">        .<span class="title function_ invoke__">with_trace_config</span>(</span><br><span class="line">            sdktrace::Config::<span class="title function_ invoke__">default</span>().<span class="title function_ invoke__">with_resource</span>(Resource::<span class="title function_ invoke__">new</span>(<span class="built_in">vec!</span>[KeyValue::<span class="title function_ invoke__">new</span>(</span><br><span class="line">                SERVICE_NAME,</span><br><span class="line">                <span class="string">&quot;tracing-jaeger&quot;</span>, <span class="comment">// 设置服务名称为 &quot;tracing-jaeger&quot;</span></span><br><span class="line">            )])),</span><br><span class="line">        )</span><br><span class="line">        <span class="comment">// 使用批量处理器进行追踪数据的导出，`runtime::Tokio` 用于支持异步操作</span></span><br><span class="line">        .<span class="title function_ invoke__">install_batch</span>(runtime::Tokio)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始化全局追踪器，将 `TracerProvider` 和 `MeterProvider` 设置为全局</span></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">init_tracer</span>() &#123;</span><br><span class="line">    <span class="comment">// 初始化并设置全局 TracerProvider</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">tracer_provider</span> = <span class="title function_ invoke__">init_tracer_provider</span>().<span class="title function_ invoke__">expect</span>(<span class="string">&quot;Failed to initialize tracer provider.&quot;</span>);</span><br><span class="line">    global::<span class="title function_ invoke__">set_tracer_provider</span>(tracer_provider);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化并设置全局 MeterProvider</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">meter_provider</span> = <span class="title function_ invoke__">init_meter_provider</span>().<span class="title function_ invoke__">expect</span>(<span class="string">&quot;Failed to initialize meter provider.&quot;</span>);</span><br><span class="line">    global::<span class="title function_ invoke__">set_meter_provider</span>(meter_provider);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 设置全局传播器（propagator）</span></span><br><span class="line">    <span class="comment">// TraceContextPropagator 用于在分布式系统中传播追踪上下文</span></span><br><span class="line">    global::<span class="title function_ invoke__">set_text_map_propagator</span>(TraceContextPropagator::<span class="title function_ invoke__">new</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-3-http之间传递context"><a href="#3-3-http之间传递context" class="headerlink" title="3.3 http之间传递context"></a>3.3 <code>http</code>之间传递<code>context</code></h2><p><code>http</code>之间传递<code>context</code>的本质是将<code>context</code>信息注入到<code>http</code>的<code>header</code>中, 官方提供的<code>demo</code>使用的是<code>hyper</code>库, 其注入过程很简单, 但这里我使用日常开发中更常用的<code>actix-web</code>库, 所以这里需要自己实现<code>http</code>之间的<code>context</code>传递:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">use</span> opentelemetry::Context;</span><br><span class="line"><span class="keyword">use</span> awc::http::header::&#123;HeaderMap, HeaderName, HeaderValue&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">fn</span> <span class="title function_">inject_context</span>(request: &amp;<span class="keyword">mut</span> HeaderMap, cx: &amp;Context) &#123;</span><br><span class="line">    <span class="comment">// 使用 OpenTelemetry 的 HTTP 传播器 (propagator) 注入追踪上下文到 HTTP 请求头</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">r_headers</span> = http::HeaderMap::<span class="title function_ invoke__">new</span>();</span><br><span class="line"></span><br><span class="line">    global::<span class="title function_ invoke__">get_text_map_propagator</span>(|propagator| &#123;</span><br><span class="line">        propagator.<span class="title function_ invoke__">inject_context</span>(&amp;cx, &amp;<span class="keyword">mut</span> <span class="title function_ invoke__">HeaderInjector</span>(&amp;<span class="keyword">mut</span> r_headers));</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="built_in">println!</span>(<span class="string">&quot;randnum: r_headers: &#123;:?&#125;&quot;</span>, &amp;r_headers);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (key, value) <span class="keyword">in</span> r_headers.<span class="title function_ invoke__">iter</span>() &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">header_name</span> = HeaderName::<span class="title function_ invoke__">from_str</span>(key.<span class="title function_ invoke__">as_str</span>()).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">header_value</span> = HeaderValue::<span class="title function_ invoke__">from_str</span>(value.<span class="title function_ invoke__">to_str</span>().<span class="title function_ invoke__">unwrap</span>()).<span class="title function_ invoke__">unwrap</span>();</span><br><span class="line"></span><br><span class="line">        request.<span class="title function_ invoke__">insert</span>(header_name, header_value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个函数的主要目的是将追踪上下文注入到 <code>HTTP</code> 请求头中，以便在分布式系统中传递追踪信息:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">request</span> = awc::Client::<span class="title function_ invoke__">default</span>().<span class="title function_ invoke__">get</span>(<span class="string">&quot;http://127.0.0.1:8080/gen_num&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> <span class="variable">req_headers</span> = request.<span class="title function_ invoke__">headers_mut</span>();</span><br><span class="line"><span class="title function_ invoke__">inject_context</span>(req_headers, &amp;cx);</span><br></pre></td></tr></table></figure>
+
+<p>当然, 在另一个<code>http</code>的接收端, 需要将<code>context</code>从<code>http</code>的<code>header</code>中提取出来:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">extract_context</span>(req: &amp;HttpRequest) <span class="punctuation">-&gt;</span> Context &#123;</span><br><span class="line">    global::<span class="title function_ invoke__">get_text_map_propagator</span>(|propagator| &#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">headers</span>: HashMap&lt;<span class="type">String</span>, <span class="type">String</span>&gt; = HashMap::<span class="title function_ invoke__">new</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (key, value) <span class="keyword">in</span> req.<span class="title function_ invoke__">headers</span>().<span class="title function_ invoke__">iter</span>() &#123;</span><br><span class="line">            headers.<span class="title function_ invoke__">insert</span>(key.<span class="title function_ invoke__">to_string</span>(), value.<span class="title function_ invoke__">to_str</span>().<span class="title function_ invoke__">unwrap</span>().<span class="title function_ invoke__">to_string</span>());</span><br><span class="line">        &#125;</span><br><span class="line">        propagator.<span class="title function_ invoke__">extract</span>(&amp;headers)</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接收端路由函数可以如下处理:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[get(<span class="string">&quot;/gen_num&quot;</span>)]</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">gen_num</span>(req: HttpRequest) <span class="punctuation">-&gt;</span> <span class="keyword">impl</span> <span class="title class_">Responder</span> &#123;</span><br><span class="line">    <span class="comment">// 使用 OpenTelemetry 的 HTTP 传播器 (propagator) 从 HTTP 请求头中提取追踪上下文</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">parent_cx</span> = <span class="title function_ invoke__">extract_context</span>(&amp;req);</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>同线程之间传递<code>context</code><br>直接传递<code>Context</code>的引用即可</p>
+</blockquote>
+<h2 id="3-4-父子Context关系的生成"><a href="#3-4-父子Context关系的生成" class="headerlink" title="3.4 父子Context关系的生成"></a>3.4 父子<code>Context</code>关系的生成</h2><p>不同函数调用之间以及<code>http</code>之间, 需要生成父子<code>Context</code>关系, 这样方便在<code>span</code>中查看调用关系, 这里我实现了一个简单的函数来生成父子<code>Context</code>:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">get_cx_from_parent_cx</span>&lt;<span class="symbol">&#x27;a</span>&gt;(</span><br><span class="line">    tracer_name: <span class="type">String</span>,</span><br><span class="line">    spam_name: <span class="type">String</span>,</span><br><span class="line">    parent_cx: <span class="type">Option</span>&lt;&amp;Context&gt;, <span class="comment">// 父`Context`为None时表示该`Context`为顶层`Context`</span></span><br><span class="line">) <span class="punctuation">-&gt;</span> Context &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">span</span>;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">tracer</span> = global::<span class="title function_ invoke__">tracer</span>(tracer_name);</span><br><span class="line">    <span class="keyword">match</span> parent_cx &#123;</span><br><span class="line">        <span class="title function_ invoke__">Some</span>(cx) =&gt; &#123;</span><br><span class="line">            <span class="comment">// 使用提取到的上下文作为父上下文，创建一个新的 span</span></span><br><span class="line">            span = tracer</span><br><span class="line">                .<span class="title function_ invoke__">span_builder</span>(spam_name)</span><br><span class="line">                .<span class="title function_ invoke__">with_kind</span>(SpanKind::Server)</span><br><span class="line">                .<span class="title function_ invoke__">start_with_context</span>(&amp;tracer, cx); <span class="comment">// start_with_context 方法会创建一个子`Span`</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="literal">None</span> =&gt; &#123;</span><br><span class="line">            span = tracer</span><br><span class="line">                .<span class="title function_ invoke__">span_builder</span>(spam_name)</span><br><span class="line">                .<span class="title function_ invoke__">with_kind</span>(SpanKind::Server)</span><br><span class="line">                .<span class="title function_ invoke__">start</span>(&amp;tracer);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Context::<span class="title function_ invoke__">current_with_span</span>(span) <span class="comment">// 返回当前`Context`，其中包含新创建的`Span`</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-5-记录event和metric"><a href="#3-5-记录event和metric" class="headerlink" title="3.5 记录event和metric"></a>3.5 记录<code>event</code>和<code>metric</code></h2><h3 id="3-5-1-event记录事件"><a href="#3-5-1-event记录事件" class="headerlink" title="3.5.1 event记录事件"></a>3.5.1 <code>event</code>记录事件</h3><p>使用<code>Context.span</code>方法即可对<code>event</code>进行记录或操作</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[get(<span class="string">&quot;/gen_num&quot;</span>)]</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">gen_num</span>(req: HttpRequest) <span class="punctuation">-&gt;</span> <span class="keyword">impl</span> <span class="title class_">Responder</span> &#123;</span><br><span class="line">    <span class="comment">// 使用 OpenTelemetry 的 HTTP 传播器 (propagator) 从 HTTP 请求头中提取追踪上下文</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">parent_cx</span> = <span class="title function_ invoke__">extract_context</span>(&amp;req);</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">cx</span> = <span class="title function_ invoke__">get_cx_from_parent_cx</span>(</span><br><span class="line">        <span class="string">&quot;dice_server&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        <span class="string">&quot;gen_num&quot;</span>.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        <span class="title function_ invoke__">Some</span>(&amp;parent_cx),</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line"></span><br><span class="line">    cx.<span class="title function_ invoke__">span</span>().<span class="title function_ invoke__">add_event</span>(</span><br><span class="line">        <span class="string">&quot;Generated random number&quot;</span>,</span><br><span class="line">        <span class="built_in">vec!</span>[opentelemetry::KeyValue::<span class="title function_ invoke__">new</span>(</span><br><span class="line">            <span class="string">&quot;number&quot;</span>,</span><br><span class="line">            random_number.<span class="title function_ invoke__">to_string</span>(),</span><br><span class="line">        )],</span><br><span class="line">    );</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-5-2-metric记录指标"><a href="#3-5-2-metric记录指标" class="headerlink" title="3.5.2 metric记录指标"></a>3.5.2 <code>metric</code>记录指标</h3><p><code>metric</code>需要先初始化指标, 这里以<code>Counter</code>为例:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义一个结构体来保存我们的计数器</span></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">HttpMetrics</span> &#123;</span><br><span class="line">    success_counter: Counter&lt;<span class="type">u64</span>&gt;,</span><br><span class="line">    failure_counter: Counter&lt;<span class="type">u64</span>&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 使用 lazy_static 创建一个全局的 HttpMetrics 实例</span></span><br><span class="line">lazy_static! &#123;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">ref</span> HTTP_METRICS: Arc&lt;HttpMetrics&gt; = Arc::<span class="title function_ invoke__">new</span>(&#123;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">meter</span> = global::<span class="title function_ invoke__">meter</span>(<span class="string">&quot;http_metrics&quot;</span>);</span><br><span class="line">        HttpMetrics &#123;</span><br><span class="line">            success_counter: meter</span><br><span class="line">                .<span class="title function_ invoke__">u64_counter</span>(<span class="string">&quot;http_requests_success&quot;</span>)</span><br><span class="line">                .<span class="title function_ invoke__">with_description</span>(<span class="string">&quot;成功的 HTTP 请求总数&quot;</span>)</span><br><span class="line">                .<span class="title function_ invoke__">init</span>(),</span><br><span class="line">            failure_counter: meter</span><br><span class="line">                .<span class="title function_ invoke__">u64_counter</span>(<span class="string">&quot;http_requests_failure&quot;</span>)</span><br><span class="line">                .<span class="title function_ invoke__">with_description</span>(<span class="string">&quot;失败的 HTTP 请求总数&quot;</span>)</span><br><span class="line">                .<span class="title function_ invoke__">init</span>(),</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>路由函数的操作:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#[get(<span class="string">&quot;/randnum&quot;</span>)]</span></span><br><span class="line"><span class="keyword">async</span> <span class="keyword">fn</span> <span class="title function_">randnum</span>() <span class="punctuation">-&gt;</span> <span class="keyword">impl</span> <span class="title class_">Responder</span> &#123;</span><br><span class="line">    ...</span><br><span class="line">    <span class="keyword">match</span> request.<span class="title function_ invoke__">send</span>().<span class="keyword">await</span> &#123;</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(<span class="keyword">mut</span> response) =&gt; <span class="keyword">match</span> response.<span class="title function_ invoke__">body</span>().<span class="keyword">await</span> &#123;</span><br><span class="line">            <span class="title function_ invoke__">Ok</span>(body) =&gt; &#123;</span><br><span class="line">                HTTP_METRICS.success_counter.<span class="title function_ invoke__">add</span>(<span class="number">1</span>, &amp;[]);</span><br><span class="line">                cx.<span class="title function_ invoke__">span</span>().<span class="title function_ invoke__">add_event</span>(<span class="string">&quot;从 gen_num 收到响应&quot;</span>, <span class="built_in">vec!</span>[]);</span><br><span class="line">                HttpResponse::<span class="title function_ invoke__">Ok</span>().<span class="title function_ invoke__">body</span>(body)</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="title function_ invoke__">Err</span>(_) =&gt; &#123;</span><br><span class="line">                HTTP_METRICS.failure_counter.<span class="title function_ invoke__">add</span>(<span class="number">1</span>, &amp;[]);</span><br><span class="line">                cx.<span class="title function_ invoke__">span</span>().<span class="title function_ invoke__">add_event</span>(<span class="string">&quot;读取响应体失败&quot;</span>, <span class="built_in">vec!</span>[]);</span><br><span class="line">                HttpResponse::<span class="title function_ invoke__">InternalServerError</span>().<span class="title function_ invoke__">body</span>(<span class="string">&quot;读取响应体失败&quot;</span>)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        <span class="title function_ invoke__">Err</span>(_) =&gt; &#123;</span><br><span class="line">            HTTP_METRICS.failure_counter.<span class="title function_ invoke__">add</span>(<span class="number">1</span>, &amp;[]);</span><br><span class="line">            cx.<span class="title function_ invoke__">span</span>().<span class="title function_ invoke__">add_event</span>(<span class="string">&quot;发送请求失败&quot;</span>, <span class="built_in">vec!</span>[]);</span><br><span class="line">            HttpResponse::<span class="title function_ invoke__">InternalServerError</span>().<span class="title function_ invoke__">body</span>(<span class="string">&quot;发送请求失败&quot;</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-6-导出数据和可视化"><a href="#3-6-导出数据和可视化" class="headerlink" title="3.6 导出数据和可视化"></a>3.6 导出数据和可视化</h3><p>这里借助<code>jaeger</code>来可视化数据, 可以使用<code>docker</code>来快速启动<code>jaeger</code>服务:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p16686:16686 -p4317:4317 -e COLLECTOR_OTLP_ENABLED=<span class="literal">true</span> jaegertracing/all-in-one:latest</span><br></pre></td></tr></table></figure>
+
+<p>访问<code>http://127.0.0.1:16686</code>即可看到可视化界面:<br><img src="/../../images/distributed/jaegertracing.png" alt="jaegertracing"></p>
+<h1 id="4-总结"><a href="#4-总结" class="headerlink" title="4 总结"></a>4 总结</h1><p><code>OpenTelemetry</code> 是一个功能强大的分布式追踪和度量库，它提供了一套统一的 API 和 SDK，支持多种语言和平台。通过 <code>OpenTelemetry</code>，开发者可以方便地在分布式系统中进行追踪和监控，从而更好地理解和优化系统性能。</p>
+<p>这里仅仅演示了<code>opentelemetry</code>的冰山一角, 更多功能可以参考<a target="_blank" rel="noopener" href="https://opentelemetry.io/docs/">官方文档</a>以及后续的更新</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.</span> <span class="toc-text">1 基本介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#OpenTelemetry-%E5%AF%B9%E7%A8%8B%E5%BA%8F%E5%91%98%E6%9C%89%E4%BB%80%E4%B9%88%E7%94%A8%EF%BC%9F"><span class="toc-number">1.0.0.1.</span> <span class="toc-text">OpenTelemetry 对程序员有什么用？</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="toc-number">2.</span> <span class="toc-text">2 核心概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Context-Propagation"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Context &amp; Propagation</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Span"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Span</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Signals-Traces-Metrics-Logs-Baggage"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Signals (Traces, Metrics, Logs, Baggage)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-1-Traces-%E8%BF%BD%E8%B8%AA"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.3.1 Traces (追踪)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-2-Metrics-%E6%8C%87%E6%A0%87"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.3.2 Metrics (指标)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-3-Logs-%E6%97%A5%E5%BF%97"><span class="toc-number">2.3.3.</span> <span class="toc-text">2.3.3 Logs (日志)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-4-Baggage-%E4%B8%8A%E4%B8%8B%E6%96%87%E4%BF%A1%E6%81%AF"><span class="toc-number">2.3.4.</span> <span class="toc-text">2.3.4 Baggage (上下文信息)</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AE%9E%E6%88%98"><span class="toc-number">3.</span> <span class="toc-text">3 实战</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%BE%9D%E8%B5%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 依赖</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%88%9D%E5%A7%8B%E5%8C%96provider%E5%92%8Cexporter"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 初始化provider和exporter</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-http%E4%B9%8B%E9%97%B4%E4%BC%A0%E9%80%92context"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 http之间传递context</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E7%88%B6%E5%AD%90Context%E5%85%B3%E7%B3%BB%E7%9A%84%E7%94%9F%E6%88%90"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 父子Context关系的生成</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E8%AE%B0%E5%BD%95event%E5%92%8Cmetric"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 记录event和metric</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-1-event%E8%AE%B0%E5%BD%95%E4%BA%8B%E4%BB%B6"><span class="toc-number">3.5.1.</span> <span class="toc-text">3.5.1 event记录事件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-2-metric%E8%AE%B0%E5%BD%95%E6%8C%87%E6%A0%87"><span class="toc-number">3.5.2.</span> <span class="toc-text">3.5.2 metric记录指标</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-%E5%AF%BC%E5%87%BA%E6%95%B0%E6%8D%AE%E5%92%8C%E5%8F%AF%E8%A7%86%E5%8C%96"><span class="toc-number">3.5.3.</span> <span class="toc-text">3.6 导出数据和可视化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">4 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&text=opentelementry入门-1-核心概念与demo"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&is_video=false&description=opentelementry入门-1-核心概念与demo"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=opentelementry入门-1-核心概念与demo&body=Check out this article: http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&title=opentelementry入门-1-核心概念与demo"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&name=opentelementry入门-1-核心概念与demo&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/&t=opentelementry入门-1-核心概念与demo"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

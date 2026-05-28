@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="0 背景在日常开发中，我们肯定遇到过这样的情况：  提交信息写错了（比如拼写错误）； 提交信息太模糊（如 “fix bug”）； 想把多个零散提交合并成一个有意义的提交； 或者只是想让 Git 历史看起来更整洁？  如果你不熟悉git, 可能会使用reset的方式撤销提交后再手动创建新的commit。。。单实际上， 交互式 rebase（git rebase -i）。可以轻松修改、合并、删除甚至重">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Git 小技巧1：修改已有的 Commit">
+<meta property="og:url" content="http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="0 背景在日常开发中，我们肯定遇到过这样的情况：  提交信息写错了（比如拼写错误）； 提交信息太模糊（如 “fix bug”）； 想把多个零散提交合并成一个有意义的提交； 或者只是想让 Git 历史看起来更整洁？  如果你不熟悉git, 可能会使用reset的方式撤销提交后再手动创建新的commit。。。单实际上， 交互式 rebase（git rebase -i）。可以轻松修改、合并、删除甚至重">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-02-13T08:42:08.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.665Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="git">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Git 小技巧1：修改已有的 Commit</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2026/02/07/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Bear-%E5%85%A8%E8%83%BD%E7%9A%84%E4%BB%A3%E7%A0%81%E7%B4%A2%E5%BC%95%E5%B7%A5%E5%85%B7/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&text=Git 小技巧1：修改已有的 Commit"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&is_video=false&description=Git 小技巧1：修改已有的 Commit"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Git 小技巧1：修改已有的 Commit&body=Check out this article: http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&name=Git 小技巧1：修改已有的 Commit&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&t=Git 小技巧1：修改已有的 Commit"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">0 背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">1 基本原理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E9%99%85%E6%A1%88%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">2 实际案例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%90%AF%E5%8A%A8%E4%BA%A4%E4%BA%92%E5%BC%8F-rebase"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 启动交互式 rebase</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B0%86-pick-%E6%94%B9%E4%B8%BA-reword"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 将 pick 改为 reword</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%BE%93%E5%85%A5%E6%96%B0%E7%9A%84%E6%8F%90%E4%BA%A4%E4%BF%A1%E6%81%AF"><span class="toc-number">3.3.</span> <span class="toc-text">2.3 输入新的提交信息</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-rebase-%E4%BB%8B%E7%BB%8D"><span class="toc-number">4.</span> <span class="toc-text">3 rebase 介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-rebase-vs-merge"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 rebase vs merge</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B8%B8%E8%A7%81%E7%94%A8%E6%B3%95"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 常见用法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="toc-number">4.3.1.</span> <span class="toc-text">4 注意点</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Git 小技巧1：修改已有的 Commit
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2026-02-13T08:42:08.000Z" class="dt-published" itemprop="datePublished">2026-02-13</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/git/" rel="tag">git</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="0-背景"><a href="#0-背景" class="headerlink" title="0 背景"></a>0 背景</h1><p>在日常开发中，我们肯定遇到过这样的情况：</p>
+<ul>
+<li>提交信息写错了（比如拼写错误）；</li>
+<li>提交信息太模糊（如 “fix bug”）；</li>
+<li>想把多个零散提交合并成一个有意义的提交；</li>
+<li>或者只是想让 Git 历史看起来更整洁？</li>
+</ul>
+<p>如果你不熟悉git, 可能会使用<code>reset</code>的方式撤销提交后再手动创建新的<code>commit</code>。。。单实际上， <strong>交互式 rebase（<code>git rebase -i</code>）</strong>。可以轻松修改、合并、删除甚至重排历史提交——包括已经提交但尚未推送到远程仓库的记录。</p>
+<p>今天，我们就来重点介绍如何用 <code>git rebase - interactive</code> 来 <strong>修改已有 commit 的信息</strong>。</p>
+<h1 id="1-基本原理"><a href="#1-基本原理" class="headerlink" title="1 基本原理"></a>1 基本原理</h1><p>Git 中的每个 commit 都包含作者、时间、父提交和提交信息（message）。一旦你执行了 <code>git commit</code>，这个 commit 就被“固化”了。</p>
+<p>但如果你还没把这个 commit 推送到共享仓库（比如 GitHub、GitLab），那么你完全可以在本地“重写历史”——这正是 <code>git rebase -i</code> 的用武之地。</p>
+<blockquote>
+<p>⚠️ 注意：<strong>不要对已经推送到公共分支且他人可能基于其工作的 commit 执行 rebase</strong>，否则会引发协作混乱。</p>
+</blockquote>
+<h1 id="2-实际案例"><a href="#2-实际案例" class="headerlink" title="2 实际案例"></a>2 实际案例</h1><p>假设我现在有这样的提交：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&gt; git <span class="built_in">log</span></span><br><span class="line">commit c9a40f6bb060fa5c1a7f07089c438d5fb3376fbd (HEAD -&gt; master, origin/master, origin/HEAD, bugfix)</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Fri Feb 13 16:24:06 2026 +0800</span><br><span class="line"></span><br><span class="line">    fix: 修复部分环境下的编译报错</span><br><span class="line"></span><br><span class="line">commit ef06417fd0e807ee3815875ae92c3327765fbd0c</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Fri Feb 13 16:28:37 2026 +0800</span><br><span class="line"></span><br><span class="line">    docs: update tools <span class="keyword">in</span> Readme</span><br><span class="line"></span><br><span class="line">commit b4449ed14e4323f87f22d8135a440a9ef601e03b</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Sat Nov 22 19:30:41 2025 +0800</span><br><span class="line"></span><br><span class="line">    修复wal清理检查的bug</span><br></pre></td></tr></table></figure>
+
+<p>这里倒数第三个提交不符合规范, 我们想在提交信息前加上 <code>feat:</code> 前缀使其符合开源规范, 我们可以通过如下几个步骤完成:</p>
+<h2 id="2-1-启动交互式-rebase"><a href="#2-1-启动交互式-rebase" class="headerlink" title="2.1 启动交互式 rebase"></a>2.1 启动交互式 rebase</h2><p>先运行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br></pre></td></tr></table></figure>
+
+<p>这里的 <code>HEAD~3</code> 表示从当前 HEAD 往前数 3 个提交（包括当前），也就是说你会看到最近的 3 个提交。如果你想修改的是倒数第 3 个，那至少要包含它。</p>
+<p>执行后，Git 会打开默认编辑器（如 Vim、Nano），显示类似内容：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pick c9a40f6 fix: 修复部分环境下的编译报错</span><br><span class="line">pick ef06417 docs: update tools in Readme</span><br><span class="line">pick b4449ed 修复wal清理检查的bug</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-2-将-pick-改为-reword"><a href="#2-2-将-pick-改为-reword" class="headerlink" title="2.2 将 pick 改为 reword"></a>2.2 将 <code>pick</code> 改为 <code>reword</code></h2><p>找到你想修改的那一行（比如第二行），把 <code>pick</code> 改成 <code>reword</code>（或简写 <code>r</code>）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pick c9a40f6 fix: 修复部分环境下的编译报错</span><br><span class="line">pick ef06417 docs: update tools in Readme</span><br><span class="line">r b4449ed 修复wal清理检查的bug</span><br></pre></td></tr></table></figure>
+
+<p>保存并退出编辑器。</p>
+<h2 id="2-3-输入新的提交信息"><a href="#2-3-输入新的提交信息" class="headerlink" title="2.3 输入新的提交信息"></a>2.3 输入新的提交信息</h2><p>Git 会立即弹出另一个编辑窗口，让你修改该 commit 的 message。这是我们就可以修改commit信息：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">feat: 修复wal清理检查的bug</span><br><span class="line"></span><br><span class="line">- Check email format</span><br><span class="line">- Add password strength hint</span><br></pre></td></tr></table></figure>
+
+<p>修改完成后保存退出。如果一切顺利，Git 会自动完成 rebase。你的 commit 信息就更新成功了！</p>
+<p>你可以用 <code>git log</code> 查看结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">commit f72d75d57a7f8443022d0cbf1fc45466e73c3407 (HEAD -&gt; master)</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Fri Feb 13 16:24:06 2026 +0800</span><br><span class="line"></span><br><span class="line">    fix: 修复部分环境下的编译报错</span><br><span class="line"></span><br><span class="line">commit 642feafc6e958bb9aa3a57eedd04b01b566ac737</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Fri Feb 13 16:28:37 2026 +0800</span><br><span class="line"></span><br><span class="line">    docs: update tools <span class="keyword">in</span> Readme</span><br><span class="line"></span><br><span class="line">commit 346f843b8806a0a2ad982d74b5c6f07039a3dad5</span><br><span class="line">Author: Vanilla-Beauty &lt;807077266@qq.com&gt;</span><br><span class="line">Date:   Sat Nov 22 19:30:41 2025 +0800</span><br><span class="line"></span><br><span class="line">    feat: 修复wal清理检查的bug</span><br></pre></td></tr></table></figure>
+
+<p>你会发现那个 commit 的 hash 值变了（因为内容变了），但历史更清晰了。</p>
+<h1 id="3-rebase-介绍"><a href="#3-rebase-介绍" class="headerlink" title="3 rebase 介绍"></a>3 rebase 介绍</h1><h2 id="3-1-基本原理"><a href="#3-1-基本原理" class="headerlink" title="3.1 基本原理"></a>3.1 基本原理</h2><p><code>git rebase</code> 是 Git 中一个用于<strong>整合分支历史</strong>的命令，它的主要作用是将一个分支上的提交“移动”或“重放”到另一个分支的顶端，从而让项目历史看起来更线性、整洁。假设你有如下历史：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A---B---C   main</span><br><span class="line">     \</span><br><span class="line">      D---E   feature</span><br></pre></td></tr></table></figure>
+
+<p>如果你在 <code>feature</code> 分支上执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase main</span><br></pre></td></tr></table></figure>
+
+<p>Git 会把 <code>feature</code> 分支上自与 <code>main</code> 分叉以来的所有提交（即 D 和 E）“重新应用”到 <code>main</code> 的最新提交 C 之后，结果变成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">A---B---C         main</span><br><span class="line">         \</span><br><span class="line">          D&#x27;---E&#x27;   feature</span><br></pre></td></tr></table></figure>
+
+<p>注意：D’ 和 E’ 是<strong>新的提交对象</strong>（因为它们的父提交变了），虽然内容一样，但哈希值不同。</p>
+<h2 id="3-2-rebase-vs-merge"><a href="#3-2-rebase-vs-merge" class="headerlink" title="3.2 rebase vs merge"></a>3.2 rebase vs merge</h2><table>
+<thead>
+<tr>
+<th>对比项</th>
+<th><code>git merge</code></th>
+<th><code>git rebase</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>历史结构</td>
+<td>保留真实合并历史，可能有分叉</td>
+<td>生成线性历史，无分叉</td>
+</tr>
+<tr>
+<td>-commit 数量</td>
+<td>可能增加一个“合并提交”</td>
+<td>不产生额外合并提交</td>
+</tr>
+<tr>
+<td>安全性</td>
+<td>安全，适合共享分支</td>
+<td><strong>不建议在已推送的公共分支上使用</strong>（会改写历史）</td>
+</tr>
+<tr>
+<td>可读性</td>
+<td>真实反映开发过程</td>
+<td>更干净、易读</td>
+</tr>
+</tbody></table>
+<h2 id="3-3-常见用法"><a href="#3-3-常见用法" class="headerlink" title="3.3 常见用法"></a>3.3 常见用法</h2><ol>
+<li><p><strong>同步上游更新（推荐在本地分支使用）</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git checkout feature</span><br><span class="line">git rebase main</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>交互式 rebase（整理提交）</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git rebase -i HEAD~3</span><br></pre></td></tr></table></figure>
+<p>可以 squash（合并）、edit（修改）、drop（删除）提交等。</p>
+</li>
+<li><p><strong>变基到远程分支</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git pull --rebase origin main</span><br></pre></td></tr></table></figure>
+<p>相当于先 fetch 再 rebase，避免不必要的 merge commit。</p>
+</li>
+</ol>
+<h3 id="4-注意点"><a href="#4-注意点" class="headerlink" title="4 注意点"></a>4 注意点</h3><blockquote>
+<p><code>git rebase</code> 就是“把你的工作重新放到别人最新的工作后面”，让历史更干净，但要谨慎使用，尤其在多人协作时。</p>
+</blockquote>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#0-%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">0 背景</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">2.</span> <span class="toc-text">1 基本原理</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%9E%E9%99%85%E6%A1%88%E4%BE%8B"><span class="toc-number">3.</span> <span class="toc-text">2 实际案例</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%90%AF%E5%8A%A8%E4%BA%A4%E4%BA%92%E5%BC%8F-rebase"><span class="toc-number">3.1.</span> <span class="toc-text">2.1 启动交互式 rebase</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%B0%86-pick-%E6%94%B9%E4%B8%BA-reword"><span class="toc-number">3.2.</span> <span class="toc-text">2.2 将 pick 改为 reword</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%BE%93%E5%85%A5%E6%96%B0%E7%9A%84%E6%8F%90%E4%BA%A4%E4%BF%A1%E6%81%AF"><span class="toc-number">3.3.</span> <span class="toc-text">2.3 输入新的提交信息</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-rebase-%E4%BB%8B%E7%BB%8D"><span class="toc-number">4.</span> <span class="toc-text">3 rebase 介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86"><span class="toc-number">4.1.</span> <span class="toc-text">3.1 基本原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-rebase-vs-merge"><span class="toc-number">4.2.</span> <span class="toc-text">3.2 rebase vs merge</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B8%B8%E8%A7%81%E7%94%A8%E6%B3%95"><span class="toc-number">4.3.</span> <span class="toc-text">3.3 常见用法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%B3%A8%E6%84%8F%E7%82%B9"><span class="toc-number">4.3.1.</span> <span class="toc-text">4 注意点</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&text=Git 小技巧1：修改已有的 Commit"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&is_video=false&description=Git 小技巧1：修改已有的 Commit"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Git 小技巧1：修改已有的 Commit&body=Check out this article: http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&title=Git 小技巧1：修改已有的 Commit"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&name=Git 小技巧1：修改已有的 Commit&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/02/13/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Git%20%E5%B0%8F%E6%8A%80%E5%B7%A71%EF%BC%9A%E4%BF%AE%E6%94%B9%E5%B7%B2%E6%9C%89%E7%9A%84%20Commit/&t=Git 小技巧1：修改已有的 Commit"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

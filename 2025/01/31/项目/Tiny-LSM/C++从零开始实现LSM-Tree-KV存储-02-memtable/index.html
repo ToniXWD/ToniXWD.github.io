@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一小节实现 MemTable 部分, 其实内容很少, 就是对 之前实现的 SkipList 的简单封装。 代码仓库: https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 MemTable实现1.1 原理剖析首先复习下MemTable和之前的SkipList的关系:  内存中的整个MemTable包含多份SkipList, 其中只有一份是可以写入的SkipLi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-02-memtable">
+<meta property="og:url" content="http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一小节实现 MemTable 部分, 其实内容很少, 就是对 之前实现的 SkipList 的简单封装。 代码仓库: https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 MemTable实现1.1 原理剖析首先复习下MemTable和之前的SkipList的关系:  内存中的整个MemTable包含多份SkipList, 其中只有一份是可以写入的SkipLi">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/MemTable.drawio.png">
+<meta property="article:published_time" content="2025-01-31T01:22:10.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.667Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/MemTable.drawio.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-02-memtable</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/02/04/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-03-Block/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/01/28/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-01-%E8%B7%B3%E8%A1%A8%E5%AE%9E%E7%8E%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&text=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-02-memtable&body=Check out this article: http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&name=C++从零开始实现LSM-Tree-KV存储-02-memtable&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&t=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-MemTable%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.</span> <span class="toc-text">1 MemTable实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原理剖析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 代码实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%BF%AD%E4%BB%A3%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 迭代器实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Merge%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Merge原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 代码实现</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-02-memtable
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-01-31T01:22:10.000Z" class="dt-published" itemprop="datePublished">2025-01-31</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一小节实现 <code>MemTable</code> 部分, 其实内容很少, 就是对 之前实现的 <code>SkipList</code> 的简单封装。</p>
+<p>代码仓库: <a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">https://github.com/Vanilla-Beauty/tiny-lsm</a></p>
+<h1 id="1-MemTable实现"><a href="#1-MemTable实现" class="headerlink" title="1 MemTable实现"></a>1 MemTable实现</h1><h2 id="1-1-原理剖析"><a href="#1-1-原理剖析" class="headerlink" title="1.1 原理剖析"></a>1.1 原理剖析</h2><p>首先复习下<code>MemTable</code>和之前的<code>SkipList</code>的关系:</p>
+<p><img src="/../../../images/Proj/LSM/MemTable.drawio.png" alt="MemTable"></p>
+<p>内存中的整个<code>MemTable</code>包含多份<code>SkipList</code>, 其中只有一份是可以写入的<code>SkipList</code>, 当<code>SkipList</code>大小达到指定阈值后被冻结成只读状态, 冻结后的<code>SkipList</code>按照冻结时间进行排序, 先冻结的在后, 后冻结的在前（其实只要保证查询是先冻结的<code>SkipList</code>优先即可）。</p>
+<p>另一方面，由于<code>LSM Tree</code>只能追加写入, 因此实际上用插入一个空值表示删除操作。这也是我们为什么在之前的<code>SkipList::get</code>中使用了<code>std::optional</code>, 因为这样同时能表示<code>key</code>在物理上不存在和<code>key</code>在逻辑上被不存在(被删除): <code>None</code>表示这个<code>key</code>从来没有存在过, 而<code>std::optional</code>中值为空表示之前的删除记录。</p>
+<h2 id="1-2-代码实现"><a href="#1-2-代码实现" class="headerlink" title="1.2 代码实现"></a>1.2 代码实现</h2><p>因此对之前的<code>SkipList</code>简单包装即可完成基础的 <code>MemTable</code></p>
+<ul>
+<li>首先定义如下:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MemTableIterator</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MemTable</span> &#123;</span><br><span class="line">  <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">MemTableIterator</span>; <span class="comment">// 后续会讲解</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="built_in">MemTable</span>();</span><br><span class="line">  ~<span class="built_in">MemTable</span>();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">put</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value)</span></span>;</span><br><span class="line">  <span class="function">std::optional&lt;std::string&gt; <span class="title">get</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">remove</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">clear</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">flush</span><span class="params">()</span></span>; <span class="comment">// 需要实现 sst</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">frozen_cur_table</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">get_cur_size</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">get_frozen_size</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">get_total_size</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function">MemTableIterator <span class="title">begin</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function">MemTableIterator <span class="title">end</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  std::shared_ptr&lt;SkipList&gt; current_table; <span class="comment">// 活跃 SkipList</span></span><br><span class="line">  std::list&lt;std::shared_ptr&lt;SkipList&gt;&gt; frozen_tables; <span class="comment">// 冻结 SkipList</span></span><br><span class="line">  <span class="type">size_t</span> frozen_bytes; <span class="comment">// 冻结的跳表的大小</span></span><br><span class="line">  std::shared_mutex rx_mtx; <span class="comment">// 以整个 SkipList 为单位的锁</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这里先用读写锁试试, 如果性能不好后续再优化。</p>
+</blockquote>
+<ul>
+<li><code>put</code>就是简单放入空值:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MemTable::put</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(rx_mtx)</span></span>;</span><br><span class="line">  current_table-&gt;<span class="built_in">put</span>(key, value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>get</code>操作会更复杂一些, 在活跃的<code>SkipList</code>中查询失败的话, 需要按顺序查询冻结的<code>SkipList</code>(就近原则):</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::optional&lt;std::string&gt; <span class="title">MemTable::get</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::shared_lock&lt;std::shared_mutex&gt; <span class="title">slock</span><span class="params">(rx_mtx)</span></span>;</span><br><span class="line">  <span class="comment">// 首先检查当前活跃的memtable</span></span><br><span class="line">  <span class="keyword">auto</span> result = current_table-&gt;<span class="built_in">get</span>(key);</span><br><span class="line">  <span class="keyword">if</span> (result.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    <span class="keyword">auto</span> data = result.<span class="built_in">value</span>();</span><br><span class="line">    <span class="keyword">if</span> (!data.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">      <span class="keyword">return</span> data;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 空值表示被删除了</span></span><br><span class="line">      <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果当前memtable中没有找到，检查frozen memtable</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;tabe : frozen_tables) &#123;</span><br><span class="line">    <span class="keyword">auto</span> result = tabe-&gt;<span class="built_in">get</span>(key);</span><br><span class="line">    <span class="keyword">if</span> (result.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">      <span class="keyword">auto</span> data = result.<span class="built_in">value</span>();</span><br><span class="line">      <span class="keyword">if</span> (!data.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">        <span class="keyword">return</span> data;</span><br><span class="line">      &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 空值表示被删除了</span></span><br><span class="line">        <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 都没有找到，返回空</span></span><br><span class="line">  <span class="comment">// !!! 目前只实现了内存中的 memtable, 还没有实现 SST</span></span><br><span class="line">  <span class="keyword">return</span> std::<span class="literal">nullopt</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>remove</code>就是插入一个空值:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">MemTable::remove</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(rx_mtx)</span></span>;</span><br><span class="line">  <span class="comment">// 删除的方式是写入空值</span></span><br><span class="line">  current_table-&gt;<span class="built_in">put</span>(key, <span class="string">&quot;&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="2-迭代器实现"><a href="#2-迭代器实现" class="headerlink" title="2 迭代器实现"></a>2 迭代器实现</h1><h2 id="2-1-Merge原理"><a href="#2-1-Merge原理" class="headerlink" title="2.1 Merge原理"></a>2.1 Merge原理</h2><p>迭代器算是这里的一个难点, 因为新的<code>SkipList</code>中的元素会导致旧的<code>SkipList</code>的部分元素失效, 因此不能简单地将不同<code>SkipList</code>的遍历结果拼接起来就完事儿。</p>
+<p>试想下面这个场景：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">SkipList0: (<span class="string">&quot;k1&quot;</span>, <span class="string">&quot;v1&quot;</span>) -&gt; (<span class="string">&quot;k4&quot;</span>, <span class="string">&quot;&quot;</span>) -&gt; (<span class="string">&quot;k5&quot;</span>, <span class="string">&quot;v3&quot;</span>)</span><br><span class="line">SkipList1: (<span class="string">&quot;k2&quot;</span>, <span class="string">&quot;v2&quot;</span>) -&gt; (<span class="string">&quot;k3&quot;</span>, <span class="string">&quot;v3&quot;</span>) -&gt; (<span class="string">&quot;k4&quot;</span>, <span class="string">&quot;v4&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p><code>SkipList0</code>中的<code>(&quot;k4&quot;, &quot;&quot;)</code>表示删除了<code>&quot;k4&quot;</code>, 因此如果我们先消耗了<code>SkipList0</code>的迭代器, 那么<code>SkipList1</code>中就无法获取<code>&quot;k3&quot;</code>的不合法性, 因此需要对不同<code>SkipList</code>的迭代器进行<code>merge</code>操作来删除这些无效的元素。</p>
+<p>这里可以维护一个堆，堆首先根据<code>key</code>排序, 然后根据<code>SkipList id</code>排序, 因此相同的<code>key</code>, 后插入的记录肯定更靠近堆顶(因为<code>SkipList id</code>越小表示其越新), 因此堆顶的某个<code>key</code>一定是整个<code>MemTable</code>中该<code>key</code>的最新记录, 迭代器对该<code>key</code>只需要堆顶的这一个元素, 其余在取出堆顶后即可全部移除(因为首先按照<code>key</code>排序, 所以他们一定连续出现在堆顶)</p>
+<p>其他函数就都很简单了, 这里不列举了, 感兴趣可以看<code>Github</code>源码</p>
+<h2 id="2-2-代码实现"><a href="#2-2-代码实现" class="headerlink" title="2.2 代码实现"></a>2.2 代码实现</h2><ul>
+<li>迭代器定义:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">pragma</span> once</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../skiplist/skiplist.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;memtable.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;queue&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span> <span class="title class_">SearchItem</span> &#123;</span><br><span class="line">  std::string key;</span><br><span class="line">  std::string value;</span><br><span class="line">  <span class="type">int</span> mem_idx;</span><br><span class="line">&#125;; <span class="comment">// 用于在堆(C++中的priority_queue)中排序</span></span><br><span class="line"></span><br><span class="line"><span class="type">bool</span> <span class="built_in">operator</span>&lt;(<span class="type">const</span> SearchItem &amp;a, <span class="type">const</span> SearchItem &amp;b);</span><br><span class="line"><span class="type">bool</span> <span class="keyword">operator</span>&gt;(<span class="type">const</span> SearchItem &amp;a, <span class="type">const</span> SearchItem &amp;b);</span><br><span class="line"><span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> SearchItem &amp;a, <span class="type">const</span> SearchItem &amp;b);</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MemTableIterator</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="built_in">MemTableIterator</span>();</span><br><span class="line">  <span class="built_in">MemTableIterator</span>(<span class="type">const</span> MemTable &amp;memtable);</span><br><span class="line">  std::pair&lt;std::string, std::string&gt; <span class="keyword">operator</span>*() <span class="type">const</span>;</span><br><span class="line">  MemTableIterator &amp;<span class="keyword">operator</span>++();</span><br><span class="line">  MemTableIterator <span class="keyword">operator</span>++(<span class="type">int</span>);</span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> MemTableIterator &amp;other) <span class="type">const</span>;</span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> MemTableIterator &amp;other) <span class="type">const</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  std::priority_queue&lt;SearchItem, std::vector&lt;SearchItem&gt;,</span><br><span class="line">                      std::greater&lt;SearchItem&gt;&gt;</span><br><span class="line">      items;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><code>MemTableIterator</code>中维持着一个堆(<code>priority_queue</code>), 这个堆的堆顶就是当前迭代器的<code>kv</code>, 且必须保证其是有效的, 换言之, 执行<code>next()</code>操作时必须移除堆顶的无效元素(被之前的删除记录删除的元素 &amp;&amp; 本身就是删除记录)</p>
+<ul>
+<li>接下来首先看看<code>MemTableIterator</code>的构造:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">MemTableIterator::<span class="built_in">MemTableIterator</span>(<span class="type">const</span> MemTable &amp;memtable) &#123;</span><br><span class="line">  <span class="keyword">auto</span> cur_table = memtable.current_table;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> iter = cur_table-&gt;<span class="built_in">begin</span>(); iter != cur_table-&gt;<span class="built_in">end</span>(); iter++) &#123;</span><br><span class="line">    items.<span class="built_in">push</span>(SearchItem&#123;iter.<span class="built_in">get_key</span>(), iter.<span class="built_in">get_value</span>(), <span class="number">0</span>&#125;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">int</span> level = <span class="number">1</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> ft = memtable.frozen_tables.<span class="built_in">begin</span>();</span><br><span class="line">       ft != memtable.frozen_tables.<span class="built_in">end</span>(); ft++) &#123;</span><br><span class="line">    <span class="keyword">auto</span> table = *ft;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> iter = table-&gt;<span class="built_in">begin</span>(); iter != table-&gt;<span class="built_in">end</span>(); iter++) &#123;</span><br><span class="line">      items.<span class="built_in">push</span>(SearchItem&#123;iter.<span class="built_in">get_key</span>(), iter.<span class="built_in">get_value</span>(), level&#125;);</span><br><span class="line">    &#125;</span><br><span class="line">    level++;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (!items.<span class="built_in">empty</span>() &amp;&amp; items.<span class="built_in">top</span>().value.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="comment">// 如果当前元素的value为空，则说明该元素已经被删除，需要从优先队列中删除</span></span><br><span class="line">    <span class="keyword">auto</span> del_key = items.<span class="built_in">top</span>().key;</span><br><span class="line">    <span class="keyword">while</span> (!items.<span class="built_in">empty</span>() &amp;&amp; items.<span class="built_in">top</span>().key == del_key) &#123;</span><br><span class="line">      items.<span class="built_in">pop</span>();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>目前也没有使用什么优化手段, 直接遍历整个底层链表, 将其放入堆中。需要注意的是，因为当前堆顶可能本身就是一个删除记录(<code>value</code>是空值), 因此需要先从堆顶检查是否<code>value</code>为空, 如果是, 需要继续删除所有该<code>key</code>的堆元素</p>
+<ul>
+<li>接下来是最重要的迭代器自增操作:</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">MemTableIterator &amp;MemTableIterator::<span class="keyword">operator</span>++() &#123;</span><br><span class="line">  <span class="keyword">if</span> (items.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">return</span> *<span class="keyword">this</span>; <span class="comment">// 处理空队列情况</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">auto</span> old_item = items.<span class="built_in">top</span>();</span><br><span class="line">  items.<span class="built_in">pop</span>();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 删除与旧元素key相同的元素</span></span><br><span class="line">  <span class="keyword">while</span> (!items.<span class="built_in">empty</span>() &amp;&amp; items.<span class="built_in">top</span>().key == old_item.key) &#123;</span><br><span class="line">    items.<span class="built_in">pop</span>();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 处理被删除的元素</span></span><br><span class="line">  <span class="keyword">while</span> (!items.<span class="built_in">empty</span>() &amp;&amp; items.<span class="built_in">top</span>().value.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">auto</span> del_key = items.<span class="built_in">top</span>().key;</span><br><span class="line">    <span class="keyword">while</span> (!items.<span class="built_in">empty</span>() &amp;&amp; items.<span class="built_in">top</span>().key == del_key) &#123;</span><br><span class="line">      items.<span class="built_in">pop</span>();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>取出一个元素后, 需要删除剩余堆中所有与该元素的<code>key</code>相同的元素。同时类似构造函数中最后对堆顶的检查, 需要检测堆顶元素不为空<code>value</code></p>
+<p>其他函数很简单了, 就不列举了</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-MemTable%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.</span> <span class="toc-text">1 MemTable实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E7%90%86%E5%89%96%E6%9E%90"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原理剖析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 代码实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E8%BF%AD%E4%BB%A3%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 迭代器实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Merge%E5%8E%9F%E7%90%86"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Merge原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 代码实现</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&text=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-02-memtable&body=Check out this article: http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&title=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&name=C++从零开始实现LSM-Tree-KV存储-02-memtable&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/31/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-02-memtable/&t=C++从零开始实现LSM-Tree-KV存储-02-memtable"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

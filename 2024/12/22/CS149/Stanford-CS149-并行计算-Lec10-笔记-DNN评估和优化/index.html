@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一章节的课程内容是关于DNN的评估和优化。虽然课程有2h, 但前面不少是对神经网络的简单介绍, 相信大家或多或少都了解过, 我就直接略过, 直接记录对卷积运算的优化部分。 课程主页: https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 朴素的卷积运算12345678910111213141516float input[IMAGE_BATCH_SIZE][">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化">
+<meta property="og:url" content="http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一章节的课程内容是关于DNN的评估和优化。虽然课程有2h, 但前面不少是对神经网络的简单介绍, 相信大家或多或少都了解过, 我就直接略过, 直接记录对卷积运算的优化部分。 课程主页: https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 朴素的卷积运算12345678910111213141516float input[IMAGE_BATCH_SIZE][">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_example.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_naive.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_block.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/kvlock.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_simd.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_local.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_local_code.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_logic.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_merge.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec10/gemm_merge_api.png">
+<meta property="article:published_time" content="2024-12-22T11:15:20.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.663Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec10/gemm.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/18/%E7%96%91%E9%9A%BE%E6%9D%82%E7%97%87%E5%90%88%E9%9B%86/Ubuntu%E4%B8%8B%E4%B8%8D%E7%94%9F%E4%BA%A7core%20dump%E6%96%87%E4%BB%B6%E5%88%86%E6%9E%90/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&text=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&is_video=false&description=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化&body=Check out this article: http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&name=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&t=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%9C%B4%E7%B4%A0%E7%9A%84%E5%8D%B7%E7%A7%AF%E8%BF%90%E7%AE%97"><span class="toc-number">1.</span> <span class="toc-text">1 朴素的卷积运算</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GEMM%E4%BC%98%E5%8C%96"><span class="toc-number">2.</span> <span class="toc-text">2 GEMM优化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95%E5%88%86%E5%9D%97%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 矩阵乘法分块优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E7%9F%A9%E9%98%B5%E5%88%86%E5%9D%97%E4%BC%98%E5%8C%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础矩阵分块优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%9F%A9%E9%98%B5%E5%88%86%E5%9D%97%E7%9A%84SIMD%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 矩阵分块的SIMD优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B1%80%E9%83%A8%E6%80%A7%E4%BC%98%E5%8C%96"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 局部性优化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%86%85%E5%AD%98%E5%B8%A6%E5%AE%BD%E4%BC%98%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">5 内存带宽优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E9%80%BB%E8%BE%91%E4%B8%8A%E7%9A%84GEMM"><span class="toc-number">4.1.</span> <span class="toc-text">5.1 逻辑上的GEMM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E7%AE%97%E5%AD%90%E5%90%88%E5%B9%B6"><span class="toc-number">4.2.</span> <span class="toc-text">5.2 算子合并</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-22T11:15:20.000Z" class="dt-published" itemprop="datePublished">2024-12-22</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/AI/" rel="tag">AI</a>, <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/CUDA/" rel="tag">CUDA</a>, <a class="p-category" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag">深度学习</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一章节的课程内容是关于<code>DNN</code>的评估和优化。虽然课程有2h, 但前面不少是对神经网络的简单介绍, 相信大家或多或少都了解过, 我就直接略过, 直接记录对卷积运算的优化部分。</p>
+<p>课程主页: <a target="_blank" rel="noopener" href="https://gfxcourses.stanford.edu/cs149/fall24">https://gfxcourses.stanford.edu/cs149/fall24</a></p>
+<h1 id="1-朴素的卷积运算"><a href="#1-朴素的卷积运算" class="headerlink" title="1 朴素的卷积运算"></a>1 朴素的卷积运算</h1><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> input[IMAGE_BATCH_SIZE][INPUT_HEIGHT][INPUT_WIDTH][INPUT_DEPTH]; <span class="comment">// input activations</span></span><br><span class="line"><span class="type">float</span> output[IMAGE_BATCH_SIZE][INPUT_HEIGHT][INPUT_WIDTH][LAYER_NUM_FILTERS]; <span class="comment">// output activations</span></span><br><span class="line"><span class="type">float</span> layer_weights[LAYER_NUM_FILTERS][LAYER_CONVY][LAYER_CONVX][INPUT_DEPTH];</span><br><span class="line"><span class="type">float</span> layer_biases[LAYER_NUM_FILTERS];</span><br><span class="line"><span class="comment">// assumes convolution stride is 1</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> img=<span class="number">0</span>; img&lt;IMAGE_BATCH_SIZE; img++)</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j=<span class="number">0</span>; j&lt;INPUT_HEIGHT; j++)</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>; i&lt;INPUT_WIDTH; i++)</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> f=<span class="number">0</span>; f&lt;LAYER_NUM_FILTERS; f++) &#123;</span><br><span class="line">                <span class="type">float</span> tmp = layer_biases[LAYER_NUM_FILTERS];</span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> kk=<span class="number">0</span>; kk&lt;INPUT_DEPTH; kk++) <span class="comment">// sum over filter responses of input channels</span></span><br><span class="line">                    <span class="keyword">for</span> (<span class="type">int</span> jj=<span class="number">0</span>; jj&lt;LAYER_FILTER_Y; jj++) <span class="comment">// spatial convolution (Y)</span></span><br><span class="line">                        <span class="keyword">for</span> (<span class="type">int</span> ii=<span class="number">0</span>; ii&lt;LAYER_FILTER_X; ii++) <span class="comment">// spatial convolution (X)</span></span><br><span class="line">                            tmp += layer_weights[f][jj][ii][kk] * input[img][j+jj][i+ii][kk];</span><br><span class="line">                output[img][j][i][f] = tmp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果不使用任何并行计算的知识, 我们的写出的代码应该和上面差不多。但上面的代码存在很多问题, 比如:</p>
+<ol>
+<li>内存访问不连续, 如果矩阵尺寸大, 卷积核移动的过程一定伴随缓存未命中</li>
+<li>内存访问方式复杂, 访问矩阵的元素是按照卷积核的尺寸和位置进行的</li>
+<li>循环层数太多, 不利于并行化</li>
+</ol>
+<h1 id="2-GEMM优化"><a href="#2-GEMM优化" class="headerlink" title="2 GEMM优化"></a>2 GEMM优化</h1><p>为了提高效率，许多深度学习框架将卷积操作转换为矩阵乘法（GEMM）。这种转换通常涉及到对输入数据的重新排列（im2col或im2row），使得原本需要通过多层循环完成的操作可以通过一次或几次高效的矩阵乘法来完成。</p>
+<p><img src="/../../images/CS149/Lec10/gemm.png" alt="gemm"></p>
+<p>以上图单层卷积为例, <code>GEMM</code>的优化就是将卷积核对应的矩阵输入拉平成矩阵的一行, 边缘部分用0填充。</p>
+<p><img src="/../../images/CS149/Lec10/gemm_example.png" alt="gemm_example"></p>
+<p>上图展示的是多通道卷积的情况, 可以看到, 这里复习以下多通道卷积的运算逻辑：</p>
+<ol>
+<li><p><strong>卷积核</strong>：假设我们有一个卷积核 <code>K</code>, 其尺寸为 <code>k x k x C</code>, 其中 <code>C</code> 代表通道数。这个卷积核实际上是由 <code>C</code> 个 <code>k x k</code> 的二维矩阵组成的，每个矩阵对应于输入图像的一个通道。</p>
+</li>
+<li><p><strong>卷积计算</strong>：当这个卷积核应用于输入图像时，它会在每一个位置上分别与输入图像的各个通道进行逐元素乘法，然后将所有通道的结果相加，再加上偏置（如果有的话），最终得到一个单一的标量值。这相当于在每个位置上做了一次三维点积。</p>
+</li>
+<li><p><strong>输出特征图</strong>：如果我们使用了多个卷积核（比如 <code>N</code> 个），那么每个卷积核都会产生一个这样的标量值，从而形成一个 <code>H_out x W_out</code> 的二维矩阵，即一个特征图。因此，如果有 <code>N</code> 个卷积核，我们将得到 <code>N</code> 个这样的特征图，它们一起构成一个 <code>H_out x W_out x N</code> 的三维张量，这就是卷积层的输出。</p>
+</li>
+<li><p><strong>输出通道数</strong>：输出的通道数等于使用的卷积核的数量 <code>N</code>，而不是1。每个卷积核都贡献了一个通道给输出。所以，如果你有64个卷积核，你的输出就会有64个通道。</p>
+</li>
+</ol>
+<p>可以看出， 多通道卷积的访问模式更复杂，计算的元素在内存中实际的分布更远， 因此， 多通道卷积的<code>GEMM</code>优化需要将输入的矩阵拉平成矩阵的一行， 边缘部分用0填充， 这样可以简化数据访问，同时便于并行优化，例如SIMD优化。</p>
+<h1 id="3-矩阵乘法分块优化"><a href="#3-矩阵乘法分块优化" class="headerlink" title="3 矩阵乘法分块优化"></a>3 矩阵乘法分块优化</h1><h2 id="3-1-基础矩阵分块优化"><a href="#3-1-基础矩阵分块优化" class="headerlink" title="3.1 基础矩阵分块优化"></a>3.1 基础矩阵分块优化</h2><p>即使我们使用<code>GEMM</code>优化， 对于大尺度的矩阵来说，还有一个问题没有解决， 先看一个常规的矩阵乘法实现：</p>
+<p><img src="/../../images/CS149/Lec10/gemm_naive.png" alt="gemm_naive"></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> A[M][K];</span><br><span class="line"><span class="type">float</span> B[K][N];</span><br><span class="line"><span class="type">float</span> C[M][N];</span><br><span class="line"><span class="comment">// compute C += A * B</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel for</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> j=<span class="number">0</span>; j&lt;M; j++)</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>; i&lt;N; i++)</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> k=<span class="number">0</span>; k&lt;K; k++)</span><br><span class="line">            C[j][i] += A[j][k] * B[k][i];</span><br></pre></td></tr></table></figure>
+
+<p>这段代码的缺点显而易见:</p>
+<ol>
+<li>缺乏局部性的利用, 运算一个C中的元素需要访问整行A和整列B</li>
+<li>计算C中下一个元素时, 上一个元素的缓存数据基本上都失效了</li>
+</ol>
+<p>为了解决这个问题, 我们可以将矩阵分块, 将矩阵分成多个小块, 每个小块的运算可以并行化, 这样可以提高计算效率。</p>
+<p><img src="/../../images/CS149/Lec10/gemm_block.png" alt="gemm_block"></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> A[M][K];</span><br><span class="line"><span class="type">float</span> B[K][N];</span><br><span class="line"><span class="type">float</span> C[M][N];</span><br><span class="line"><span class="comment">// compute C += A * B</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> omp parallel for</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> jblock=<span class="number">0</span>; jblock&lt;M; jblock+=BLOCKSIZE_J)</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> iblock=<span class="number">0</span>; iblock&lt;N; iblock+=BLOCKSIZE_I)</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> kblock=<span class="number">0</span>; kblock&lt;K; kblock+=BLOCKSIZE_K)</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> j=<span class="number">0</span>; j&lt;BLOCKSIZE_J; j++)</span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> i=<span class="number">0</span>; i&lt;BLOCKSIZE_I; i++)</span><br><span class="line">                    <span class="keyword">for</span> (<span class="type">int</span> k=<span class="number">0</span>; k&lt;BLOCKSIZE_K; k++)</span><br><span class="line">                        C[jblock+j][iblock+i] += A[jblock+j][kblock+k] * B[kblock+k][iblock+i];</span><br></pre></td></tr></table></figure>
+
+<p>此时我们以块为单位进行计算, <code>jblock</code>和<code>iblock</code>是块的索引, <code>j</code>和<code>i</code>是块内的索引, <code>kblock</code>是计算C中的块所需要A和B矩阵中快内的索引。</p>
+<p>这里尤其需要注意一下 <code>kblock</code>, 我在图中对<code>kblock</code>的索引进行了标注, 可以看到, 在计算C中的块时, 需要访问A和B矩阵中对应的块, 因此, <code>kblock</code>的索引需要从0开始, 到<code>K</code>结束。</p>
+<p><img src="/../../images/CS149/Lec10/kvlock.png" alt="kvlock"></p>
+<h2 id="3-2-矩阵分块的SIMD优化"><a href="#3-2-矩阵分块的SIMD优化" class="headerlink" title="3.2 矩阵分块的SIMD优化"></a>3.2 矩阵分块的SIMD优化</h2><p>有了之前矩阵分块的优化, 我们就可以将矩阵分块, 每个小块的运算可以并行化, 这样可以提高计算效率, 一个典型的<code>SIMD</code>优化的思路是:</p>
+<p><img src="/../../images/CS149/Lec10/gemm_simd.png" alt="gemm_simd"></p>
+<p>这里的思路就是, A中的某一行的一个元素, 会与B中的某一行的多个元素相乘, 结果会累加到C中的对应行的不同列中, 这样就可以利用<code>SIMD</code>指令进行优化, 一次性将B中的行数据加载到寄存器中, 然后与A中的的这个元素乘法运算, 最后将结果累加到C中的对应行中。</p>
+<h2 id="3-3-局部性优化"><a href="#3-3-局部性优化" class="headerlink" title="3.3 局部性优化"></a>3.3 局部性优化</h2><p>由于B中的元素是按照列进行访问的, 但内存中是以行作为连续的空间存储的, 因此可以将B进行转置, 这样B中的元素就是按照行进行访问的, 这样就可以利用内存的连续性进行优化。</p>
+<p><img src="/../../images/CS149/Lec10/gemm_local.png" alt="gemm_local"></p>
+<p>转置后仍然可以使用<code>SIMD</code>优化:</p>
+<p><img src="/../../images/CS149/Lec10/gemm_local_code.png" alt="gemm_local_code"></p>
+<h1 id="5-内存带宽优化"><a href="#5-内存带宽优化" class="headerlink" title="5 内存带宽优化"></a>5 内存带宽优化</h1><h2 id="5-1-逻辑上的GEMM"><a href="#5-1-逻辑上的GEMM" class="headerlink" title="5.1 逻辑上的GEMM"></a>5.1 逻辑上的<code>GEMM</code></h2><p><code>GEMM</code>是将卷积核中的元素拉平成矩阵的一行, 边缘部分用0填充, 然后与输入矩阵进行矩阵乘法运算, 但是如果矩阵特别大, 且运算的次数特别多, 构造一个这样的全新矩阵陷入很满意必要, 因此可以直接在逻辑上构造一个用于计算的矩阵, 但访问矩阵元素时, 按照卷积核的尺寸和位置到原始矩阵中进行访问。</p>
+<p><img src="/../../images/CS149/Lec10/gemm_logic.png" alt="gemm_logic"></p>
+<h2 id="5-2-算子合并"><a href="#5-2-算子合并" class="headerlink" title="5.2 算子合并"></a>5.2 算子合并</h2><p>深度学习中, 计算的特征层不断地通过连接的<code>layer</code>作为下一个结构的输入, 最经典的组合包括:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Conv2d + BatchNorm + ReLU</span><br><span class="line">Conv2d + ReLU</span><br><span class="line">Conv2d + BatchNorm</span><br><span class="line">Self-Attention + Add + LayerNorm</span><br></pre></td></tr></table></figure>
+
+<p>深度学习框架中有很多算子, 比如<code>BatchNorm</code>, <code>ReLU</code>, <code>LayerNorm</code>等, 这些算子并不涉及复杂的矩阵运算, 并且基本上都可以在原始矩阵中完成原位操作。但是对于过大的矩阵，访问整个矩阵的每个元素本身就是比较耗时的操作，因此，将这些算子合并到类似<code>Conv2d</code>的算子中，可以减少内存访问的次数，提高计算效率。</p>
+<p><img src="/../../images/CS149/Lec10/gemm_merge.png" alt="gemm_merge"></p>
+<p>我们常用的<code>pytorch</code>或<code>tensorflow</code>中, 提供了非常的多的算子合并的<code>api</code>:</p>
+<p><img src="/../../images/CS149/Lec10/gemm_merge_api.png" alt="gemm_merge_api"></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%9C%B4%E7%B4%A0%E7%9A%84%E5%8D%B7%E7%A7%AF%E8%BF%90%E7%AE%97"><span class="toc-number">1.</span> <span class="toc-text">1 朴素的卷积运算</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GEMM%E4%BC%98%E5%8C%96"><span class="toc-number">2.</span> <span class="toc-text">2 GEMM优化</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%9F%A9%E9%98%B5%E4%B9%98%E6%B3%95%E5%88%86%E5%9D%97%E4%BC%98%E5%8C%96"><span class="toc-number">3.</span> <span class="toc-text">3 矩阵乘法分块优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E7%9F%A9%E9%98%B5%E5%88%86%E5%9D%97%E4%BC%98%E5%8C%96"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础矩阵分块优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%9F%A9%E9%98%B5%E5%88%86%E5%9D%97%E7%9A%84SIMD%E4%BC%98%E5%8C%96"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 矩阵分块的SIMD优化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%B1%80%E9%83%A8%E6%80%A7%E4%BC%98%E5%8C%96"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 局部性优化</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%86%85%E5%AD%98%E5%B8%A6%E5%AE%BD%E4%BC%98%E5%8C%96"><span class="toc-number">4.</span> <span class="toc-text">5 内存带宽优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E9%80%BB%E8%BE%91%E4%B8%8A%E7%9A%84GEMM"><span class="toc-number">4.1.</span> <span class="toc-text">5.1 逻辑上的GEMM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E7%AE%97%E5%AD%90%E5%90%88%E5%B9%B6"><span class="toc-number">4.2.</span> <span class="toc-text">5.2 算子合并</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&text=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&is_video=false&description=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化&body=Check out this article: http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&title=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&name=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/&t=Stanford-CS149-并行计算-Lec10-笔记-DNN评估和优化"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

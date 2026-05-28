@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这节课针对之前实现的LSM-Tree设计布隆过滤器来减少无效的磁盘IO 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 欢迎点个Star 1 布隆过滤器简介1.1 原理介绍布隆过滤器是一种 probabilistic 数据结构，用于判断一个元素是否在集合中">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器">
+<meta property="og:url" content="http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这节课针对之前实现的LSM-Tree设计布隆过滤器来减少无效的磁盘IO 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 欢迎点个Star 1 布隆过滤器简介1.1 原理介绍布隆过滤器是一种 probabilistic 数据结构，用于判断一个元素是否在集合中">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/bloom-example.png">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/bloom-compute.png">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/sst-with-bloom.png">
+<meta property="article:published_time" content="2025-03-15T08:57:44.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.669Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/bloom-example.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/02/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-15-%E4%BA%8B%E5%8A%A1%E4%B8%8EMVCC%E8%AE%BE%E8%AE%A11/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/03/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-13-%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&text=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器&body=Check out this article: http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&name=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&t=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 布隆过滤器简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E7%90%86%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原理介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%A1%88%E4%BE%8B%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 案例介绍</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-LSM-Tree%E4%B8%AD%E7%9A%84%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">2 LSM-Tree中的布隆过滤器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 布隆过滤器代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 设计思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%A4%B4%E6%96%87%E4%BB%B6"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 头文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 构造函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-%E6%B7%BB%E5%8A%A0%E8%AE%B0%E5%BD%95"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 添加记录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-4-%E5%88%A4%E6%96%ADkey%E5%90%A6%E5%AD%98%E5%9C%A8"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 判断key否存在</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-5-%E7%BC%96%E8%A7%A3%E7%A0%81"><span class="toc-number">3.2.5.</span> <span class="toc-text">3.2.5 编解码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-LSM-Tree%E5%BC%95%E5%85%A5%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 LSM-Tree引入布隆过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E7%BC%96%E7%A0%81"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 布隆过滤器的编码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E8%A7%A3%E7%A0%81"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 布隆过滤器的解码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 布隆过滤器的使用</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-03-15T08:57:44.000Z" class="dt-published" itemprop="datePublished">2025-03-15</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这节课针对之前实现的<code>LSM-Tree</code>设计布隆过滤器来减少无效的磁盘IO</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a></p>
+<p>欢迎点个Star</p>
+<h1 id="1-布隆过滤器简介"><a href="#1-布隆过滤器简介" class="headerlink" title="1 布隆过滤器简介"></a>1 布隆过滤器简介</h1><h2 id="1-1-原理介绍"><a href="#1-1-原理介绍" class="headerlink" title="1.1 原理介绍"></a>1.1 原理介绍</h2><p>布隆过滤器是一种 <code>probabilistic</code> 数据结构，用于判断一个元素是否在集合中。它通过一个概率的方式来判断，即使集合中存在一个元素，但是布隆过滤器也依然可以判断出来。</p>
+<p>布隆过滤器的核心思想是使用一个位数组和多个哈希函数来表示一个集合。它的特点是可以高效地判断某个元素是否“可能存在”或“确定不存在”，但它有一定的误判率，即可能会误判某个不存在的元素为“可能存在”。其实现方式如下:</p>
+<ol>
+<li><strong>初始化位数组</strong>：布隆过滤器使用一个固定大小的位数组（如长度为 <code>m</code>），所有位初始化为 <code>0</code>。</li>
+<li><strong>插入元素时在位数组记录</strong>：当插入一个元素时，使用 <code>k</code> 个独立的哈希函数对该元素进行哈希运算，得到 <code>k</code> 个哈希值（每个值对应位数组的索引）。将这些索引位置的位设置为 <code>1</code>。</li>
+<li><strong>查询元素时在位数组校验</strong>：当查询一个元素是否存在时，同样使用 <code>k</code> 个哈希函数对该元素进行哈希运算，得到 <code>k</code> 个哈希值。如果这些哈希值对应的位数组中的所有位都为 <code>1</code>，则判断该元素“可能存在”；如果有任意一位为 <code>0</code>，则判断该元素“确定不存在”。</li>
+</ol>
+<p><strong>特点</strong></p>
+<ul>
+<li><strong>优点</strong>：布隆过滤器的空间效率和查询效率非常高，适合处理大规模数据。</li>
+<li><strong>缺点</strong>：存在一定的误判率（即可能会误判不存在的元素为“可能存在”），并且无法删除元素（删除可能会影响其他元素的判断）。</li>
+</ul>
+<h2 id="1-2-案例介绍"><a href="#1-2-案例介绍" class="headerlink" title="1.2 案例介绍"></a>1.2 案例介绍</h2><p>下面我们通过一个案例来看看布隆过滤器的运行机制:</p>
+<p><img src="/../../../images/Proj/LSM/bloom-example.png" alt="bloom-example"></p>
+<blockquote>
+<p>案例图片来源自 <a target="_blank" rel="noopener" href="https://blog.csdn.net/Zyw907155124/article/details/135556557">https://blog.csdn.net/Zyw907155124/article/details/135556557</a>, 侵删</p>
+</blockquote>
+<ol>
+<li>在新增一个记录时(<code>put/insert</code>等), 通过预定义数量(案例图片中是2个)的哈希函数对<code>key</code>进行哈希, 将哈希值对位数组的长度取模, 将结果作为索引, 将索引位置的位设置为1</li>
+<li>在查询时(<code>get</code>), 通过预定义数量(案例图片中是2个)的哈希函数对<code>key</code>进行哈希, 将哈希值对位数组的长度取模, 将结果作为索引, 如果索引位置的位为1, 则认为该<code>key</code>可能存在, 否则认为该<code>key</code>不存在</li>
+</ol>
+<h1 id="2-LSM-Tree中的布隆过滤器"><a href="#2-LSM-Tree中的布隆过滤器" class="headerlink" title="2 LSM-Tree中的布隆过滤器"></a>2 LSM-Tree中的布隆过滤器</h1><p>尽管我们之前为整个<code>LSM-Tree</code>设计了<code>bock cache</code>, 但面对大量不存在于<code>LSM-Tree</code>中的<code>key</code>时, <code>bock cache</code>会频繁的进行磁盘IO, 这将导致<code>LSM-Tree</code>的性能降低。</p>
+<blockquote>
+<p>这里的原理类似后端八股文中<code>Redis</code>常问的缓存击穿、缓存穿透、缓存雪崩，而设置布隆过滤器就是一个景点的解决方案，背过八股的同学们应该会很熟悉。</p>
+</blockquote>
+<p>因此，我们可以在编码<code>SST</code>文件时，为每个<code>SST</code>文件都设计一个<code>bloom filter</code>, 在其中记录整个<code>SST</code>中的所有<code>key</code>, 并将其持久化到文件系统中, 在读取文件时, 相应的布隆过滤器部分也需要被解码并加载到内存中。这样当查询时, 我们只需要判断<code>key</code>是否存在于<code>bloom filter</code>中, 如果不存在, 则认为该<code>key</code>不存在于<code>LSM-Tree</code>, 否则, 我们需要继续在<code>LSM-Tree</code>中查找。这样以来, 我们就可以避免大量的无效访问。</p>
+<h1 id="3-布隆过滤器代码实现"><a href="#3-布隆过滤器代码实现" class="headerlink" title="3 布隆过滤器代码实现"></a>3 布隆过滤器代码实现</h1><h2 id="3-1-设计思路"><a href="#3-1-设计思路" class="headerlink" title="3.1 设计思路"></a>3.1 设计思路</h2><p>现在我们就可以为我们的<code>LSM-Tree</code>设计一个布隆过滤器了，我们需要完成如下的功能：</p>
+<ol>
+<li>能够在初始化时通过假阳性率和键的数量来确定哈希函数的数量和位数组的长度</li>
+<li>支持编码与解码</li>
+</ol>
+<p>对于<code>通过假阳性率和键的数量来确定哈希函数的数量和位数组的长度</code>, 我们可以按照指定的公式求取, 但问题在于我们是不知道哈希函数的数量的, 难道我们要手动写很多个哈希函数吗?</p>
+<p>我们可以采用这样的方案: 只写2个哈希函数, 通过对这两个哈希函数的线性组合构造新的哈希函数</p>
+<h2 id="3-2-代码实现"><a href="#3-2-代码实现" class="headerlink" title="3.2 代码实现"></a>3.2 代码实现</h2><h3 id="3-2-1-头文件"><a href="#3-2-1-头文件" class="headerlink" title="3.2.1 头文件"></a>3.2.1 头文件</h3><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BloomFilter</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// 构造函数，初始化布隆过滤器</span></span><br><span class="line">  <span class="comment">// expected_elements: 预期插入的元素数量</span></span><br><span class="line">  <span class="comment">// false_positive_rate: 允许的假阳性率</span></span><br><span class="line">  <span class="built_in">BloomFilter</span>();</span><br><span class="line">  <span class="built_in">BloomFilter</span>(<span class="type">size_t</span> expected_elements, <span class="type">double</span> false_positive_rate);</span><br><span class="line"></span><br><span class="line">  <span class="built_in">BloomFilter</span>(<span class="type">size_t</span> expected_elements, <span class="type">double</span> false_positive_rate,</span><br><span class="line">              <span class="type">size_t</span> num_bits);</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">add</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果key可能存在于布隆过滤器中，返回true；否则返回false</span></span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">possibly_contains</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 清空布隆过滤器</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">clear</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">std::vector&lt;<span class="type">uint8_t</span>&gt; <span class="title">encode</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function"><span class="type">static</span> BloomFilter <span class="title">decode</span><span class="params">(<span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt; &amp;data)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="comment">// 布隆过滤器的位数组大小</span></span><br><span class="line">  <span class="type">size_t</span> expected_elements_;</span><br><span class="line">  <span class="comment">// 允许的假阳性率</span></span><br><span class="line">  <span class="type">double</span> false_positive_rate_;</span><br><span class="line">  <span class="type">size_t</span> num_bits_;</span><br><span class="line">  <span class="comment">// 哈希函数的数量</span></span><br><span class="line">  <span class="type">size_t</span> num_hashes_;</span><br><span class="line">  <span class="comment">// 布隆过滤器的位数组</span></span><br><span class="line">  std::vector&lt;<span class="type">bool</span>&gt; bits_;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="comment">// 第一个哈希函数</span></span><br><span class="line">  <span class="comment">// 返回值: 哈希值</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">hash1</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 第二个哈希函数</span></span><br><span class="line">  <span class="comment">// 返回值: 哈希值</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">hash2</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">hash</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">size_t</span> idx)</span> <span class="type">const</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-2-构造函数"><a href="#3-2-2-构造函数" class="headerlink" title="3.2.2 构造函数"></a>3.2.2 构造函数</h3><p>构造函数就是计算需要的哈希函数数量和位数组大小:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">BloomFilter::<span class="built_in">BloomFilter</span>()&#123;&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 构造函数，初始化布隆过滤器</span></span><br><span class="line"><span class="comment">// expected_elements: 预期插入的元素数量</span></span><br><span class="line"><span class="comment">// false_positive_rate: 允许的假阳性率</span></span><br><span class="line">BloomFilter::<span class="built_in">BloomFilter</span>(<span class="type">size_t</span> expected_elements, <span class="type">double</span> false_positive_rate)</span><br><span class="line">    : <span class="built_in">expected_elements_</span>(expected_elements),</span><br><span class="line">      <span class="built_in">false_positive_rate_</span>(false_positive_rate) &#123;</span><br><span class="line">  <span class="comment">// 计算布隆过滤器的位数组大小</span></span><br><span class="line">  <span class="type">double</span> m = -<span class="built_in">static_cast</span>&lt;<span class="type">double</span>&gt;(expected_elements) *</span><br><span class="line">             std::<span class="built_in">log</span>(false_positive_rate) / std::<span class="built_in">pow</span>(std::<span class="built_in">log</span>(<span class="number">2</span>), <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line">  num_bits_ = <span class="built_in">static_cast</span>&lt;<span class="type">size_t</span>&gt;(std::<span class="built_in">ceil</span>(m));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 计算哈希函数的数量</span></span><br><span class="line">  num_hashes_ =</span><br><span class="line">      <span class="built_in">static_cast</span>&lt;<span class="type">size_t</span>&gt;(std::<span class="built_in">ceil</span>(m / expected_elements * std::<span class="built_in">log</span>(<span class="number">2</span>)));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化位数组</span></span><br><span class="line">  bits_.<span class="built_in">resize</span>(num_bits_, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>构造函数中, 假阳性率、键值对数量、哈希函数数量、位数组数量间的关系可以通过下面的公式计算：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">double</span> m = -<span class="built_in">static_cast</span>&lt;<span class="type">double</span>&gt;(expected_elements) *</span><br><span class="line">           std::<span class="built_in">log</span>(false_positive_rate) / std::<span class="built_in">pow</span>(std::<span class="built_in">log</span>(<span class="number">2</span>), <span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+<p>也就是:</p>
+<p><img src="/../../../images/Proj/LSM/bloom-compute.png" alt="bloom-compute"></p>
+<blockquote>
+<p>这里的公式推导不介绍了, 就是个数学问题</p>
+</blockquote>
+<h3 id="3-2-3-添加记录"><a href="#3-2-3-添加记录" class="headerlink" title="3.2.3 添加记录"></a>3.2.3 添加记录</h3><p>添加记录时, 我们根据哈希函数的序号, 使用2个不同的哈希函数的线性组合来构造一个新的哈希函数计算位数组的索引:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">BloomFilter::add</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 对每个哈希函数计算哈希值，并将对应位置的位设置为true</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; num_hashes_; ++i) &#123;</span><br><span class="line">    bits_[<span class="built_in">hash</span>(key, i)] = <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">BloomFilter::hash1</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  std::hash&lt;std::string&gt; hasher;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">hasher</span>(key);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">BloomFilter::hash2</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  std::hash&lt;std::string&gt; hasher;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">hasher</span>(key + <span class="string">&quot;salt&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">BloomFilter::hash</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">size_t</span> idx)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="keyword">auto</span> h1 = <span class="built_in">hash1</span>(key);</span><br><span class="line">  <span class="keyword">auto</span> h2 = <span class="built_in">hash2</span>(key);</span><br><span class="line">  <span class="keyword">return</span> (h1 + idx * h2) % num_bits_;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-4-判断key否存在"><a href="#3-2-4-判断key否存在" class="headerlink" title="3.2.4 判断key否存在"></a>3.2.4 判断key否存在</h3><p>布隆过滤器检查<code>key</code>是否存在时, 我们只需要判断哈希函数的线性组合的计算结果对应的位数组中的位是否都为<code>true</code>即可:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  如果key可能存在于布隆过滤器中，返回true；否则返回false</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">BloomFilter::possibly_contains</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 对每个哈希函数计算哈希值，检查对应位置的位是否都为true</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; num_hashes_; ++i) &#123;</span><br><span class="line">    <span class="keyword">auto</span> bit_idx = <span class="built_in">hash</span>(key, i);</span><br><span class="line">    <span class="keyword">if</span> (!bits_[bit_idx]) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-5-编解码"><a href="#3-2-5-编解码" class="headerlink" title="3.2.5 编解码"></a>3.2.5 编解码</h3><p>这里编解码在逻辑上也非常简单, 但在<code>C++</code>语法上有一个坑需要注意:</p>
+<p><code>CPP</code>的<code>std::vector&lt;bool&gt;</code>是以<code>bit</code>为基础操作的, 也就是说假设有下面的代码:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::vector&lt;<span class="type">bool</span>&gt; <span class="title">bits</span><span class="params">(<span class="number">8</span>, <span class="literal">false</span>)</span></span>;</span><br><span class="line">bits[<span class="number">0</span>] = <span class="literal">true</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>[0]</code>表示对第一个<code>bit</code>进行操作, 而不是对第一个<code>byte</code>进行操作!!!</p>
+<p>因此, 这里编解码时, 需要额外确保字节的对其:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 编码布隆过滤器为 std::vector&lt;uint8_t&gt;</span></span><br><span class="line"><span class="function">std::vector&lt;<span class="type">uint8_t</span>&gt; <span class="title">BloomFilter::encode</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  std::vector&lt;<span class="type">uint8_t</span>&gt; data;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码 expected_elements_</span></span><br><span class="line">  data.<span class="built_in">insert</span>(data.<span class="built_in">end</span>(),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;expected_elements_),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;expected_elements_) +</span><br><span class="line">                  <span class="built_in">sizeof</span>(expected_elements_));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码 false_positive_rate_</span></span><br><span class="line">  data.<span class="built_in">insert</span>(data.<span class="built_in">end</span>(),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;false_positive_rate_),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;false_positive_rate_) +</span><br><span class="line">                  <span class="built_in">sizeof</span>(false_positive_rate_));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码 num_bits_</span></span><br><span class="line">  data.<span class="built_in">insert</span>(data.<span class="built_in">end</span>(), <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;num_bits_),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;num_bits_) +</span><br><span class="line">                  <span class="built_in">sizeof</span>(num_bits_));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码 num_hashes_</span></span><br><span class="line">  data.<span class="built_in">insert</span>(data.<span class="built_in">end</span>(), <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;num_hashes_),</span><br><span class="line">              <span class="built_in">reinterpret_cast</span>&lt;<span class="type">const</span> <span class="type">uint8_t</span> *&gt;(&amp;num_hashes_) +</span><br><span class="line">                  <span class="built_in">sizeof</span>(num_hashes_));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码 bits_</span></span><br><span class="line">  <span class="type">size_t</span> num_bytes = (num_bits_ + <span class="number">7</span>) / <span class="number">8</span>; <span class="comment">// 向上取整以对齐字节</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; num_bytes; ++i) &#123;</span><br><span class="line">    <span class="type">uint8_t</span> byte = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; <span class="number">8</span>; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> (i * <span class="number">8</span> + j &lt; num_bits_) &#123;</span><br><span class="line">        byte |= (bits_[i * <span class="number">8</span> + j] &lt;&lt; j);</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    data.<span class="built_in">push_back</span>(byte);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> data;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 从 std::vector&lt;uint8_t&gt; 解码布隆过滤器</span></span><br><span class="line"><span class="function">BloomFilter <span class="title">BloomFilter::decode</span><span class="params">(<span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt; &amp;data)</span> </span>&#123;</span><br><span class="line">  <span class="type">size_t</span> index = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解码 expected_elements_</span></span><br><span class="line">  <span class="type">size_t</span> expected_elements;</span><br><span class="line">  std::<span class="built_in">memcpy</span>(&amp;expected_elements, &amp;data[index], <span class="built_in">sizeof</span>(expected_elements));</span><br><span class="line">  index += <span class="built_in">sizeof</span>(expected_elements);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解码 false_positive_rate_</span></span><br><span class="line">  <span class="type">double</span> false_positive_rate;</span><br><span class="line">  std::<span class="built_in">memcpy</span>(&amp;false_positive_rate, &amp;data[index], <span class="built_in">sizeof</span>(false_positive_rate));</span><br><span class="line">  index += <span class="built_in">sizeof</span>(false_positive_rate);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解码 num_bits_</span></span><br><span class="line">  <span class="type">size_t</span> num_bits;</span><br><span class="line">  std::<span class="built_in">memcpy</span>(&amp;num_bits, &amp;data[index], <span class="built_in">sizeof</span>(num_bits));</span><br><span class="line">  index += <span class="built_in">sizeof</span>(num_bits);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解码 num_hashes_</span></span><br><span class="line">  <span class="type">size_t</span> num_hashes;</span><br><span class="line">  std::<span class="built_in">memcpy</span>(&amp;num_hashes, &amp;data[index], <span class="built_in">sizeof</span>(num_hashes));</span><br><span class="line">  index += <span class="built_in">sizeof</span>(num_hashes);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 解码 bits_</span></span><br><span class="line">  <span class="function">std::vector&lt;<span class="type">bool</span>&gt; <span class="title">bits</span><span class="params">(num_bits, <span class="literal">false</span>)</span></span>;</span><br><span class="line">  <span class="type">size_t</span> num_bytes = (num_bits + <span class="number">7</span>) / <span class="number">8</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; num_bytes; ++i) &#123;</span><br><span class="line">    <span class="type">uint8_t</span> byte = data[index++];</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; <span class="number">8</span>; ++j) &#123;</span><br><span class="line">      <span class="keyword">if</span> (i * <span class="number">8</span> + j &lt; num_bits) &#123;</span><br><span class="line">        bits[i * <span class="number">8</span> + j] = (byte &gt;&gt; j) &amp; <span class="number">1</span>;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  BloomFilter bf;</span><br><span class="line">  bf.expected_elements_ = expected_elements;</span><br><span class="line">  bf.false_positive_rate_ = false_positive_rate;</span><br><span class="line">  bf.num_bits_ = num_bits;</span><br><span class="line">  bf.num_hashes_ = num_hashes;</span><br><span class="line">  bf.bits_ = bits;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> bf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-LSM-Tree引入布隆过滤器"><a href="#4-LSM-Tree引入布隆过滤器" class="headerlink" title="4 LSM-Tree引入布隆过滤器"></a>4 LSM-Tree引入布隆过滤器</h1><h2 id="4-1-布隆过滤器的编码"><a href="#4-1-布隆过滤器的编码" class="headerlink" title="4.1 布隆过滤器的编码"></a>4.1 布隆过滤器的编码</h2><p>布隆过滤器是编码到<code>sst</code>文件中的, 我们需要更新<code>sst</code>的编码格式如下:</p>
+<p><img src="/../../../images/Proj/LSM/sst-with-bloom.png" alt="sst-with-bloom"></p>
+<p>我们在<code>Block</code>的元数据块后面加入了布隆过滤器的编码部分, 同时将其偏移量也记录在了<code>Extra Information</code>中。</p>
+<blockquote>
+<p>编解码格式变化了, 相应的函数也需要更新, 但这里就不展开了, 毕竟流程类似的, 可以看仓库源码</p>
+</blockquote>
+<p>我们只需要在编码<code>sst</code>时, 每次<code>add</code>时, 添加对这个<code>key</code>的记录就可以了:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SSTBuilder::add</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 记录第一个key</span></span><br><span class="line">  <span class="keyword">if</span> (first_key.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    first_key = key;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 在 布隆过滤器 中添加key</span></span><br><span class="line">  <span class="keyword">if</span> (bloom_filter != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">    bloom_filter-&gt;<span class="built_in">add</span>(key);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (block.<span class="built_in">add_entry</span>(key, value)) &#123;</span><br><span class="line">    <span class="comment">// block 满足容量限制, 插入成功</span></span><br><span class="line">    last_key = key;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">finish_block</span>(); <span class="comment">// 将当前 block 写入</span></span><br><span class="line"></span><br><span class="line">  block.<span class="built_in">add_entry</span>(key, value);</span><br><span class="line">  first_key = key;</span><br><span class="line">  last_key = key; <span class="comment">// 更新最后一个key</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="4-2-布隆过滤器的解码"><a href="#4-2-布隆过滤器的解码" class="headerlink" title="4.2 布隆过滤器的解码"></a>4.2 布隆过滤器的解码</h2><p>在<code>open</code>一个<code>sst</code>时, 将布隆过滤器的部分解码并初始化:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;SST&gt; <span class="title">SST::open</span><span class="params">(<span class="type">size_t</span> sst_id, FileObj file,</span></span></span><br><span class="line"><span class="params"><span class="function">                               std::shared_ptr&lt;BlockCache&gt; block_cache)</span> </span>&#123;</span><br><span class="line">  ...</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. 读取 bloom filter</span></span><br><span class="line">  <span class="keyword">if</span> (sst-&gt;bloom_offset + <span class="number">2</span> * <span class="built_in">sizeof</span>(<span class="type">uint32_t</span>) &lt; file_size) &#123;</span><br><span class="line">    <span class="comment">// 布隆过滤器偏移量 + 2*uint32_t 的大小小于文件大小</span></span><br><span class="line">    <span class="comment">// 表示存在布隆过滤器</span></span><br><span class="line">    <span class="type">uint32_t</span> bloom_size = file_size - sst-&gt;bloom_offset - <span class="built_in">sizeof</span>(<span class="type">uint32_t</span>) * <span class="number">2</span>;</span><br><span class="line">    <span class="keyword">auto</span> bloom_bytes = sst-&gt;file.<span class="built_in">read_to_slice</span>(sst-&gt;bloom_offset, bloom_size);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> bloom = BloomFilter::<span class="built_in">decode</span>(bloom_bytes);</span><br><span class="line">    sst-&gt;bloom_filter = std::<span class="built_in">make_shared</span>&lt;BloomFilter&gt;(std::<span class="built_in">move</span>(bloom));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line"> ...</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> sst;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-3-布隆过滤器的使用"><a href="#4-3-布隆过滤器的使用" class="headerlink" title="4.3 布隆过滤器的使用"></a>4.3 布隆过滤器的使用</h2><p>同时, 在查询时需要用布隆过滤器过滤无效请求:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">size_t</span> <span class="title">SST::find_block_idx</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 先在布隆过滤器判断key是否存在</span></span><br><span class="line">  <span class="keyword">if</span> (bloom_filter != <span class="literal">nullptr</span> &amp;&amp; !bloom_filter-&gt;<span class="built_in">possibly_contains</span>(key)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">-1</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 二分查找</span></span><br><span class="line">  ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 布隆过滤器简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%8E%9F%E7%90%86%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 原理介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%A1%88%E4%BE%8B%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 案例介绍</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-LSM-Tree%E4%B8%AD%E7%9A%84%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">2 LSM-Tree中的布隆过滤器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 布隆过滤器代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%AE%BE%E8%AE%A1%E6%80%9D%E8%B7%AF"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 设计思路</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-%E5%A4%B4%E6%96%87%E4%BB%B6"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 头文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 构造函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-3-%E6%B7%BB%E5%8A%A0%E8%AE%B0%E5%BD%95"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 添加记录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-4-%E5%88%A4%E6%96%ADkey%E5%90%A6%E5%AD%98%E5%9C%A8"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 判断key否存在</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-5-%E7%BC%96%E8%A7%A3%E7%A0%81"><span class="toc-number">3.2.5.</span> <span class="toc-text">3.2.5 编解码</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-LSM-Tree%E5%BC%95%E5%85%A5%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 LSM-Tree引入布隆过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E7%BC%96%E7%A0%81"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 布隆过滤器的编码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E8%A7%A3%E7%A0%81"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 布隆过滤器的解码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 布隆过滤器的使用</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&text=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器&body=Check out this article: http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&name=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/03/15/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-14-%E5%B8%83%E9%9A%86%E8%BF%87%E6%BB%A4%E5%99%A8/&t=C++从零开始实现LSM-Tree-KV存储-14-布隆过滤器"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

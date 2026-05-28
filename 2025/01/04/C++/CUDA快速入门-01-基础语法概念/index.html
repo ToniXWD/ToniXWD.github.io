@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本文是本人学习CUDA整理的笔记, 该内容基本上是基于CUDA官方文档以及Youtube博主的CUDA Programming Course – High-Performance Computing with GPUs的视频教程。我这里只记录的CUDA的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。 本文不会介绍C++基础, 适合有C++基础, 想要快速了解CUDA的读者。 1 什">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CUDA快速入门-01-基础语法概念">
+<meta property="og:url" content="http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本文是本人学习CUDA整理的笔记, 该内容基本上是基于CUDA官方文档以及Youtube博主的CUDA Programming Course – High-Performance Computing with GPUs的视频教程。我这里只记录的CUDA的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。 本文不会介绍C++基础, 适合有C++基础, 想要快速了解CUDA的读者。 1 什">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/C++/cuda-arch.png">
+<meta property="og:image" content="http://example.com/images/C++/grid.drawio.png">
+<meta property="article:published_time" content="2025-01-04T09:15:12.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.659Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="深度学习">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/C++/cuda-arch.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>CUDA快速入门-01-基础语法概念</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/01/11/C++/ucontext%E5%AD%A6%E4%B9%A0/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/22/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec10-%E7%AC%94%E8%AE%B0-DNN%E8%AF%84%E4%BC%B0%E5%92%8C%E4%BC%98%E5%8C%96/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&text=CUDA快速入门-01-基础语法概念"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&is_video=false&description=CUDA快速入门-01-基础语法概念"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CUDA快速入门-01-基础语法概念&body=Check out this article: http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&name=CUDA快速入门-01-基础语法概念&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&t=CUDA快速入门-01-基础语法概念"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFCUDA"><span class="toc-number">1.</span> <span class="toc-text">1 什么是CUDA</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-CUDA%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">2.</span> <span class="toc-text">2 CUDA基础概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Host-%E5%92%8C-Device"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Host 和 Device</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Kernel"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Kernel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Grid-Block-Thread"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Grid, Block, Thread</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-Warps"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 Warps</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CUDA%E5%9F%BA%E7%A1%80%E7%BC%96%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3 CUDA基础编程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%B1%87%E6%80%BB"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础语法汇总</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-Kernel%E7%9A%84%E7%BB%B4%E5%BA%A6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Kernel的维度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 内存管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-CUDA-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1. CUDA 内存模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%87%BD%E6%95%B0"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2. 内存管理函数</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-1-%E8%AE%BE%E5%A4%87%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="toc-number">3.3.2.1.</span> <span class="toc-text">3.3.2.1 设备内存分配与释放</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-2-%E4%B8%BB%E6%9C%BA-%E8%AE%BE%E5%A4%87%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93"><span class="toc-number">3.3.2.2.</span> <span class="toc-text">3.3.2.2 主机-设备数据传输</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-3-%E5%86%85%E5%AD%98%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">3.3.2.3.</span> <span class="toc-text">3.3.2.3 内存初始化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.4.</span> <span class="toc-text">3.5 代码示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B8%8E%E5%90%8C%E6%AD%A5"><span class="toc-number">4.</span> <span class="toc-text">4 线程安全与同步</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5%E4%B8%8E%E5%B1%8F%E9%9A%9C"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 线程同步与屏障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 原子操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 代码示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Stream"><span class="toc-number">5.</span> <span class="toc-text">5 Stream</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Stream-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Stream 的基本概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-Stream-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. Stream 的基本操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Events"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Events</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-CallBack"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 CallBack</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.5.</span> <span class="toc-text">5.5 代码示例</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CUDA快速入门-01-基础语法概念
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-01-04T09:15:12.000Z" class="dt-published" itemprop="datePublished">2025-01-04</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/AI/" rel="tag">AI</a>, <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/CUDA/" rel="tag">CUDA</a>, <a class="p-category" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag">深度学习</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本文是本人学习CUDA整理的笔记, 该内容基本上是基于<code>CUDA</code>官方文档以及Youtube博主的<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=86FAWCzIe_4&t=11717s">CUDA Programming Course – High-Performance Computing with GPUs</a>的视频教程。我这里只记录的<code>CUDA</code>的核心概念, 提供简单入门的途经, 详细的内容需要参考官方文档。</p>
+<p>本文不会介绍<code>C++</code>基础, 适合有<code>C++</code>基础, 想要快速了解<code>CUDA</code>的读者。</p>
+<h1 id="1-什么是CUDA"><a href="#1-什么是CUDA" class="headerlink" title="1 什么是CUDA"></a>1 什么是CUDA</h1><p>简单说, <code>CUDA</code>是<code>NVIDIA</code>提供的一套并行计算框架, 可以利用GPU进行并行计算。本文由于篇幅有限不做过多介绍, 可以参考本人的另一篇笔记: <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/10670739751">Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA</a></p>
+<p>同时<code>CUDA</code>的安装可以参考: <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/682583573">WSL入门到入土</a></p>
+<h1 id="2-CUDA基础概念"><a href="#2-CUDA基础概念" class="headerlink" title="2 CUDA基础概念"></a>2 CUDA基础概念</h1><h2 id="2-1-Host-和-Device"><a href="#2-1-Host-和-Device" class="headerlink" title="2.1 Host 和 Device"></a>2.1 Host 和 Device</h2><p><code>CUDA</code>程序中, 存在<code>Host</code>和<code>Device</code>两个概念, 前者是CPU, 后者是GPU。熟悉<code>Pytorch</code>的读者应该知道, <code>Pytorch</code>的<code>CPU</code>和<code>GPU</code>的计算是分开的, <code>CPU</code>上的数据需要通过<code>.cuda()</code>函数传递到<code>GPU</code>上。本质上就是<code>GPU</code>的计算使用的显存, 而<code>CPU</code>的计算使用的是内存。</p>
+<h2 id="2-2-Kernel"><a href="#2-2-Kernel" class="headerlink" title="2.2 Kernel"></a>2.2 Kernel</h2><p><code>Kernel</code>是<code>CUDA</code>中最重要的概念, 此<code>Kernel</code>不是操作系统的内核, 而是指的是在<code>GPU</code>上执行的函数。<code>Kernel</code>的执行是并行的, 可以同时执行多个线程（也不是操作系统的线程， 后面会介绍）。<code>Kernel</code>的执行需要通过<code>&lt;&lt;&lt;,&gt;&gt;&gt;</code>操作符来指定执行的线程数和线程块数。</p>
+<h2 id="2-3-Grid-Block-Thread"><a href="#2-3-Grid-Block-Thread" class="headerlink" title="2.3 Grid, Block, Thread"></a>2.3 Grid, Block, Thread</h2><ul>
+<li><p><strong>Thread（线程）</strong>：</p>
+<ul>
+<li>最基本的执行单元，每个线程独立运行相同的代码，但处理不同的数据。</li>
+<li>线程通过唯一的 <code>threadIdx</code> 标识。</li>
+</ul>
+</li>
+<li><p><strong>Block（线程块）</strong>：</p>
+<ul>
+<li>一组线程的集合，块内的线程可以通过共享内存和同步操作（如 <code>__syncthreads()</code>）协作。</li>
+<li>块通过唯一的 <code>blockIdx</code> 标识，块内的线程通过 <code>threadIdx</code> 标识。</li>
+</ul>
+</li>
+<li><p><strong>Grid（网格）</strong>：</p>
+<ul>
+<li>由多个线程块组成，网格中的所有线程块执行相同的内核函数。</li>
+<li>网格通过唯一的 <code>gridDim</code> 和 <code>blockIdx</code> 标识。<code>gridDim</code>表示网格中包含的线程块<code>block</code>数, <code>blockIdx</code>表示线程块的索引。</li>
+</ul>
+</li>
+</ul>
+<p><code>Grid</code>是<code>CUDA</code>中执行的线程块的集合, <code>Block</code>是<code>CUDA</code>中执行的线程的集合, 线程<code>Thread</code>是<code>CUDA</code>中执行的最小单位。<code>Grid</code>由多个<code>Block</code>组成, <code>Block</code>由多个<code>Thread</code>组成。</p>
+<p>需要注意的是，<code>Thread</code>是<code>CUDA</code>中执行的最小执行上下文单位，类似<code>CPU</code>中的<code>SIMD</code>中的一个计算通道。并且<code>Thread</code>是实际存在的硬件， 而<code>Block</code>和<code>Grid</code>是逻辑概念， 是<code>CUDA</code>为了方便管理线程而引入的抽象。</p>
+<p>他们的区别和联系如下总结:</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>描述</th>
+<th>标识符</th>
+<th>协作与通信</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Thread</strong></td>
+<td>最基本的执行单元，独立运行代码。</td>
+<td><code>threadIdx</code></td>
+<td>无直接协作，通过全局内存通信。</td>
+</tr>
+<tr>
+<td><strong>Block</strong></td>
+<td>一组线程的集合，块内线程可通过共享内存和同步操作协作。</td>
+<td><code>blockIdx</code>, <code>threadIdx</code></td>
+<td>块内线程可协作，块间独立。</td>
+</tr>
+<tr>
+<td><strong>Grid</strong></td>
+<td>由多个线程块组成，所有块执行相同的内核函数。</td>
+<td><code>gridDim</code>, <code>blockIdx</code></td>
+<td>块间无直接协作，通过全局内存通信。</td>
+</tr>
+</tbody></table>
+<p><img src="/../../images/C++/cuda-arch.png" alt="CUDA 线程模型"></p>
+<h2 id="2-4-Warps"><a href="#2-4-Warps" class="headerlink" title="2.4 Warps"></a>2.4 Warps</h2><p><code>CUDA</code>中, 一个<code>warp</code>是<code>CUDA</code>中执行的最小的执行调度单位, 一个<code>warp</code>包含32个<code>Thread</code>。<code>CUDA</code>中, 一个<code>warp</code>的执行是并行的, 可以同时执行32个<code>Thread</code>， 称为<code>SIMD</code>（单指令多数据： Single Instruction Multiple Thread）。</p>
+<p>这里不对<code>warp</code>做过多介绍, 只需要知道<code>warp</code>是<code>CUDA</code>中执行的最小执行上下文单位, 一个<code>warp</code>包含32个<code>Thread</code>。</p>
+<blockquote>
+<p>可能会有人产生疑惑, 不是说<code>Thread</code>是<code>CUDA</code>中执行的最小执行上下文单位, 怎么现在又变成<code>warp</code>了? 这其实和<code>CPU</code>的<code>SIMD</code>很类似, <code>GPU</code>的<code>warp</code>的32个<code>Thread</code>就相当于<code>CPU</code>的<code>SIMD</code>的<code>avx256</code>的8个计算通道(假设是32位浮点数运算)。</p>
+</blockquote>
+<p>需要注意的是, <code>warp</code>有对应的硬件, <code>warp</code>有为32个<code>Thread</code>对应的上下文寄存器。因此，通常进行简单的<code>CUDA</code>编程时, 不需要考虑这个概念, 只需要操作<code>Grid, Block, Thread</code>即可。</p>
+<h1 id="3-CUDA基础编程"><a href="#3-CUDA基础编程" class="headerlink" title="3 CUDA基础编程"></a>3 CUDA基础编程</h1><h2 id="3-1-基础语法汇总"><a href="#3-1-基础语法汇总" class="headerlink" title="3.1 基础语法汇总"></a>3.1 基础语法汇总</h2><p>有了上面的基础概念, 可以上手简单的<code>CUDA</code>程序了。<br><code>CUDA</code>编程可以看做<code>C++</code>的超集, 其在<code>C++</code>的基础上, 添加一些<code>CUDA</code>特有的语法。</p>
+<p>这里假定读者有<code>C/C++</code>的基础, 直接给出总结后的语法, 这里有一些没有涉及的概念, 比如<code>Stream</code>, <code>Event</code>, <code>Atomic Operation</code>等, 这些概念后续章节会介绍。</p>
+<table>
+<thead>
+<tr>
+<th><strong>类别</strong></th>
+<th><strong>语法&#x2F;概念</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>内核函数</strong></td>
+<td><code>__global__ void kernel(...)</code></td>
+<td>定义在 GPU 上执行的函数。<code>__global__</code> 表示该函数是内核函数，由 CPU 调用，GPU 执行。</td>
+<td><code>__global__ void add(int *a, int *b, int *c) &#123; *c = *a + *b; &#125;</code></td>
+</tr>
+<tr>
+<td><strong>主机函数</strong></td>
+<td><code>__host__ void host_func(...)</code></td>
+<td>定义在 CPU 上执行的函数。<code>__host__</code> 是默认修饰符，可省略。</td>
+<td><code>__host__ void init(int *a, int value) &#123; *a = value; &#125;</code></td>
+</tr>
+<tr>
+<td><strong>设备函数</strong></td>
+<td><code>__device__ void device_func(...)</code></td>
+<td>定义在 GPU 上执行的辅助函数，只能由内核函数或其他设备函数调用。</td>
+<td><code>__device__ int square(int x) &#123; return x * x; &#125;</code></td>
+</tr>
+<tr>
+<td><strong>调用内核</strong></td>
+<td><code>kernel&lt;&lt;&lt;grid, block&gt;&gt;&gt;(...)</code></td>
+<td>从 CPU 调用内核函数。<code>grid</code> 和 <code>block</code> 分别指定网格和线程块的维度。</td>
+<td><code>add&lt;&lt;&lt;1, 1&gt;&gt;&gt;(d_a, d_b, d_c);</code></td>
+</tr>
+<tr>
+<td><strong>线程索引</strong></td>
+<td><code>threadIdx.x</code>, <code>threadIdx.y</code>, <code>threadIdx.z</code></td>
+<td>当前线程在线程块中的索引。</td>
+<td><code>int idx = threadIdx.x;</code></td>
+</tr>
+<tr>
+<td><strong>块索引</strong></td>
+<td><code>blockIdx.x</code>, <code>blockIdx.y</code>, <code>blockIdx.z</code></td>
+<td>当前线程块在网格中的索引。</td>
+<td><code>int blockId = blockIdx.x;</code></td>
+</tr>
+<tr>
+<td><strong>块维度</strong></td>
+<td><code>blockDim.x</code>, <code>blockDim.y</code>, <code>blockDim.z</code></td>
+<td>线程块的维度（每个线程块中的线程数）。</td>
+<td><code>int threadsPerBlock = blockDim.x;</code></td>
+</tr>
+<tr>
+<td><strong>网格维度</strong></td>
+<td><code>gridDim.x</code>, <code>gridDim.y</code>, <code>gridDim.z</code></td>
+<td>网格的维度（每个网格中的线程块数）。</td>
+<td><code>int blocksPerGrid = gridDim.x;</code></td>
+</tr>
+<tr>
+<td><strong>全局线程索引</strong></td>
+<td><code>int idx = blockIdx.x * blockDim.x + threadIdx.x;</code></td>
+<td>计算当前线程的全局索引，用于处理一维数据。</td>
+<td><code>int idx = blockIdx.x * blockDim.x + threadIdx.x;</code></td>
+</tr>
+<tr>
+<td><strong>共享内存</strong></td>
+<td><code>__shared__ float shared_mem[100];</code></td>
+<td>定义线程块内共享的内存，块内所有线程可见，生命周期与块相同。</td>
+<td><code>__shared__ float temp[128];</code></td>
+</tr>
+<tr>
+<td><strong>同步线程</strong></td>
+<td><code>__syncthreads();</code></td>
+<td>同步线程块内的所有线程，确保所有线程都执行到此处后再继续。</td>
+<td><code>__syncthreads();</code></td>
+</tr>
+<tr>
+<td><strong>内存分配</strong></td>
+<td><code>cudaMalloc(void **devPtr, size_t size);</code></td>
+<td>在 GPU 上分配全局内存。</td>
+<td><code>cudaMalloc((void**)&amp;d_a, sizeof(int));</code></td>
+</tr>
+<tr>
+<td><strong>内存释放</strong></td>
+<td><code>cudaFree(void *devPtr);</code></td>
+<td>释放 GPU 上的全局内存。</td>
+<td><code>cudaFree(d_a);</code></td>
+</tr>
+<tr>
+<td><strong>内存拷贝</strong></td>
+<td><code>cudaMemcpy(void *dst, const void *src, size_t count, cudaMemcpyKind kind);</code></td>
+<td>在主机和设备之间拷贝数据。<code>kind</code> 可以是 <code>cudaMemcpyHostToDevice</code> 或 <code>cudaMemcpyDeviceToHost</code>。</td>
+<td><code>cudaMemcpy(d_a, h_a, size, cudaMemcpyHostToDevice);</code></td>
+</tr>
+<tr>
+<td><strong>错误检查</strong></td>
+<td><code>cudaGetLastError()</code>, <code>cudaDeviceSynchronize()</code></td>
+<td>检查 CUDA 函数是否出错，并同步设备以确保所有任务完成。</td>
+<td><code>cudaDeviceSynchronize(); if (cudaGetLastError() != cudaSuccess) &#123; printf(&quot;Error!\n&quot;); &#125;</code></td>
+</tr>
+<tr>
+<td><strong>设备管理</strong></td>
+<td><code>cudaSetDevice(int device);</code></td>
+<td>设置当前使用的 GPU 设备。</td>
+<td><code>cudaSetDevice(0);</code></td>
+</tr>
+<tr>
+<td><strong>流</strong></td>
+<td><code>cudaStream_t stream;</code></td>
+<td>定义 CUDA 流，用于并发执行多个任务。</td>
+<td><code>cudaStream_t stream; cudaStreamCreate(&amp;stream); kernel&lt;&lt;&lt;1, 1, 0, stream&gt;&gt;&gt;(...);</code></td>
+</tr>
+<tr>
+<td><strong>事件</strong></td>
+<td><code>cudaEvent_t start, stop;</code></td>
+<td>定义 CUDA 事件，用于测量时间或同步任务。</td>
+<td><code>cudaEventCreate(&amp;start); cudaEventRecord(start); cudaEventElapsedTime(&amp;time, start, stop);</code></td>
+</tr>
+<tr>
+<td><strong>原子操作</strong></td>
+<td><code>atomicAdd(int *address, int val);</code></td>
+<td>原子操作，确保多个线程对同一内存地址的操作是原子的。</td>
+<td><code>atomicAdd(&amp;sum, value);</code></td>
+</tr>
+</tbody></table>
+<h2 id="3-2-Kernel的维度"><a href="#3-2-Kernel的维度" class="headerlink" title="3.2 Kernel的维度"></a>3.2 Kernel的维度</h2><p>在 CUDA 编程中，<strong>Kernel 的维度</strong>是指如何组织线程（Thread）和线程块（Block）的层次结构，以便在 GPU 上执行并行任务。CUDA 使用 <strong>Grid</strong> 和 <strong>Block</strong> 的层次结构来定义线程的分布，而每个 Block 和 Grid 可以是 <strong>一维、二维或三维</strong> 的。这种灵活性使得 CUDA 能够高效地处理各种并行计算任务。</p>
+<p><strong>Grid 和 Block 的层次结构</strong></p>
+<ul>
+<li><strong>Grid</strong>：一个 Grid 包含多个线程块（Block）。</li>
+<li><strong>Block</strong>：一个 Block 包含多个线程（Thread）。</li>
+<li><strong>Thread</strong>：最基本的执行单元。</li>
+</ul>
+<p>Kernel 的维度通过定义 Grid 和 Block 的大小和形状来确定。CUDA 支持以下维度的 Grid 和 Block：</p>
+<ul>
+<li><strong>一维（1D）</strong></li>
+<li><strong>二维（2D）</strong></li>
+<li><strong>三维（3D）</strong></li>
+</ul>
+<p><strong>定义 Grid 和 Block 的维度</strong><br>在调用 Kernel 时，需要通过 <code>&lt;&lt;&lt;&gt;&gt;&gt;</code> 语法指定 Grid 和 Block 的维度。CUDA 提供了以下数据类型来定义维度：</p>
+<ul>
+<li>**<code>dim3</code>**：用于定义 Grid 和 Block 的维度，支持 1D、2D 和 3D。<ul>
+<li>如果只指定一个值，则默认为 1D。</li>
+<li>如果指定两个值，则为 2D。</li>
+<li>如果指定三个值，则为 3D。</li>
+</ul>
+</li>
+</ul>
+<p><strong>示例</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1D Grid 和 1D Block</span></span><br><span class="line"><span class="function">dim3 <span class="title">gridDim</span><span class="params">(<span class="number">128</span>)</span></span>;       <span class="comment">// 128 个 Block</span></span><br><span class="line"><span class="function">dim3 <span class="title">blockDim</span><span class="params">(<span class="number">256</span>)</span></span>;      <span class="comment">// 每个 Block 有 256 个 Thread</span></span><br><span class="line">kernel&lt;&lt;&lt;gridDim, blockDim&gt;&gt;&gt;(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2D Grid 和 2D Block</span></span><br><span class="line"><span class="function">dim3 <span class="title">gridDim</span><span class="params">(<span class="number">16</span>, <span class="number">8</span>)</span></span>;     <span class="comment">// 16x8 的 Grid</span></span><br><span class="line"><span class="function">dim3 <span class="title">blockDim</span><span class="params">(<span class="number">32</span>, <span class="number">16</span>)</span></span>;   <span class="comment">// 每个 Block 有 32x16 的 Thread</span></span><br><span class="line">kernel&lt;&lt;&lt;gridDim, blockDim&gt;&gt;&gt;(...);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3D Grid 和 3D Block</span></span><br><span class="line"><span class="function">dim3 <span class="title">gridDim</span><span class="params">(<span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>)</span></span>;   <span class="comment">// 4x4x4 的 Grid</span></span><br><span class="line"><span class="function">dim3 <span class="title">blockDim</span><span class="params">(<span class="number">8</span>, <span class="number">8</span>, <span class="number">8</span>)</span></span>;  <span class="comment">// 每个 Block 有 8x8x8 的 Thread</span></span><br><span class="line">kernel&lt;&lt;&lt;gridDim, blockDim&gt;&gt;&gt;(...);</span><br></pre></td></tr></table></figure>
+
+<p><strong>线程索引的计算</strong><br>在 <code>Kernel</code> 中，可以通过以下内置变量获取当前线程的索引：</p>
+<ul>
+<li>**<code>threadIdx</code>**：当前线程在 Block 中的索引（<code>threadIdx.x</code>, <code>threadIdx.y</code>, <code>threadIdx.z</code>）。</li>
+<li>**<code>blockIdx</code>**：当前 Block 在 Grid 中的索引（<code>blockIdx.x</code>, <code>blockIdx.y</code>, <code>blockIdx.z</code>）。</li>
+<li>**<code>blockDim</code>**：Block 的维度（<code>blockDim.x</code>, <code>blockDim.y</code>, <code>blockDim.z</code>）。</li>
+<li>**<code>gridDim</code>**：Grid 的维度（<code>gridDim.x</code>, <code>gridDim.y</code>, <code>gridDim.z</code>）。</li>
+</ul>
+<p><strong>全局线程索引的计算</strong></p>
+<ul>
+<li><strong>1D Grid 和 1D Block</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;</span><br></pre></td></tr></table></figure></li>
+<li><strong>2D Grid 和 2D Block</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line"><span class="type">int</span> y = blockIdx.y * blockDim.y + threadIdx.y;</span><br><span class="line"><span class="type">int</span> idx = y * gridDim.x * blockDim.x + x;</span><br></pre></td></tr></table></figure></li>
+<li><strong>3D Grid 和 3D Block</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line"><span class="type">int</span> y = blockIdx.y * blockDim.y + threadIdx.y;</span><br><span class="line"><span class="type">int</span> z = blockIdx.z * blockDim.z + threadIdx.z;</span><br><span class="line"><span class="type">int</span> idx = z * (gridDim.y * blockDim.y) * (gridDim.x * blockDim.x) + y * (gridDim.x * blockDim.x) + x;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="3-3-内存管理"><a href="#3-3-内存管理" class="headerlink" title="3.3 内存管理"></a>3.3 内存管理</h2><h3 id="3-3-1-CUDA-内存模型"><a href="#3-3-1-CUDA-内存模型" class="headerlink" title="3.3.1. CUDA 内存模型"></a>3.3.1. <strong>CUDA 内存模型</strong></h3><p>CUDA 内存模型包括以下几种主要内存类型：</p>
+<table>
+<thead>
+<tr>
+<th><strong>内存类型</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>作用域</strong></th>
+<th><strong>生命周期</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>全局内存 (Global Memory)</strong></td>
+<td>GPU 的主要内存，所有线程都可以访问，速度较慢。</td>
+<td>所有线程和主机</td>
+<td>由程序员显式管理</td>
+</tr>
+<tr>
+<td><strong>共享内存 (Shared Memory)</strong></td>
+<td>线程块内的共享内存，块内线程可访问，速度较快。</td>
+<td>线程块内</td>
+<td>线程块执行期间</td>
+</tr>
+<tr>
+<td><strong>寄存器 (Registers)</strong></td>
+<td>每个线程的私有内存，速度最快，容量有限。</td>
+<td>单个线程</td>
+<td>线程执行期间</td>
+</tr>
+<tr>
+<td><strong>常量内存 (Constant Memory)</strong></td>
+<td>只读内存，适合存储常量数据，访问速度快。</td>
+<td>所有线程和主机</td>
+<td>由程序员显式管理</td>
+</tr>
+<tr>
+<td><strong>纹理内存 (Texture Memory)</strong></td>
+<td>专为图像处理优化的只读内存，支持缓存和插值。</td>
+<td>所有线程</td>
+<td>由程序员显式管理</td>
+</tr>
+<tr>
+<td><strong>本地内存 (Local Memory)</strong></td>
+<td>当寄存器不足时，线程的私有数据会存储在本地内存中，速度较慢。</td>
+<td>单个线程</td>
+<td>线程执行期间</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-2-内存管理函数"><a href="#3-3-2-内存管理函数" class="headerlink" title="3.3.2. 内存管理函数"></a>3.3.2. <strong>内存管理函数</strong></h3><p>CUDA 提供了一系列函数来管理设备内存和主机-设备之间的数据传输, 这些函数在<code>cuda_runtime.h</code>头文件中定义, 且非常类似<code>C</code>语言的<code>malloc</code>和<code>free</code>和<code>string.h</code>中的函数。</p>
+<h4 id="3-3-2-1-设备内存分配与释放"><a href="#3-3-2-1-设备内存分配与释放" class="headerlink" title="3.3.2.1 设备内存分配与释放"></a>3.3.2.1 <strong>设备内存分配与释放</strong></h4><table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cudaMalloc(void **devPtr, size_t size)</code></td>
+<td>在设备上分配全局内存。</td>
+<td><code>cudaMalloc((void**)&amp;d_a, sizeof(float) * N);</code></td>
+</tr>
+<tr>
+<td><code>cudaFree(void *devPtr)</code></td>
+<td>释放设备上的全局内存。</td>
+<td><code>cudaFree(d_a);</code></td>
+</tr>
+</tbody></table>
+<h4 id="3-3-2-2-主机-设备数据传输"><a href="#3-3-2-2-主机-设备数据传输" class="headerlink" title="3.3.2.2 主机-设备数据传输"></a>3.3.2.2 <strong>主机-设备数据传输</strong></h4><table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cudaMemcpy(void *dst, const void *src, size_t count, cudaMemcpyKind kind)</code></td>
+<td>在主机和设备之间拷贝数据。<code>kind</code> 指定传输方向。</td>
+<td><code>cudaMemcpy(d_a, h_a, sizeof(float) * N, cudaMemcpyHostToDevice);</code></td>
+</tr>
+<tr>
+<td><code>cudaMemcpyHostToDevice</code></td>
+<td>从主机内存拷贝数据到设备内存。</td>
+<td></td>
+</tr>
+<tr>
+<td><code>cudaMemcpyDeviceToHost</code></td>
+<td>从设备内存拷贝数据到主机内存。</td>
+<td></td>
+</tr>
+<tr>
+<td><code>cudaMemcpyDeviceToDevice</code></td>
+<td>在设备内存之间拷贝数据。</td>
+<td></td>
+</tr>
+</tbody></table>
+<h4 id="3-3-2-3-内存初始化"><a href="#3-3-2-3-内存初始化" class="headerlink" title="3.3.2.3 内存初始化"></a>3.3.2.3 <strong>内存初始化</strong></h4><table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cudaMemset(void *devPtr, int value, size_t count)</code></td>
+<td>将设备内存初始化为指定值。</td>
+<td><code>cudaMemset(d_a, 0, sizeof(float) * N);</code></td>
+</tr>
+</tbody></table>
+<h2 id="3-5-代码示例"><a href="#3-5-代码示例" class="headerlink" title="3.5 代码示例"></a>3.5 代码示例</h2><p>下面是一个经典的矩阵计算的CUDA实现:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cuda_runtime.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">matmul</span><span class="params">(<span class="type">float</span> *A, <span class="type">float</span> *B, <span class="type">float</span> *C, <span class="type">int</span> M, <span class="type">int</span> N, <span class="type">int</span> K)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// A(M, N) * B(N, K) = C(M, K)</span></span><br><span class="line">  <span class="keyword">auto</span> row = blockIdx.y * blockDim.y + threadIdx.y;</span><br><span class="line">  <span class="keyword">auto</span> col = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (row &gt;= M || col &gt;= K) &#123;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="type">float</span> sum = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">unsigned</span> <span class="type">int</span> idx = <span class="number">0</span>; idx &lt; N; idx++) &#123;</span><br><span class="line">    sum += A[row * N + idx] * B[idx * K + col];</span><br><span class="line">  &#125;</span><br><span class="line">  C[row * K + col] = sum;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 初始化矩阵</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">init_matrix</span><span class="params">(<span class="type">float</span> *matrix, <span class="type">int</span> rows, <span class="type">int</span> cols, <span class="type">float</span> value)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows * cols; i++) &#123;</span><br><span class="line">    matrix[i] = value;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 打印矩阵</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">print_matrix</span><span class="params">(<span class="type">float</span> *matrix, <span class="type">int</span> rows, <span class="type">int</span> cols)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; rows; i++) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; cols; j++) &#123;</span><br><span class="line">      <span class="built_in">printf</span>(<span class="string">&quot;%.2f &quot;</span>, matrix[i * cols + j]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;\n&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> M = <span class="number">8</span>, N = <span class="number">4</span>, K = <span class="number">4</span>; <span class="comment">// 定义矩阵维度</span></span><br><span class="line">  <span class="type">size_t</span> size_A = M * N * <span class="built_in">sizeof</span>(<span class="type">float</span>);</span><br><span class="line">  <span class="type">size_t</span> size_B = N * K * <span class="built_in">sizeof</span>(<span class="type">float</span>);</span><br><span class="line">  <span class="type">size_t</span> size_C = M * K * <span class="built_in">sizeof</span>(<span class="type">float</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 分配主机内存</span></span><br><span class="line">  <span class="type">float</span> *h_A = (<span class="type">float</span> *)<span class="built_in">malloc</span>(size_A);</span><br><span class="line">  <span class="type">float</span> *h_B = (<span class="type">float</span> *)<span class="built_in">malloc</span>(size_B);</span><br><span class="line">  <span class="type">float</span> *h_C = (<span class="type">float</span> *)<span class="built_in">malloc</span>(size_C);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 初始化矩阵 A 和 B</span></span><br><span class="line">  <span class="built_in">init_matrix</span>(h_A, M, N, <span class="number">1.0f</span>); <span class="comment">// A 初始化为全 1</span></span><br><span class="line">  <span class="built_in">init_matrix</span>(h_B, N, K, <span class="number">2.0f</span>); <span class="comment">// B 初始化为全 2</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 打印矩阵 A 和 B</span></span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Matrix A:\n&quot;</span>);</span><br><span class="line">  <span class="built_in">print_matrix</span>(h_A, M, N);</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Matrix B:\n&quot;</span>);</span><br><span class="line">  <span class="built_in">print_matrix</span>(h_B, N, K);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 分配设备内存</span></span><br><span class="line">  <span class="type">float</span> *d_A, *d_B, *d_C;</span><br><span class="line">  <span class="built_in">cudaMalloc</span>((<span class="type">void</span> **)&amp;d_A, size_A);</span><br><span class="line">  <span class="built_in">cudaMalloc</span>((<span class="type">void</span> **)&amp;d_B, size_B);</span><br><span class="line">  <span class="built_in">cudaMalloc</span>((<span class="type">void</span> **)&amp;d_C, size_C);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 拷贝数据到设备</span></span><br><span class="line">  <span class="built_in">cudaMemcpy</span>(d_A, h_A, size_A, cudaMemcpyHostToDevice);</span><br><span class="line">  <span class="built_in">cudaMemcpy</span>(d_B, h_B, size_B, cudaMemcpyHostToDevice);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 定义 Block 和 Grid 的维度</span></span><br><span class="line">  <span class="function">dim3 <span class="title">blockDim</span><span class="params">(<span class="number">2</span>, <span class="number">2</span>)</span></span>; <span class="comment">// 每个 Block 有 2x2 个线程</span></span><br><span class="line">  <span class="function">dim3 <span class="title">gridDim</span><span class="params">((K + blockDim.x - <span class="number">1</span>) / blockDim.x,</span></span></span><br><span class="line"><span class="params"><span class="function">               (M + blockDim.y - <span class="number">1</span>) / blockDim.y)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 调用 Kernel</span></span><br><span class="line">  matmul&lt;&lt;&lt;gridDim, blockDim&gt;&gt;&gt;(d_A, d_B, d_C, M, N, K);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 拷贝结果回主机</span></span><br><span class="line">  <span class="built_in">cudaMemcpy</span>(h_C, d_C, size_C, cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 打印结果矩阵 C</span></span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">&quot;Matrix C (A * B):\n&quot;</span>);</span><br><span class="line">  <span class="built_in">print_matrix</span>(h_C, M, K);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 释放设备内存</span></span><br><span class="line">  <span class="built_in">cudaFree</span>(d_A);</span><br><span class="line">  <span class="built_in">cudaFree</span>(d_B);</span><br><span class="line">  <span class="built_in">cudaFree</span>(d_C);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 释放主机内存</span></span><br><span class="line">  <span class="built_in">free</span>(h_A);</span><br><span class="line">  <span class="built_in">free</span>(h_B);</span><br><span class="line">  <span class="built_in">free</span>(h_C);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里简单展示一下举证计算的网格维度划分, 这2行代码实现维度划分:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">dim3 <span class="title">blockDim</span><span class="params">(<span class="number">2</span>, <span class="number">2</span>)</span></span>; <span class="comment">// 每个 Block 有 2x2 个线程</span></span><br><span class="line"><span class="function">dim3 <span class="title">gridDim</span><span class="params">((K + blockDim.x - <span class="number">1</span>) / blockDim.x,</span></span></span><br><span class="line"><span class="params"><span class="function">             (M + blockDim.y - <span class="number">1</span>) / blockDim.y)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>矩阵计算的维度以矩阵C的维度进行, C的维度本来是(M, K) &#x3D; (4, 2), 而每个网格划分后的分布如下:<br><img src="/../../images/C++/grid.drawio.png" alt="grid"></p>
+<p>例如<code>Block(0,1)</code>中的0就表示<code>blockIdx.y</code>, 1就表示<code>blockIdx.x</code>, <code>Block(0,1)</code>中的坐标(1,2)对应的<code>threadIdx.x=0, threadIdx.y=1</code></p>
+<p>因此, <code>kernel</code>中的这两行:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">auto</span> row = blockIdx.y * blockDim.y + threadIdx.y;</span><br><span class="line"><span class="keyword">auto</span> col = blockIdx.x * blockDim.x + threadIdx.x;</span><br></pre></td></tr></table></figure>
+<p>就是计算原始的行列(逻辑上的行和列, 因为数据本质是一维数组)</p>
+<h1 id="4-线程安全与同步"><a href="#4-线程安全与同步" class="headerlink" title="4 线程安全与同步"></a>4 线程安全与同步</h1><h2 id="4-1-线程同步与屏障"><a href="#4-1-线程同步与屏障" class="headerlink" title="4.1 线程同步与屏障"></a>4.1 线程同步与屏障</h2><p>类似<code>C++</code>, <code>CUDA</code>中也有线程同步的概念, 这里的同步也类似<code>Go</code>的<code>WaitGroup</code>。</p>
+<table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>作用域</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>使用场景</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>cudaDeviceSynchronize()</code></strong></td>
+<td>设备级别</td>
+<td>阻塞主机线程，直到设备上所有任务完成。</td>
+<td>用于确保主机代码在设备任务完成后继续执行。</td>
+</tr>
+<tr>
+<td><strong><code>__syncthreads()</code></strong></td>
+<td>线程块级别</td>
+<td>同步线程块内的所有线程，确保所有线程都执行到此处后再继续。</td>
+<td>用于线程块内的线程协作，例如共享内存操作后同步。</td>
+</tr>
+<tr>
+<td><strong><code>__syncwarp()</code></strong></td>
+<td>Warp 级别</td>
+<td>同步 Warp 内的所有线程（32 个线程），确保 Warp 内的线程执行到此处后再继续。</td>
+<td>用于 Warp 内的线程协作，例如 Warp 级别的操作后同步。</td>
+</tr>
+<tr>
+<td><strong><code>__threadfence()</code></strong></td>
+<td>线程块级别</td>
+<td>确保之前的所有内存操作可见</td>
+<td>避免由于内存访问乱序导致的竞态条件或数据不一致问题。</td>
+</tr>
+<tr>
+<td><strong><code>__threadfence_block()</code></strong></td>
+<td>线程块级别</td>
+<td>与 __threadfence() 相同，但更明确地表示作用范围是线程块内。</td>
+<td>用于线程块内的线程协作，例如共享内存操作后同步。</td>
+</tr>
+<tr>
+<td><strong><code>__threadfence_system()</code></strong></td>
+<td>设备级别</td>
+<td>确保内存操作对整个系统（包括 GPU 和 CPU）可见。</td>
+<td>用于整个设备内的线程协作，例如共享内存操作后同步。</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>warp相关的同步函数较少涉及, 这里就不介绍了</p>
+</blockquote>
+<p><strong>sync类函数和fence类函数的区别是什么?</strong></p>
+<ul>
+<li><code>sync</code> 类函数：用于线程同步，确保所有线程到达同步点后再继续执行，适用于线程块内的协作操作。</li>
+<li><code>fence</code> 类函数：用于内存栅栏，确保内存操作的顺序性和可见性，适用于线程间通信和多 GPU 协同计算。</li>
+</ul>
+<h2 id="4-2-原子操作"><a href="#4-2-原子操作" class="headerlink" title="4.2 原子操作"></a>4.2 原子操作</h2><p>熟悉C++的朋友们肯定知道原子操作是什么, 这里我就只给出整理好的语法说明:</p>
+<p><strong>整数原子操作</strong></p>
+<p>以下原子操作适用于 <code>int</code> 类型的数据。</p>
+<table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>返回值</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>atomicAdd(int* address, int val)</code></td>
+<td>原子地将 <code>val</code> 加到 <code>address</code> 指向的值，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicAdd(&amp;sum, 1);</code></td>
+</tr>
+<tr>
+<td><code>atomicSub(int* address, int val)</code></td>
+<td>原子地从 <code>address</code> 指向的值中减去 <code>val</code>，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicSub(&amp;sum, 1);</code></td>
+</tr>
+<tr>
+<td><code>atomicExch(int* address, int val)</code></td>
+<td>原子地将 <code>address</code> 指向的值替换为 <code>val</code>，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicExch(&amp;var, 10);</code></td>
+</tr>
+<tr>
+<td><code>atomicMax(int* address, int val)</code></td>
+<td>原子地将 <code>address</code> 指向的值设置为 <code>max(old_value, val)</code>，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicMax(&amp;max_val, new_val);</code></td>
+</tr>
+<tr>
+<td><code>atomicMin(int* address, int val)</code></td>
+<td>原子地将 <code>address</code> 指向的值设置为 <code>min(old_value, val)</code>，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicMin(&amp;min_val, new_val);</code></td>
+</tr>
+<tr>
+<td><code>atomicAnd(int* address, int val)</code></td>
+<td>原子地对 <code>address</code> 指向的值和 <code>val</code> 进行按位与操作，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicAnd(&amp;var, mask);</code></td>
+</tr>
+<tr>
+<td><code>atomicOr(int* address, int val)</code></td>
+<td>原子地对 <code>address</code> 指向的值和 <code>val</code> 进行按位或操作，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicOr(&amp;var, mask);</code></td>
+</tr>
+<tr>
+<td><code>atomicXor(int* address, int val)</code></td>
+<td>原子地对 <code>address</code> 指向的值和 <code>val</code> 进行按位异或操作，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicXor(&amp;var, mask);</code></td>
+</tr>
+<tr>
+<td><code>atomicCAS(int* address, int compare, int val)</code></td>
+<td>原子地比较 <code>address</code> 指向的值与 <code>compare</code>，如果相等，则替换为 <code>val</code>，并返回旧值。</td>
+<td>旧值</td>
+<td><code>int old = atomicCAS(&amp;var, expected, new_val);</code></td>
+</tr>
+</tbody></table>
+<p><strong>浮点数原子操作</strong></p>
+<p>以下原子操作适用于 <code>float</code> 和 <code>double</code> 类型的数据。</p>
+<table>
+<thead>
+<tr>
+<th><strong>函数</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>返回值</strong></th>
+<th><strong>示例</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>atomicAdd(float* address, float val)</code></td>
+<td>原子地将 <code>val</code> 加到 <code>address</code> 指向的值，并返回旧值。支持从 CUDA 2.0 开始。</td>
+<td>旧值</td>
+<td><code>float old = atomicAdd(&amp;sum, 1.0f);</code></td>
+</tr>
+<tr>
+<td><code>atomicAdd(double* address, double val)</code></td>
+<td>原子地将 <code>val</code> 加到 <code>address</code> 指向的值，并返回旧值。支持从 CUDA Compute Capability 6.0 开始。</td>
+<td>旧值</td>
+<td><code>double old = atomicAdd(&amp;sum, 1.0);</code></td>
+</tr>
+</tbody></table>
+<h2 id="4-3-代码示例"><a href="#4-3-代码示例" class="headerlink" title="4.3 代码示例"></a>4.3 代码示例</h2><p>以下是一个简单的 CUDA 程序，演示了 <strong>线程同步</strong> 的使用场景。该程序使用共享内存（Shared Memory）和 <code>__syncthreads()</code> 来实现线程块内的协作计算。</p>
+<p><strong>程序功能</strong></p>
+<ul>
+<li>每个线程块计算其内部线程的局部和，并将结果存储到共享内存中。</li>
+<li>使用 <code>__syncthreads()</code> 确保所有线程完成共享内存的写入后，再进行后续计算。</li>
+<li>最后，将每个线程块的计算结果累加到全局内存中。</li>
+</ul>
+<p><strong>代码实现</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cuda_runtime.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// CUDA Kernel</span></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">partial_sum_kernel</span><span class="params">(<span class="type">int</span> *input, <span class="type">int</span> *output, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 声明共享内存</span></span><br><span class="line">    __shared__ <span class="type">int</span> shared_data[<span class="number">128</span>];  <span class="comment">// 假设每个线程块最多有 128 个线程</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算线程的全局索引</span></span><br><span class="line">    <span class="type">int</span> tid = threadIdx.x + blockIdx.x * blockDim.x;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将全局内存中的数据加载到共享内存</span></span><br><span class="line">    <span class="keyword">if</span> (tid &lt; n) &#123;</span><br><span class="line">        shared_data[threadIdx.x] = input[tid];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        shared_data[threadIdx.x] = <span class="number">0</span>;  <span class="comment">// 超出范围的线程填充 0</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 同步线程块内的所有线程，确保共享内存写入完成</span></span><br><span class="line">    __syncthreads();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 线程块内的归约操作（计算局部和）</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> stride = blockDim.x / <span class="number">2</span>; stride &gt; <span class="number">0</span>; stride /= <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (threadIdx.x &lt; stride) &#123;</span><br><span class="line">            shared_data[threadIdx.x] += shared_data[threadIdx.x + stride];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 同步线程块内的所有线程，确保每一步归约操作完成</span></span><br><span class="line">        __syncthreads();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将线程块的结果写入全局内存</span></span><br><span class="line">    <span class="keyword">if</span> (threadIdx.x == <span class="number">0</span>) &#123;</span><br><span class="line">        output[blockIdx.x] = shared_data[<span class="number">0</span>];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> n = <span class="number">1024</span>;  <span class="comment">// 输入数组的大小</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> block_size = <span class="number">128</span>;  <span class="comment">// 每个线程块的线程数</span></span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> grid_size = (n + block_size - <span class="number">1</span>) / block_size;  <span class="comment">// 网格的大小</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分配主机内存</span></span><br><span class="line">    <span class="type">int</span> *h_input = (<span class="type">int</span> *)<span class="built_in">malloc</span>(n * <span class="built_in">sizeof</span>(<span class="type">int</span>));</span><br><span class="line">    <span class="type">int</span> *h_output = (<span class="type">int</span> *)<span class="built_in">malloc</span>(grid_size * <span class="built_in">sizeof</span>(<span class="type">int</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 初始化输入数组</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; n; i++) &#123;</span><br><span class="line">        h_input[i] = <span class="number">1</span>;  <span class="comment">// 每个元素初始化为 1</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 分配设备内存</span></span><br><span class="line">    <span class="type">int</span> *d_input, *d_output;</span><br><span class="line">    <span class="built_in">cudaMalloc</span>((<span class="type">void</span> **)&amp;d_input, n * <span class="built_in">sizeof</span>(<span class="type">int</span>));</span><br><span class="line">    <span class="built_in">cudaMalloc</span>((<span class="type">void</span> **)&amp;d_output, grid_size * <span class="built_in">sizeof</span>(<span class="type">int</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将输入数据拷贝到设备</span></span><br><span class="line">    <span class="built_in">cudaMemcpy</span>(d_input, h_input, n * <span class="built_in">sizeof</span>(<span class="type">int</span>), cudaMemcpyHostToDevice);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 启动 Kernel</span></span><br><span class="line">    partial_sum_kernel&lt;&lt;&lt;grid_size, block_size&gt;&gt;&gt;(d_input, d_output, n);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将结果拷贝回主机</span></span><br><span class="line">    <span class="built_in">cudaMemcpy</span>(h_output, d_output, grid_size * <span class="built_in">sizeof</span>(<span class="type">int</span>), cudaMemcpyDeviceToHost);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 计算最终结果（将所有线程块的结果累加）</span></span><br><span class="line">    <span class="type">int</span> final_sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; grid_size; i++) &#123;</span><br><span class="line">        final_sum += h_output[i];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 打印结果</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Final sum: %d\n&quot;</span>, final_sum);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放设备内存</span></span><br><span class="line">    <span class="built_in">cudaFree</span>(d_input);</span><br><span class="line">    <span class="built_in">cudaFree</span>(d_output);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 释放主机内存</span></span><br><span class="line">    <span class="built_in">free</span>(h_input);</span><br><span class="line">    <span class="built_in">free</span>(h_output);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的<code>__syncthreads</code>有2次使用:</p>
+<ol>
+<li>第一次使用是完成共享内存的初始化</li>
+<li>第二次使用是等待当前<code>block</code>的所有线程完成, 然后继续执行下一个循环, 因为下一个循环的<code>shared_data</code>依赖于不同索引处的值</li>
+</ol>
+<h1 id="5-Stream"><a href="#5-Stream" class="headerlink" title="5 Stream"></a>5 Stream</h1><h2 id="5-1-Stream-的基本概念"><a href="#5-1-Stream-的基本概念" class="headerlink" title="5.1 Stream 的基本概念"></a>5.1 Stream 的基本概念</h2><p>在 CUDA 中，<strong>Stream</strong> 是一种用于管理并发执行的机制。通过使用 <code>Stream</code>，可以将多个任务（如 Kernel 执行、内存拷贝等）分配到不同的流中，从而实现任务之间的并行执行。<code>Stream</code> 的主要作用是提高 GPU 的利用率，特别是在需要执行多个独立任务时。</p>
+<ul>
+<li><strong>Stream</strong>：一个 <code>Stream</code> 是一个任务队列，其中的任务按顺序执行。不同 <code>Stream</code> 中的任务可以并发执行。</li>
+<li><strong>默认 Stream</strong>：如果没有显式创建 <code>Stream</code>，所有任务都会在默认 <code>Stream</code> 中执行，任务之间是串行的。</li>
+<li><strong>非默认 Stream</strong>：通过显式创建 <code>Stream</code>，可以将任务分配到不同的 <code>Stream</code> 中，从而实现并发执行。</li>
+</ul>
+<p><strong>Stream 的使用场景</strong></p>
+<ul>
+<li><strong>并发 Kernel 执行</strong>：在多个 <code>Stream</code> 中启动不同的 <code>Kernel</code>，实现 <code>Kernel</code> 的并发执行。</li>
+<li><strong>并发内存拷贝和 Kernel 执行</strong>：在一个 <code>Stream</code> 中执行 <code>Kernel</code>，同时在另一个 <code>Stream</code> 中执行内存拷贝，实现计算和数据传输的重叠。</li>
+<li><strong>多任务流水线</strong>：将多个任务分配到不同的 <code>Stream</code> 中，形成流水线，提高整体吞吐量。</li>
+</ul>
+<h2 id="5-2-Stream-的基本操作"><a href="#5-2-Stream-的基本操作" class="headerlink" title="5.2. Stream 的基本操作"></a>5.2. <strong>Stream 的基本操作</strong></h2><p><strong>创建和销毁 Stream</strong></p>
+<ul>
+<li><strong>创建 Stream</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cudaStream_t stream;</span><br><span class="line"><span class="built_in">cudaStreamCreate</span>(&amp;stream);</span><br></pre></td></tr></table></figure></li>
+<li><strong>创建 Stream 并设置优先级</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> leastPriority, greatestPriority;</span><br><span class="line"><span class="built_in">cudaDeviceGetStreamPriorityRange</span>(&amp;leastPriority, &amp;greatestPriority);</span><br><span class="line"><span class="built_in">cudaStreamCreateWithPriority</span>(&amp;stream1, cudaStreamNonBlocking, leastPriority);</span><br><span class="line"><span class="built_in">cudaStreamCreateWithPriority</span>(&amp;stream2, cudaStreamNonBlocking, greatestPriority);</span><br></pre></td></tr></table></figure>
+  这里的<code>flag</code>设置为<code>cudaStreamNonBlocking</code>表示非阻塞, 否则设置为0即可</li>
+<li><strong>销毁 Stream</strong>：<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cudaStreamDestroy</span>(stream);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>在 Stream 中执行任务</strong></p>
+<ul>
+<li><p><strong>启动 Kernel</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kernel&lt;&lt;&lt;gridDim, blockDim, <span class="number">0</span>, stream&gt;&gt;&gt;(...);</span><br></pre></td></tr></table></figure>
+<p>其中 <code>stream</code> 是指定的 Stream。</p>
+</li>
+<li><p><strong>异步内存拷贝</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cudaMemcpyAsync</span>(dst, src, size, cudaMemcpyHostToDevice, stream);</span><br></pre></td></tr></table></figure>
+<p>其中 <code>stream</code> 是指定的 Stream。在 <code>CUDA</code> 编程中，将 使用 <code>Stream</code> 的 <code>Kernel</code> 和 <code>cudaMemcpyAsync</code> 结合使用的主要目的是<strong>实现计算与数据传输的重叠</strong>，从而最大化 GPU 的利用率和整体性能。这种结合使用的场景在需要频繁进行数据传输和计算的应用程序中非常常见，例如深度学习训练、科学计算和大规模数据处理等。</p>
+</li>
+</ul>
+<p><strong>同步 Stream</strong></p>
+<ul>
+<li><p><strong>同步单个 Stream</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cudaStreamSynchronize</span>(stream);</span><br></pre></td></tr></table></figure>
+<p>等待指定 Stream 中的所有任务完成。</p>
+</li>
+<li><p><strong>同步所有 Stream</strong>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cudaDeviceSynchronize</span>();</span><br></pre></td></tr></table></figure>
+<p>等待所有 Stream 中的任务完成。</p>
+</li>
+</ul>
+<h2 id="5-3-Events"><a href="#5-3-Events" class="headerlink" title="5.3 Events"></a>5.3 Events</h2><p><code>Events</code> 是 <code>CUDA</code> 中用于同步和计时的高级机制。通过创建和使用 <code>Events</code>，可以精确地跟踪和控制任务的执行时间，从而优化性能和调试。<code>Events</code> 通常与 <code>Stream</code> 结合使用，用于同步和计时,并创建依赖关系。</p>
+<p>以下面的代码为例（摘选自<a target="_blank" rel="noopener" href="https://github.com/Infatoshi/cuda-course">cuda-course</a>）：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">cudaEvent_t start, stop;</span><br><span class="line"><span class="built_in">cudaEventCreate</span>(&amp;start);</span><br><span class="line"><span class="built_in">cudaEventCreate</span>(&amp;stop);</span><br><span class="line"></span><br><span class="line"><span class="built_in">cudaEventRecord</span>(start, stream);</span><br><span class="line">kernel&lt;&lt;&lt;grid, block, <span class="number">0</span>, stream&gt;&gt;&gt;(args);</span><br><span class="line"><span class="built_in">cudaEventRecord</span>(stop, stream);</span><br><span class="line"></span><br><span class="line"><span class="built_in">cudaEventSynchronize</span>(stop);</span><br><span class="line"><span class="type">float</span> milliseconds = <span class="number">0</span>;</span><br><span class="line"><span class="built_in">cudaEventElapsedTime</span>(&amp;milliseconds, start, stop);</span><br></pre></td></tr></table></figure>
+<p>上面的代码展示了如何使用 <code>Events</code> 来同步和计时。</p>
+<ul>
+<li><strong>同步</strong>：使用<code>cudaEventRecord</code>标记了<code>start</code>和<code>stop</code>事件, 然后使用<code>cudaEventSynchronize</code>等待<code>stop</code>事件完成</li>
+<li><strong>计时</strong>：使用<code>cudaEventElapsedTime</code>计算<code>start</code>和<code>stop</code>事件之间的时间差, 单位为毫秒</li>
+</ul>
+<h2 id="5-4-CallBack"><a href="#5-4-CallBack" class="headerlink" title="5.4 CallBack"></a>5.4 CallBack</h2><p><code>Callback</code> 是 <code>CUDA</code> 中用于在任务完成时执行回调函数的高级机制。通过创建和使用 <code>Callback</code>，可以实现任务完成后的自定义操作，例如日志记录、错误处理等。<code>Callback</code> 通常与 <code>Stream</code> 结合使用，用于在任务完成后执行特定的操作。其使用方式如下:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">cudaStreamAddCallback</span>(stream, callback, data, flags);</span><br></pre></td></tr></table></figure>
+<p>这里的<code>callback</code>是一个函数指针, <code>data</code>是传递给回调函数的参数, <code>flags</code>是回调函数的标志, 通常设置为0。</p>
+<h2 id="5-5-代码示例"><a href="#5-5-代码示例" class="headerlink" title="5.5 代码示例"></a>5.5 代码示例</h2><p>下面的代码同样摘选自<a target="_blank" rel="noopener" href="https://github.com/Infatoshi/cuda-course">cuda-course</a></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;cuda_runtime.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)</span></span><br><span class="line"><span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">check</span><span class="params">(T err, <span class="type">const</span> <span class="type">char</span>* <span class="type">const</span> func, <span class="type">const</span> <span class="type">char</span>* <span class="type">const</span> file, <span class="type">const</span> <span class="type">int</span> line)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (err != cudaSuccess) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(stderr, <span class="string">&quot;CUDA error at %s:%d code=%d(%s) \&quot;%s\&quot; \n&quot;</span>, file, line, <span class="built_in">static_cast</span>&lt;<span class="type">unsigned</span> <span class="type">int</span>&gt;(err), <span class="built_in">cudaGetErrorString</span>(err), func);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">kernel1</span><span class="params">(<span class="type">float</span> *data, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line">    <span class="keyword">if</span> (idx &lt; n) &#123;</span><br><span class="line">        data[idx] *= <span class="number">2.0f</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">kernel2</span><span class="params">(<span class="type">float</span> *data, <span class="type">int</span> n)</span> </span>&#123;</span><br><span class="line">    <span class="type">int</span> idx = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line">    <span class="keyword">if</span> (idx &lt; n) &#123;</span><br><span class="line">        data[idx] += <span class="number">1.0f</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> CUDART_CB <span class="title">myStreamCallback</span><span class="params">(cudaStream_t stream, cudaError_t status, <span class="type">void</span> *userData)</span> </span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Stream callback: Operation completed\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">void</span>)</span> </span>&#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">int</span> N = <span class="number">1000000</span>;</span><br><span class="line">    <span class="type">size_t</span> size = N * <span class="built_in">sizeof</span>(<span class="type">float</span>);</span><br><span class="line">    <span class="type">float</span> *h_data, *d_data;</span><br><span class="line">    cudaStream_t stream1, stream2;</span><br><span class="line">    cudaEvent_t event;</span><br><span class="line">    std::cout &lt;&lt; event &lt;&lt; std::endl;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Allocate host and device memory</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaMallocHost</span>(&amp;h_data, size));  <span class="comment">// Pinned memory for faster transfers</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaMalloc</span>(&amp;d_data, size));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Initialize data</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; ++i) &#123;</span><br><span class="line">        h_data[i] = <span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(i);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Create streams with different priorities</span></span><br><span class="line">    <span class="type">int</span> leastPriority, greatestPriority;</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaDeviceGetStreamPriorityRange</span>(&amp;leastPriority, &amp;greatestPriority));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamCreateWithPriority</span>(&amp;stream1, cudaStreamNonBlocking, leastPriority));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamCreateWithPriority</span>(&amp;stream2, cudaStreamNonBlocking, greatestPriority));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Create event</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaEventCreate</span>(&amp;event));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Asynchronous memory copy and kernel execution in stream1</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaMemcpyAsync</span>(d_data, h_data, size, cudaMemcpyHostToDevice, stream1));</span><br><span class="line">    kernel1&lt;&lt;&lt;(N + <span class="number">255</span>) / <span class="number">256</span>, <span class="number">256</span>, <span class="number">0</span>, stream1&gt;&gt;&gt;(d_data, N);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Record event in stream1</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaEventRecord</span>(event, stream1));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Make stream2 wait for event</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamWaitEvent</span>(stream2, event, <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Execute kernel in stream2</span></span><br><span class="line">    kernel2&lt;&lt;&lt;(N + <span class="number">255</span>) / <span class="number">256</span>, <span class="number">256</span>, <span class="number">0</span>, stream2&gt;&gt;&gt;(d_data, N);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Add callback to stream2</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamAddCallback</span>(stream2, myStreamCallback, <span class="literal">NULL</span>, <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Asynchronous memory copy back to host</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaMemcpyAsync</span>(h_data, d_data, size, cudaMemcpyDeviceToHost, stream2));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Synchronize streams</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamSynchronize</span>(stream1));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamSynchronize</span>(stream2));</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Verify result</span></span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; ++i) &#123;</span><br><span class="line">        <span class="type">float</span> expected = (<span class="built_in">static_cast</span>&lt;<span class="type">float</span>&gt;(i) * <span class="number">2.0f</span>) + <span class="number">1.0f</span>;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">fabs</span>(h_data[i] - expected) &gt; <span class="number">1e-5</span>) &#123;</span><br><span class="line">            <span class="built_in">fprintf</span>(stderr, <span class="string">&quot;Result verification failed at element %d!\n&quot;</span>, i);</span><br><span class="line">            <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Test PASSED\n&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Clean up</span></span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaFreeHost</span>(h_data));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaFree</span>(d_data));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamDestroy</span>(stream1));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaStreamDestroy</span>(stream2));</span><br><span class="line">    <span class="built_in">CHECK_CUDA_ERROR</span>(<span class="built_in">cudaEventDestroy</span>(event));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>这段代码首先使用<code>cudaStreamCreateWithPriority</code>创建的优先级不同的<code>Stream</code>, <code>stream2</code>的优先级最高, <code>stream1</code>的优先级最低</li>
+<li>然后使用<code>cudaEventCreate</code>创建了一个<code>Event</code>, 并使用<code>cudaEventRecord</code>在<code>stream1</code>中记录了这个事件, 需要注意的是, 由于<code>stream1</code>先启动了<code>kernel1</code>, 当记录这个<code>Event</code>时的含义是<code>kernel1</code>已经完成</li>
+<li>接着使用<code>cudaStreamWaitEvent</code>在<code>stream2</code>中等待这个事件完成, 也就是<code>kernel1</code>完成后<code>stream1</code>通过记录<code>Event</code>来通知<code>stream2</code></li>
+<li>最后使用<code>cudaStreamAddCallback</code>在<code>stream2</code>中添加了一个回调函数, 当<code>stream2</code>中的任务完成时, 会调用这个回调函数</li>
+<li>这段代码的目的是实现<code>stream1</code>和<code>stream2</code>的并发执行, 并使用<code>Event</code>来同步<code>stream2</code>和<code>stream1</code></li>
+</ul>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFCUDA"><span class="toc-number">1.</span> <span class="toc-text">1 什么是CUDA</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-CUDA%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5"><span class="toc-number">2.</span> <span class="toc-text">2 CUDA基础概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-Host-%E5%92%8C-Device"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 Host 和 Device</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-Kernel"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 Kernel</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Grid-Block-Thread"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Grid, Block, Thread</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-Warps"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 Warps</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CUDA%E5%9F%BA%E7%A1%80%E7%BC%96%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3 CUDA基础编程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%B1%87%E6%80%BB"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础语法汇总</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-Kernel%E7%9A%84%E7%BB%B4%E5%BA%A6"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 Kernel的维度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 内存管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-1-CUDA-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1. CUDA 内存模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-2-%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86%E5%87%BD%E6%95%B0"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2. 内存管理函数</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-1-%E8%AE%BE%E5%A4%87%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E4%B8%8E%E9%87%8A%E6%94%BE"><span class="toc-number">3.3.2.1.</span> <span class="toc-text">3.3.2.1 设备内存分配与释放</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-2-%E4%B8%BB%E6%9C%BA-%E8%AE%BE%E5%A4%87%E6%95%B0%E6%8D%AE%E4%BC%A0%E8%BE%93"><span class="toc-number">3.3.2.2.</span> <span class="toc-text">3.3.2.2 主机-设备数据传输</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-3-%E5%86%85%E5%AD%98%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="toc-number">3.3.2.3.</span> <span class="toc-text">3.3.2.3 内存初始化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">3.4.</span> <span class="toc-text">3.5 代码示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B8%8E%E5%90%8C%E6%AD%A5"><span class="toc-number">4.</span> <span class="toc-text">4 线程安全与同步</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E7%BA%BF%E7%A8%8B%E5%90%8C%E6%AD%A5%E4%B8%8E%E5%B1%8F%E9%9A%9C"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 线程同步与屏障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 原子操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 代码示例</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Stream"><span class="toc-number">5.</span> <span class="toc-text">5 Stream</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Stream-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Stream 的基本概念</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-Stream-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%93%8D%E4%BD%9C"><span class="toc-number">5.2.</span> <span class="toc-text">5.2. Stream 的基本操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Events"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Events</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-4-CallBack"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 CallBack</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-5-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">5.5.</span> <span class="toc-text">5.5 代码示例</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&text=CUDA快速入门-01-基础语法概念"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&is_video=false&description=CUDA快速入门-01-基础语法概念"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CUDA快速入门-01-基础语法概念&body=Check out this article: http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&title=CUDA快速入门-01-基础语法概念"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&name=CUDA快速入门-01-基础语法概念&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/01/04/C++/CUDA%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8-01-%E5%9F%BA%E7%A1%80%E8%AF%AD%E6%B3%95%E6%A6%82%E5%BF%B5/&t=CUDA快速入门-01-基础语法概念"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

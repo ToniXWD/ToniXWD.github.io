@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这一小节实现基于之前的Block完成SST的编解码、迭代器。 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 SST设计上一小节已经介绍了Block和SST的关系, 以及SST和Immutable MemTable的关系。不过缺失了SST的编码方式。 参考Minni LSM的编码方式: SST文件由多个Block组成，每个SST的格式如下：  这">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-04-SST">
+<meta property="og:url" content="http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这一小节实现基于之前的Block完成SST的编解码、迭代器。 代码仓库：https:&#x2F;&#x2F;github.com&#x2F;Vanilla-Beauty&#x2F;tiny-lsm 1 SST设计上一小节已经介绍了Block和SST的关系, 以及SST和Immutable MemTable的关系。不过缺失了SST的编码方式。 参考Minni LSM的编码方式: SST文件由多个Block组成，每个SST的格式如下：  这">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/SST.drawio.png">
+<meta property="article:published_time" content="2025-02-05T01:29:33.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.667Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/SST.drawio.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-04-SST</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/02/08/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-05-%E6%96%87%E4%BB%B6IO/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/02/04/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-03-Block/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&text=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-04-SST&body=Check out this article: http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&name=C++从零开始实现LSM-Tree-KV存储-04-SST&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&t=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SST%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 SST设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-SST%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 SST实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-BlockMeta"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 BlockMeta</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-SST"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 SST</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-SST%E8%BF%AD%E4%BB%A3%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 SST迭代器实现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%B8%8B%E4%B8%80%E6%AD%A5%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">4.</span> <span class="toc-text">4 下一步是什么？</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-04-SST
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-02-05T01:29:33.000Z" class="dt-published" itemprop="datePublished">2025-02-05</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这一小节实现基于之前的<code>Block</code>完成<code>SST</code>的编解码、迭代器。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">https://github.com/Vanilla-Beauty/tiny-lsm</a></p>
+<h1 id="1-SST设计"><a href="#1-SST设计" class="headerlink" title="1 SST设计"></a>1 SST设计</h1><p>上一小节已经介绍了<code>Block</code>和<code>SST</code>的关系, 以及<code>SST</code>和<code>Immutable MemTable</code>的关系。不过缺失了<code>SST</code>的编码方式。</p>
+<p>参考<code>Minni LSM</code>的编码方式: <code>SST</code>文件由多个<code>Block</code>组成，每个<code>SST</code>的格式如下：</p>
+<p><img src="/../../../images/Proj/LSM/SST.drawio.png" alt="SST"></p>
+<p>这里的每个<code>Block_x</code>就是上一节介绍的编码格式, 其后会追加32位的哈希值，用于校验, 这也是为什么之前的<code>Block::decode</code>需要一个参数来判断<code>Block</code>是否包含哈希值的原因。每个<code>Block</code>对应一个<code>Meta</code>, 每个<code>Meta</code>记录这个<code>Block</code>在<code>SST</code>文件中的偏移量、第一个和最后一个<code>key</code>的元数据(长度和大小)。</p>
+<p>对每个<code>Block</code>的索引和<code>Block</code>不同, 需要尤其注意。因为<code>Block</code>的数据是已经加载到内存中的, 而<code>SST</code>则是存在磁盘上的, 所以这里需要根据<code>Meta Section Offset</code>定位到<code>Meta Section</code>并将其读取到内存，然后根据索引在内存中读取对应的<code>Meta</code>, 再从文件系统重读取真正的<code>Block</code>, 读取的字节序列交由我们之前实现的<code>Block::decode</code>处理。也就是说, 第一次读取<code>Meta Section</code>之后其就常驻于内存中, 之后的<code>Block</code>的元数据读取都是在内存中进行的。(这里还没有实现缓存池管理, 因此后续的代码可能会有变化)。</p>
+<h1 id="2-SST实现"><a href="#2-SST实现" class="headerlink" title="2 SST实现"></a>2 SST实现</h1><h2 id="2-1-BlockMeta"><a href="#2-1-BlockMeta" class="headerlink" title="2.1 BlockMeta"></a>2.1 BlockMeta</h2><p>根据之前描述的编码方式和过程，如下设计：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">BlockMeta</span> &#123;</span><br><span class="line">  <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">BlockMetaTest</span>;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="type">size_t</span> offset;       <span class="comment">// 块在文件中的偏移量</span></span><br><span class="line">  std::string first_key; <span class="comment">// 块的第一个key</span></span><br><span class="line">  std::string last_key;  <span class="comment">// 块的最后一个key</span></span><br><span class="line">  <span class="function"><span class="type">static</span> <span class="type">void</span> <span class="title">encode_meta_to_slice</span><span class="params">(std::vector&lt;BlockMeta&gt; &amp;meta_entries, std::vector&lt;<span class="type">uint8_t</span>&gt; &amp;metadata)</span></span>;</span><br><span class="line">  <span class="function"><span class="type">static</span> std::vector&lt;BlockMeta&gt; <span class="title">decode_meta_from_slice</span><span class="params">(<span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt; &amp;metadata)</span></span>;</span><br><span class="line">  <span class="built_in">BlockMeta</span>();</span><br><span class="line">  <span class="built_in">BlockMeta</span>(<span class="type">size_t</span> offset, <span class="type">const</span> std::string&amp; first_key, <span class="type">const</span> std::string&amp; last_key);</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这里的重要函数只有<code>encode_meta_to_slice</code>和<code>decode_meta_from_slice</code>，分别用于将<code>BlockMeta</code>编码到字节序列和从字节序列解码出<code>BlockMeta</code>。这里的实现也就是比较繁琐, 倒没有特别易错的地方和技术难度, 这里就不列出了, 有兴趣的可以看代码。</p>
+<h2 id="2-2-SST"><a href="#2-2-SST" class="headerlink" title="2.2 SST"></a>2.2 SST</h2><p>这里把<code>SST</code>分为<code>SSTBuilder</code>和<code>SST</code>两个类，<code>SSTBuilder</code>用于构建<code>SST</code>文件，<code>SST</code>用于读取<code>SST</code>文件。<code>SSTBuilder</code>执行刷盘后会返回<code>SST</code>描述类, <code>SST</code>描述类中对<code>SST</code>文件的读取和解析需要是惰性的（后续实现缓存池管理后代码可能会有变化）。</p>
+<p>这里的<code>SST</code>类的设计如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SST</span> : <span class="keyword">public</span> std::enable_shared_from_this&lt;SST&gt; &#123;</span><br><span class="line">  <span class="keyword">friend</span> <span class="keyword">class</span> <span class="title class_">SSTBuilder</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  FileObj file; <span class="comment">// 封装的对SST文件的操作, 后续会提到</span></span><br><span class="line">  std::vector&lt;BlockMeta&gt; meta_entries; <span class="comment">// 内存中的meta数据, 读取sst文件时会从文件中加载</span></span><br><span class="line">  <span class="type">uint32_t</span> meta_block_offset;</span><br><span class="line">  <span class="type">size_t</span> sst_id;</span><br><span class="line">  std::string first_key;</span><br><span class="line">  std::string last_key;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// 从文件中打开sst</span></span><br><span class="line">  <span class="function"><span class="type">static</span> std::shared_ptr&lt;SST&gt; <span class="title">open</span><span class="params">(<span class="type">size_t</span> sst_id, FileObj file)</span></span>;</span><br><span class="line">  <span class="comment">// 创建一个sst, 只包含首尾key的元数据</span></span><br><span class="line">  <span class="function"><span class="type">static</span> std::shared_ptr&lt;SST&gt;</span></span><br><span class="line"><span class="function">  <span class="title">create_sst_with_meta_only</span><span class="params">(<span class="type">size_t</span> sst_id, <span class="type">size_t</span> file_size,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">const</span> std::string &amp;first_key,</span></span></span><br><span class="line"><span class="params"><span class="function">                            <span class="type">const</span> std::string &amp;last_key)</span></span>;</span><br><span class="line">  <span class="comment">// 根据索引读取block</span></span><br><span class="line">  <span class="function">std::shared_ptr&lt;Block&gt; <span class="title">read_block</span><span class="params">(<span class="type">size_t</span> block_idx)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 找到key所在的block的idx</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">find_block_idx</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 根据key返回迭代器</span></span><br><span class="line">  <span class="function">SstIterator <span class="title">get</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回sst中block的数量</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">num_blocks</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回sst的首key</span></span><br><span class="line">  <span class="function">std::string <span class="title">get_first_key</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回sst的尾key</span></span><br><span class="line">  <span class="function">std::string <span class="title">get_last_key</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回sst的大小</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">sst_size</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回sst的id</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">get_sst_id</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="function">SstIterator <span class="title">begin</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function">SstIterator <span class="title">end</span><span class="params">()</span></span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SSTBuilder</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  Block block; <span class="comment">// 当前block</span></span><br><span class="line">  std::string first_key; <span class="comment">// 当前block的第一个key</span></span><br><span class="line">  std::string last_key; <span class="comment">// 当前block的最后一个key</span></span><br><span class="line">  std::vector&lt;BlockMeta&gt; meta_entries; <span class="comment">// 全局的meta数据</span></span><br><span class="line">  std::vector&lt;<span class="type">uint8_t</span>&gt; data; <span class="comment">// 全局sst编码数据</span></span><br><span class="line">  <span class="type">size_t</span> block_size; <span class="comment">// block的阈值</span></span><br><span class="line">  std::vector&lt;<span class="type">uint32_t</span>&gt; key_hashes;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="comment">// 创建一个sst构建器, 指定目标block的大小</span></span><br><span class="line">  <span class="built_in">SSTBuilder</span>(<span class="type">size_t</span> block_size);</span><br><span class="line">  <span class="comment">// 添加一个key-value对</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">add</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value)</span></span>;</span><br><span class="line">  <span class="comment">// 估计sst的大小</span></span><br><span class="line">  <span class="function"><span class="type">size_t</span> <span class="title">estimated_size</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">  <span class="comment">// 完成当前block的构建, 即将block写入data, 并创建新的block</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">finish_block</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="comment">// 构建sst, 将sst写入文件并返回SST描述类</span></span><br><span class="line">  <span class="function">std::shared_ptr&lt;SST&gt; <span class="title">build</span><span class="params">(<span class="type">size_t</span> sst_id, <span class="type">const</span> std::string &amp;path)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>这里为了后续实现迭代器, <code>SST</code>类也继承了<code>std::enable_shared_from_this&lt;SST&gt;</code>，这样在<code>SstIterator</code>中可以通过<code>shared_from_this</code>获取<code>SST</code>的<code>shared_ptr</code>。</p>
+</blockquote>
+<p>最后这里理清下<code>SST</code>的构建和读取流程：</p>
+<p><strong>构建流程</strong></p>
+<ol>
+<li>当<code>MemTable</code>的大小超过阈值后，准备将<code>MemTable</code>中最旧的<code>Immutable MemTable</code>刷出为<code>SST</code>。</li>
+<li>先创建一个<code>SSTBuilder</code>, 按照迭代器的顺序遍历<code>Immutable MemTable</code>，将<code>key-value</code>对添加到<code>SSTBuilder</code>中:<ol>
+<li><code>SSTBuilder</code>会有一个当前的<code>block</code>, 首先会调用<code>Block::add_entry</code>将迭代器的<code>kv</code>对插入</li>
+<li>如果当前的<code>block</code>容量超出阈值<code>block_size</code>, 就调用<code>finish_block</code>将其编码到<code>data</code>, 并清楚当前<code>block</code>相关数据</li>
+<li>遍历完成迭代器的所有<code>kv</code>对的插入后, 调用<code>build</code>将所有的数据刷到文件系统, 并返回一个<code>SST</code>描述类</li>
+</ol>
+</li>
+</ol>
+<p><strong>读取流程</strong></p>
+<ol>
+<li><code>SST</code>构造函数会绑定一个文件描述符(这里是我自定义封装的文件读取类<code>FileObj file</code>)</li>
+<li><code>SST</code>中的<code>meta entries</code>从第一次读取后就常驻内存(第一次读取可以是构造函数, 也可以是第一次<code>get</code>)</li>
+<li>上层调用<code>get</code>时, 会从元数据<code>meta_entries</code>中进行二分查找, 找到对应的<code>block</code>的偏移量, 然后调用文件描述对象<code>file</code>从磁盘中读取</li>
+<li>读取后的字节流交由<code>Block::decode</code>解码得到内存中的<code>Block</code></li>
+<li>内存中的<code>Block</code>调用之前实现的查询函数完成二分查询</li>
+</ol>
+<p>这里介绍完逻辑后, 关键代码给出<code>add</code>, <code>build</code>:</p>
+<p><strong>add</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SSTBuilder::add</span><span class="params">(<span class="type">const</span> std::string &amp;key, <span class="type">const</span> std::string &amp;value)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 记录第一个key</span></span><br><span class="line">  <span class="keyword">if</span> (first_key.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    first_key = key;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 计算当前key的hash并存储</span></span><br><span class="line">  <span class="type">uint32_t</span> hash = <span class="built_in">static_cast</span>&lt;<span class="type">uint32_t</span>&gt;(std::hash&lt;std::string&gt;&#123;&#125;(key));</span><br><span class="line">  key_hashes.<span class="built_in">push_back</span>(hash);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (block.<span class="built_in">add_entry</span>(key, value)) &#123;</span><br><span class="line">    <span class="comment">// block 满足容量限制, 插入成功</span></span><br><span class="line">    last_key = key;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">finish_block</span>(); <span class="comment">// 将当前 block 写入</span></span><br><span class="line"></span><br><span class="line">  block.<span class="built_in">add_entry</span>(key, value);</span><br><span class="line">  first_key = key;</span><br><span class="line">  last_key = key; <span class="comment">// 更新最后一个key</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>build</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;SST&gt; <span class="title">SSTBuilder::build</span><span class="params">(<span class="type">size_t</span> sst_id, <span class="type">const</span> std::string &amp;path)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 完成最后一个block</span></span><br><span class="line">  <span class="keyword">if</span> (!block.<span class="built_in">is_empty</span>()) &#123;</span><br><span class="line">    <span class="built_in">finish_block</span>();</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 如果没有数据，抛出异常</span></span><br><span class="line">  <span class="keyword">if</span> (meta_entries.<span class="built_in">empty</span>()) &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;Cannot build empty SST&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 编码元数据块</span></span><br><span class="line">  std::vector&lt;<span class="type">uint8_t</span>&gt; meta_block;</span><br><span class="line">  BlockMeta::<span class="built_in">encode_meta_to_slice</span>(meta_entries, meta_block);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 计算元数据块的偏移量</span></span><br><span class="line">  <span class="type">uint32_t</span> meta_offset = data.<span class="built_in">size</span>();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 构建完整的文件内容</span></span><br><span class="line">  <span class="comment">// 1. 已有的数据块</span></span><br><span class="line">  std::vector&lt;<span class="type">uint8_t</span>&gt; file_content = std::<span class="built_in">move</span>(data);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. 添加元数据块</span></span><br><span class="line">  file_content.<span class="built_in">insert</span>(file_content.<span class="built_in">end</span>(), meta_block.<span class="built_in">begin</span>(), meta_block.<span class="built_in">end</span>());</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 3. 添加元数据块偏移量</span></span><br><span class="line">  file_content.<span class="built_in">resize</span>(file_content.<span class="built_in">size</span>() + <span class="built_in">sizeof</span>(<span class="type">uint32_t</span>));</span><br><span class="line">  <span class="built_in">memcpy</span>(file_content.<span class="built_in">data</span>() + file_content.<span class="built_in">size</span>() - <span class="built_in">sizeof</span>(<span class="type">uint32_t</span>),</span><br><span class="line">         &amp;meta_offset, <span class="built_in">sizeof</span>(<span class="type">uint32_t</span>));</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 创建文件</span></span><br><span class="line">  FileObj file = FileObj::<span class="built_in">create_and_write</span>(path, file_content);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回SST对象</span></span><br><span class="line">  <span class="keyword">auto</span> res = std::<span class="built_in">make_shared</span>&lt;SST&gt;();</span><br><span class="line"></span><br><span class="line">  res-&gt;sst_id = sst_id;</span><br><span class="line">  res-&gt;file = std::<span class="built_in">move</span>(file);</span><br><span class="line">  res-&gt;first_key = meta_entries.<span class="built_in">front</span>().first_key;</span><br><span class="line">  res-&gt;last_key = meta_entries.<span class="built_in">back</span>().last_key;</span><br><span class="line">  res-&gt;meta_block_offset = meta_offset;</span><br><span class="line">  res-&gt;meta_entries = std::<span class="built_in">move</span>(meta_entries);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>至于<code>get</code>, 需要先实现迭代器</p>
+<h1 id="3-SST迭代器实现"><a href="#3-SST迭代器实现" class="headerlink" title="3 SST迭代器实现"></a>3 SST迭代器实现</h1><p>要实现<code>SST</code>的迭代器, 需要记录当前的<code>Block</code>索引, <code>Block</code>中的<code>Entry</code>索引, 因此也需要原<code>SST</code>类的<code>this</code>指针, 之前已经介绍过<code>enable_shared_from_this</code>了, 不再赘述。</p>
+<p>首先看迭代器的定义:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SST</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">SstIterator</span> &#123;</span><br><span class="line">  <span class="keyword">friend</span> SST;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  std::shared_ptr&lt;SST&gt; m_sst;</span><br><span class="line">  <span class="type">size_t</span> m_block_idx;</span><br><span class="line">  std::shared_ptr&lt;BlockIterator&gt; m_block_it;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="keyword">using</span> value_type = std::pair&lt;std::string, std::string&gt;;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 创建迭代器, 并移动到第一个key</span></span><br><span class="line">  <span class="built_in">SstIterator</span>(std::shared_ptr&lt;SST&gt; sst);</span><br><span class="line">  <span class="comment">// 创建迭代器, 并移动到第指定key</span></span><br><span class="line">  <span class="built_in">SstIterator</span>(std::shared_ptr&lt;SST&gt; sst, <span class="type">const</span> std::string &amp;key);</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">seek_first</span><span class="params">()</span></span>; <span class="comment">// 将迭代器置于开始位置</span></span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">seek</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>; <span class="comment">// 将迭代器置于指定key的位置</span></span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">is_end</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">key</span><span class="params">()</span></span>;</span><br><span class="line">  <span class="function">std::string <span class="title">value</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  SstIterator &amp;<span class="keyword">operator</span>++();</span><br><span class="line">  SstIterator <span class="keyword">operator</span>++(<span class="type">int</span>) = <span class="keyword">delete</span>;</span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> SstIterator &amp;other) <span class="type">const</span>;</span><br><span class="line">  <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> SstIterator &amp;other) <span class="type">const</span>;</span><br><span class="line">  value_type <span class="keyword">operator</span>*() <span class="type">const</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>这里使用<code>m_sst</code>, <code>m_block_idx</code>和<code>m_block_it</code>分别记录原始的<code>SST</code>类对象、当前<code>Block</code>在<code>SST</code>中的位置、当前迭代器在<code>Block</code>中的位置。</p>
+<p>这里比较重要的是定位迭代器的函数：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">SstIterator::seek_first</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!m_sst || m_sst-&gt;<span class="built_in">num_blocks</span>() == <span class="number">0</span>) &#123;</span><br><span class="line">    m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  m_block_idx = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">auto</span> block = m_sst-&gt;<span class="built_in">read_block</span>(m_block_idx);</span><br><span class="line">  m_block_it = std::<span class="built_in">make_shared</span>&lt;BlockIterator&gt;(block);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SstIterator::seek</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (!m_sst) &#123;</span><br><span class="line">    m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    m_block_idx = m_sst-&gt;<span class="built_in">find_block_idx</span>(key);</span><br><span class="line">    <span class="keyword">auto</span> block = m_sst-&gt;<span class="built_in">read_block</span>(m_block_idx);</span><br><span class="line">    <span class="keyword">if</span> (!block) &#123;</span><br><span class="line">      m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">      <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    m_block_it = std::<span class="built_in">make_shared</span>&lt;BlockIterator&gt;(block, key);</span><br><span class="line">  &#125; <span class="built_in">catch</span> (<span class="type">const</span> std::exception &amp;) &#123;</span><br><span class="line">    m_block_it = <span class="literal">nullptr</span>;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;could not read a block from m_sst&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里的逻辑也很简单, 就是先使用记录在<code>sst</code>中的<code>meta_entries</code>找到包含要查找的<code>key</code>的<code>Block</code>(<code>find_block_idx</code>), 从文件中读取这个<code>Block</code>(<code>read_block</code>), 然后再读取的<code>Block</code>中调用获取指定<code>key</code>的迭代器的构造函数, 通过<code>BlockIterator</code>实现在<code>Block</code>中的定位。</p>
+<h1 id="4-下一步是什么？"><a href="#4-下一步是什么？" class="headerlink" title="4 下一步是什么？"></a>4 下一步是什么？</h1><p>现在已经有了<code>Blcok</code>, <code>SST</code>, <code>MemTable</code>。我们是不是可以完成基础的<code>CRUD</code>了呢?</p>
+<p>并不是, 首先是我们目前很没有实现文件加载的<code>FileObj</code>类。这个下一节介绍。</p>
+<p>然后就是，<code>SST</code>的迭代器<code>SstIterator</code>只包含当前的<code>SST</code>内容, 但如果不同的<code>SST</code>中有标记删除的键值对(<code>value</code>为空), 后续的<code>SST</code>迭代器会出现<code>bug</code>, 这个也需要使用之前的堆完成排除。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SST%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 SST设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-SST%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">2 SST实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-BlockMeta"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 BlockMeta</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-SST"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 SST</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-SST%E8%BF%AD%E4%BB%A3%E5%99%A8%E5%AE%9E%E7%8E%B0"><span class="toc-number">3.</span> <span class="toc-text">3 SST迭代器实现</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E4%B8%8B%E4%B8%80%E6%AD%A5%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">4.</span> <span class="toc-text">4 下一步是什么？</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&text=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-04-SST&body=Check out this article: http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&title=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&name=C++从零开始实现LSM-Tree-KV存储-04-SST&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/02/05/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-04-SST/&t=C++从零开始实现LSM-Tree-KV存储-04-SST"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

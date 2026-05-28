@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 Modules是什么？C++20 引入了一个重要的新特性：模块（Modules），这是对 C++ 编译模型的一次重大革新，旨在解决传统头文件（header files）机制带来的诸多问题，如编译速度慢、宏污染、重复包含、依赖管理混乱等。 这么说可能有点抽象, 那么我们说人话就是:  有了模块之后, C++就不需要不需要将源文件和头文件分离了 你甚至可以不需要头文件 你的C++的文件结构变得类似">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++新特性梳理-Modules">
+<meta property="og:url" content="http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 Modules是什么？C++20 引入了一个重要的新特性：模块（Modules），这是对 C++ 编译模型的一次重大革新，旨在解决传统头文件（header files）机制带来的诸多问题，如编译速度慢、宏污染、重复包含、依赖管理混乱等。 这么说可能有点抽象, 那么我们说人话就是:  有了模块之后, C++就不需要不需要将源文件和头文件分离了 你甚至可以不需要头文件 你的C++的文件结构变得类似">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-11-09T04:02:57.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.658Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="面经">
+<meta property="article:tag" content="C++20">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++新特性梳理-Modules</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/11/16/C++/C++%20%E4%B8%AD%20typename%20%E5%85%B3%E9%94%AE%E5%AD%97%E7%9A%84%E5%AE%8C%E6%95%B4%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&text=C++新特性梳理-Modules"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&is_video=false&description=C++新特性梳理-Modules"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理-Modules&body=Check out this article: http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&name=C++新特性梳理-Modules&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&t=C++新特性梳理-Modules"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Modules%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 Modules是什么？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A4%B4%E6%96%87%E4%BB%B6%E5%AD%98%E5%9C%A8%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.</span> <span class="toc-text">2 头文件存在的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%B4%E6%96%87%E4%BB%B6%E6%9C%BA%E5%88%B6%E7%9A%84%E4%BB%A3%E7%A0%81%E6%A1%88%E4%BE%8B"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统头文件机制的代码案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BC%A0%E7%BB%9F%E5%A4%B4%E6%96%87%E4%BB%B6%E6%9C%BA%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 传统头文件机制的问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Modules-%E6%89%80%E8%A7%A3%E5%86%B3%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">3.</span> <span class="toc-text">3 Modules 所解决的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%BC%96%E8%AF%91%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 编译速度提升</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%AC%A6%E5%8F%B7%E6%B1%A1%E6%9F%93%E9%97%AE%E9%A2%98"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 符号污染问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Modules-%E8%AF%AD%E6%B3%95%E8%AF%A6%E8%A7%A3"><span class="toc-number">4.</span> <span class="toc-text">4 Modules 语法详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%A8%A1%E5%9D%97%E5%A3%B0%E6%98%8E"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 模块声明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 导入导出的方法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-%E5%AF%BC%E5%87%BA%EF%BC%88Export%EF%BC%89"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 导出（Export）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E5%AF%BC%E5%85%A5%EF%BC%88Import%EF%BC%89"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 导入（Import）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%85%A8%E5%B1%80%E5%92%8C%E7%A7%81%E6%9C%89%E6%A8%A1%E5%9D%97%E7%89%87%E6%AE%B5"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 全局和私有模块片段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E5%AD%90%E6%A8%A1%E5%9D%97%E5%88%92%E5%88%86"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 子模块划分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-5-%E6%89%80%E6%9C%89%E6%9D%83%E9%97%AE%E9%A2%98"><span class="toc-number">4.5.</span> <span class="toc-text">4.5 所有权问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%AE%9E%E6%88%98-Demo"><span class="toc-number">5.</span> <span class="toc-text">5 实战 Demo</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++新特性梳理-Modules
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-11-09T04:02:57.000Z" class="dt-published" itemprop="datePublished">2025-11-09</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/C-%E9%9A%8F%E7%AC%94/">C++随笔</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/C-20/" rel="tag">C++20</a>, <a class="p-category" href="/tags/%E9%9D%A2%E7%BB%8F/" rel="tag">面经</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-Modules是什么？"><a href="#1-Modules是什么？" class="headerlink" title="1 Modules是什么？"></a>1 Modules是什么？</h1><p>C++20 引入了一个重要的新特性：模块（<code>Modules</code>），这是对 C++ 编译模型的一次重大革新，旨在解决传统头文件（header files）机制带来的诸多问题，如编译速度慢、宏污染、重复包含、依赖管理混乱等。</p>
+<p>这么说可能有点抽象, 那么我们说人话就是:</p>
+<ul>
+<li>有了模块之后, C++就不需要不需要将源文件和头文件分离了</li>
+<li>你甚至可以不需要头文件</li>
+<li>你的C++的文件结构变得类似<code>Java</code>和<code>Python</code>, <code>import</code>时导入你想要的代码就行了, 不需要考虑头文件这个东西</li>
+</ul>
+<p>以上只是引入<code>Modules</code>后代码直观结果, 当然<code>Modules</code>的功能不仅仅如此</p>
+<h1 id="2-头文件存在的问题"><a href="#2-头文件存在的问题" class="headerlink" title="2 头文件存在的问题"></a>2 头文件存在的问题</h1><h2 id="2-1-传统头文件机制的代码案例"><a href="#2-1-传统头文件机制的代码案例" class="headerlink" title="2.1 传统头文件机制的代码案例"></a>2.1 传统头文件机制的代码案例</h2><p>在 C++20 之前，我们通常采用“声明-定义分离”模式：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// math.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> MATH_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MATH_H</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span></span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="comment">// main.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;math.h&quot;</span></span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; <span class="keyword">return</span> a + b; &#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// math.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;math.h&quot;</span></span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; <span class="keyword">return</span> a + b; &#125;</span><br></pre></td></tr></table></figure>
+<p>这个例子中, 也就是传统的 C++ 编译模型中，头文件实际上是一种文本替换机制。当预处理器遇到 <code>#include</code> 指令时，它会将指定的头文件内容直接复制到 <code>#include</code> 所在的位置。这种机制也被称为”包含模型”(include model)。<br>例如，在上面的例子中，预处理器处理后的 math.cpp 文件实际上变成了：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 预处理器处理后的 math.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> MATH_H    <span class="comment">// 来自 math.h</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MATH_H    <span class="comment">// 来自 math.h</span></span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span></span>;  <span class="comment">// 来自 math.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span>            <span class="comment">// 来自 math.h</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; <span class="keyword">return</span> a + b; &#125;</span><br></pre></td></tr></table></figure>
+<p>这个过程中, 头文件的作用是: <strong>生命一个编译时期可见的符号</strong>, 在这个例子中, 头文件<code>math.h</code>声明了函数<code>add</code>, 使得<code>math.cpp</code>可以调用这个函数, 为了理解这句话, 我们还需要知道C++ 程序从源代码到可执行文件需要经历的步骤:</p>
+<p><strong>编译阶段</strong></p>
+<ol>
+<li>预处理阶段(Preprocessing)：<ol>
+<li>处理 #include、#define 等预处理指令</li>
+<li>展开头文件内容，替换宏定义</li>
+<li>条件编译处理</li>
+</ol>
+</li>
+<li>编译阶段(Compilation)：<ol>
+<li>将预处理后的文件转换为汇编代码</li>
+<li>每个源文件(.cpp)独立编译成目标文件(.obj&#x2F;.o)</li>
+<li>进行词法分析、语法分析、语义分析</li>
+<li>生成符号表</li>
+</ol>
+</li>
+<li>汇编阶段(Assembly)：<ol>
+<li>将汇编代码转换为机器码</li>
+<li>生成目标文件(.obj&#x2F;.o)</li>
+</ol>
+</li>
+</ol>
+<p><strong>链接阶段</strong></p>
+<ol>
+<li>合并多个目标文件</li>
+<li>解析外部引用（如函数调用）</li>
+<li>重定位地址</li>
+<li>生成最终的可执行文件</li>
+</ol>
+<p>这里还需要知道一个重要的知识点, C++编译的基础单元就是一个.cpp文件（严格说是翻译单元 <code>translation unit</code>）, 而.cpp文件会生成一个.obj文件, 一个或多个.obj文件经处理会生成一个.exe文件</p>
+<p>在这个过程中, 一个编译单元引用其他编译单元的符号如何确保其正确和有效呢? 在传统方法中, 就是通过头文件告知编译器。 例如这里<code>main.cpp</code>需要调用<code>add</code>函数, 那么它就需要包含<code>math.h</code>, 这样编译器在编译<code>main.cpp</code>时就能够从头文件知道<code>add</code>函数的存在, 先将其地址标记为可重定位。最后在链接阶段, 链接器会找到<code>add</code>函数的实现并将之前的可重定位符号替换为真实的地址。</p>
+<h2 id="2-2-传统头文件机制的问题"><a href="#2-2-传统头文件机制的问题" class="headerlink" title="2.2 传统头文件机制的问题"></a>2.2 传统头文件机制的问题</h2><p>基于上述编译过程，我们可以发现传统头文件机制好像没啥问题?</p>
+<p>但如果是下面几个场景呢?</p>
+<ol>
+<li>一个头文件在大型项目中被多个源文件包含<ol>
+<li>每次编译这些源文件时, 头文件内容都会被重复处理</li>
+<li>即使头文件发生微小变化，所有包含它的源文件都需要重新编译</li>
+</ol>
+</li>
+<li>不同代码由不同的团队编写, 可能存在冲突的符号<ol>
+<li>虽然可以使用<code>include guards</code>（如#ifndef）或<code>#pragma once</code>来防止重复包含，但这增加了复杂性，并且仍需要预处理器进行检查</li>
+</ol>
+</li>
+<li>模板支持不佳<ol>
+<li>模板实现必须放在头文件中才能被正确实例化，这进一步增加了头文件的大小和编译负担。</li>
+</ol>
+</li>
+</ol>
+<h1 id="3-Modules-所解决的问题"><a href="#3-Modules-所解决的问题" class="headerlink" title="3 Modules 所解决的问题"></a>3 Modules 所解决的问题</h1><p>C++20引入的Modules特性旨在从根本上解决上述问题：</p>
+<h2 id="3-1-编译速度提升"><a href="#3-1-编译速度提升" class="headerlink" title="3.1 编译速度提升"></a>3.1 编译速度提升</h2><p>Modules通过引入模块接口单元（module interface unit）来替代头文件。模块只编译一次，生成中间表示形式，其他编译单元可以直接导入这个预编译的结果：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// math.cpp (模块接口)</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> math;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// main.cpp</span></span><br><span class="line"><span class="keyword">import</span> math; <span class="comment">// 直接导入，无需文本替换</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">add</span>(<span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>这里给出的名词和代码案例先不进行详细介绍, 后面的章节中会进行详细介绍</p>
+</blockquote>
+<h2 id="3-2-符号污染问题"><a href="#3-2-符号污染问题" class="headerlink" title="3.2 符号污染问题"></a>3.2 符号污染问题</h2><p>Modules具有明确的导出控制，只有明确标记为<code>export</code>的声明才会对外可见，定义的符号默认不会泄露到导入模块的编译单元中。例如</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> math;</span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">inner_add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a + b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>inner_add</code>函数没有使用<code>export</code>关键字，不会被导出，因此不会被其他模块访问。</p>
+<h1 id="4-Modules-语法详解"><a href="#4-Modules-语法详解" class="headerlink" title="4 Modules 语法详解"></a>4 Modules 语法详解</h1><h2 id="4-1-模块声明"><a href="#4-1-模块声明" class="headerlink" title="4.1 模块声明"></a>4.1 模块声明</h2><ul>
+<li><p><strong>默认 → 普通单元</strong></p>
+<ul>
+<li>不使用 <code>module</code> 关键字的翻译单元是普通单元（即传统 <code>.cpp</code> 文件）</li>
+<li>可以包含头文件，使用 <code>#include</code></li>
+</ul>
+</li>
+<li><p><strong>加 <code>module</code> 关键字 → 模块单元</strong></p>
+<ul>
+<li>使用 <code>module</code> 声明的单元称为模块单元</li>
+<li>分为两种子类型：<ul>
+<li><strong>默认 → 模块实现单元</strong><ul>
+<li>仅定义内部逻辑，不对外暴露接口</li>
+<li>通常用于实现细节</li>
+</ul>
+</li>
+<li><strong>加 <code>export</code> 关键字 → 模块接口单元</strong><ul>
+<li>使用 <code>export module ModuleName;</code> 定义模块接口</li>
+<li>是模块的入口点，供其他模块导入</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> mymath;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; <span class="keyword">return</span> a + b; &#125;</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h2 id="4-2-导入导出的方法"><a href="#4-2-导入导出的方法" class="headerlink" title="4.2 导入导出的方法"></a>4.2 导入导出的方法</h2><p>这里的导入导出的含义就是, 如何让外部模块访问模块中的符号</p>
+<h3 id="4-2-1-导出（Export）"><a href="#4-2-1-导出（Export）" class="headerlink" title="4.2.1 导出（Export）"></a>4.2.1 导出（Export）</h3><ul>
+<li><strong>默认 → 不可见</strong><ul>
+<li>模块单元中定义的符号默认对其他模块不可见</li>
+</ul>
+</li>
+<li><strong>加 <code>export</code> 关键字 → 可见</strong><ul>
+<li>显式导出函数、类、变量等，使其可以被其他模块使用</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">multiply</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123; <span class="keyword">return</span> a * b; &#125; <span class="comment">// 可被导入</span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">helper</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// 不可见</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<h3 id="4-2-2-导入（Import）"><a href="#4-2-2-导入（Import）" class="headerlink" title="4.2.2 导入（Import）"></a>4.2.2 导入（Import）</h3><ul>
+<li><p><strong>加 <code>import</code> 关键字 → 导入只在本编译单元可见</strong></p>
+<ul>
+<li>使用 <code>import ModuleName;</code> 引入整个模块</li>
+<li>导入后，该模块的导出内容可在当前单元中使用</li>
+</ul>
+</li>
+<li><p><strong>普通&#x2F;模块单元区别：导入头文件</strong></p>
+<ul>
+<li><strong>模块单元无法使用 <code>#include</code> 引入头文件</strong><ul>
+<li>必须使用 <code>import &quot;header.h&quot;</code> 或 <code>import &lt;header&gt;</code> 方式导入</li>
+</ul>
+</li>
+<li><strong>问题：预处理宏访问限制</strong><ul>
+<li>在模块单元中，通过 <code>import</code> 导入的头文件中定义的宏，<strong>不能被其他 <code>import</code> 的头文件访问</strong></li>
+<li>因为模块机制绕过了传统的预处理器行为</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> math;           <span class="comment">// 导入模块</span></span><br><span class="line"><span class="keyword">import</span> <span class="string">&quot;myconfig.h&quot;</span>;   <span class="comment">// 导入自定义头文件（作为模块）</span></span><br></pre></td></tr></table></figure>
+
+<p>补充说明：</p>
+<ul>
+<li><code>import math;</code> 用于导入名为 <code>math</code> 的模块，这与传统的 <code>#include</code> 方式不同，它不会进行文本替换，而是直接导入模块的接口</li>
+<li><code>import &quot;myconfig.h&quot;;</code> 用于将以传统头文件形式存在的代码作为模块导入，这为逐步迁移现有代码提供了便利</li>
+<li>与 <code>#include</code> 不同，<code>import</code> 导入的头文件中的宏定义不会泄露到全局命名空间，避免了宏污染问题</li>
+<li>模块导入具有原子性，要么全部导入成功，要么全部失败，不会出现部分导入的情况</li>
+</ul>
+</blockquote>
+<h2 id="4-3-全局和私有模块片段"><a href="#4-3-全局和私有模块片段" class="headerlink" title="4.3 全局和私有模块片段"></a>4.3 全局和私有模块片段</h2><ul>
+<li>模块支持定义<strong>全局模块片段</strong>（Global Module Fragment）<ul>
+<li>用 <code>module;</code> 表示</li>
+<li>用于在模块中声明不依赖于模块名的全局内容</li>
+</ul>
+</li>
+<li>支持<strong>私有模块片段</strong>（Private Module Fragment）<ul>
+<li>用于定义仅在模块内部使用的符号</li>
+<li>无需 <code>export</code>，自动隐藏</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> mylib;</span><br><span class="line"></span><br><span class="line"><span class="keyword">module</span>; <span class="comment">// 全局模块片段开始</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span> <span class="comment">// 在全局模块片段中包含头文件</span></span></span><br><span class="line"><span class="type">int</span> global_counter = <span class="number">0</span>; <span class="comment">// 全局变量，模块内可见</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">get_counter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> global_counter;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">module</span> : <span class="keyword">private</span>; <span class="comment">// 私有模块片段开始</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">internal_helper</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 仅在当前模块内可用的辅助函数</span></span><br><span class="line">    global_counter++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">void</span> <span class="title">increment_counter</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="built_in">internal_helper</span>(); <span class="comment">// 可以调用私有函数</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在这个例子中：</p>
+<ul>
+<li><code>module;</code> 开始全局模块片段，可以包含头文件和全局声明</li>
+<li><code>module : private;</code> 开始私有模块片段，其中定义的符号仅在当前模块内可见</li>
+<li><code>global_counter</code> 在全局模块片段中定义，对整个模块可见但不导出</li>
+<li><code>internal_helper</code> 函数在私有模块片段中定义，只能在当前模块内使用</li>
+</ul>
+</blockquote>
+<h2 id="4-4-子模块划分"><a href="#4-4-子模块划分" class="headerlink" title="4.4 子模块划分"></a>4.4 子模块划分</h2><ul>
+<li>模块支持<strong>子模块</strong>（Submodules）或<strong>模块分区</strong>（Module Partitions）</li>
+<li>用于将大型模块拆分为多个部分，便于组织和维护</li>
+<li>语法：<ul>
+<li><code>export module mylib:part1;</code> —— 子模块接口</li>
+<li><code>module mylib:impl;</code> —— 实现部分（非导出）</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>示例：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// mylib.cppm</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> mylib;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">int</span> <span class="title">main_func</span><span class="params">()</span></span>; <span class="comment">// 接口</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// mylib:impl.cppm</span></span><br><span class="line"><span class="keyword">module</span> mylib:impl;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main_func</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> <span class="number">42</span>; &#125; <span class="comment">// 实现</span></span><br></pre></td></tr></table></figure>
+</blockquote>
+<blockquote>
+<p>注意：主模块必须先声明，子模块才能引用。</p>
+</blockquote>
+<hr>
+<h2 id="4-5-所有权问题"><a href="#4-5-所有权问题" class="headerlink" title="4.5 所有权问题"></a>4.5 所有权问题</h2><ul>
+<li><strong>模块的所有权属于其定义者</strong></li>
+<li><strong>不能随意修改已发布的模块</strong></li>
+<li><strong>导入模块时，不能重定义其符号</strong></li>
+<li><strong>模块间的依赖关系明确且强绑定</strong></li>
+<li><strong>避免循环依赖</strong>：模块间应保持清晰的依赖链</li>
+</ul>
+<blockquote>
+<p>⚠️ 重要提示：</p>
+<ul>
+<li>模块一旦发布，其接口应尽量稳定</li>
+<li>修改模块接口可能破坏所有依赖它的代码</li>
+<li>模块是“编译期实体”，不像头文件那样容易“偷偷”引入副作用</li>
+</ul>
+</blockquote>
+<h1 id="5-实战-Demo"><a href="#5-实战-Demo" class="headerlink" title="5 实战 Demo"></a>5 实战 Demo</h1><p>下面是一个 使用 <code>xmake</code> 构建 C++20 Modules 的完整真实案例，涵盖了模块的大部分常用功能：</p>
+<ul>
+<li>主模块接口（Primary Module Interface）</li>
+<li>模块实现单元（Module Implementation Unit）</li>
+<li>模块分区（Module Partition）</li>
+<li>导入标准库模块（如 <iostream>）</li>
+<li>与传统 .cpp 文件混合编译</li>
+</ul>
+<p>完整代码请参考: <a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/cpp_notes_code/tree/master/modules_demo">https://github.com/Vanilla-Beauty/cpp_notes_code/tree/master/modules_demo</a></p>
+<blockquote>
+<p>这里说明为什么使用 <code>xmake</code> 而不是 <code>cmake</code>, 原因当然是<code>xmake</code>配置最简单了…同时我个人非常不喜欢<code>cmake</code>的语法…</p>
+</blockquote>
+<p><strong>📁 0 项目结构</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">bash</span><br><span class="line">modules_demo/</span><br><span class="line">├── src</span><br><span class="line">│   ├── main.cpp # </span><br><span class="line">│   └── math</span><br><span class="line">│       ├── math.ixx</span><br><span class="line">│       ├── math_impl.cpp</span><br><span class="line">│       └── utils.ixx</span><br><span class="line">└── xmake.lua</span><br></pre></td></tr></table></figure>
+<p><strong>🔧 1. xmake.lua 配置文件</strong></p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- xmake.lua</span></span><br><span class="line">set_languages(<span class="string">&quot;c++20&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 启用模块支持（关键！）</span></span><br><span class="line">set_policy(<span class="string">&quot;build.c++.modules&quot;</span>, <span class="literal">true</span>)</span><br><span class="line"></span><br><span class="line">target(<span class="string">&quot;modules_demo&quot;</span>)</span><br><span class="line">    set_kind(<span class="string">&quot;binary&quot;</span>)</span><br><span class="line">    add_files(<span class="string">&quot;src/main.cpp&quot;</span>)</span><br><span class="line">    add_files(<span class="string">&quot;src/math/math.ixx&quot;</span>)           <span class="comment">-- 主模块接口</span></span><br><span class="line">    add_files(<span class="string">&quot;src/math/math_impl.cpp&quot;</span>)      <span class="comment">-- 模块实现单元</span></span><br><span class="line">    add_files(<span class="string">&quot;src/math/utils.ixx&quot;</span>)     <span class="comment">-- 模块分区</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>📄 2. 模块分区：src&#x2F;math&#x2F;utils.ixx</strong>\</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/math/utils.ixx</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> math:utils;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">namespace</span> math::utils &#123;</span><br><span class="line">    <span class="function"><span class="keyword">inline</span> <span class="type">int</span> <span class="title">square</span><span class="params">(<span class="type">int</span> x)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> x * x;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>📄 3. 主模块接口：src&#x2F;math&#x2F;math.ixx</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src//math/math.ixx</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">module</span> math;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 导入模块分区</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">import</span> :utils;  <span class="comment">// 等价于 import math:utils;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">namespace</span> math &#123;</span><br><span class="line">    <span class="comment">// 导出函数声明（定义在实现单元）</span></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">multiply</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 内联函数可直接定义并导出</span></span><br><span class="line">    <span class="function"><span class="keyword">inline</span> <span class="type">int</span> <span class="title">power2</span><span class="params">(<span class="type">int</span> x)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> utils::<span class="built_in">square</span>(x);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>📄 4. 模块实现单元：src&#x2F;math&#x2F;math_impl.cpp</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/math/math_impl.cpp</span></span><br><span class="line"><span class="keyword">module</span> math;  <span class="comment">// 注意：这里不加 export！</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 实现主模块中声明的函数</span></span><br><span class="line"><span class="keyword">namespace</span> math &#123;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">add</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a + b;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">multiply</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> a * b;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>⚠️ 实现单元使用 module math;（无 export），表示这是 math 模块的一部分，但不导出新符号。</p>
+<blockquote>
+<p>这里模块接口定义单元和模块实现单元类似传统的头文件与源文件</p>
+</blockquote>
+<p><strong>📄 5. 主程序：src&#x2F;main.cpp</strong></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/main.cpp</span></span><br><span class="line"><span class="keyword">import</span> math; <span class="comment">// 导入我们自己的模块</span></span><br><span class="line"><span class="keyword">import</span> &lt;iostream&gt;; <span class="comment">// C++20 标准库模块（需编译器支持）</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> math;</span><br><span class="line"></span><br><span class="line">cout &lt;&lt; <span class="string">&quot;2 + 3 = &quot;</span> &lt;&lt; <span class="built_in">add</span>(<span class="number">2</span>, <span class="number">3</span>) &lt;&lt; endl;</span><br><span class="line">cout &lt;&lt; <span class="string">&quot;4 5 = &quot;</span> &lt;&lt; <span class="built_in">multiply</span>(<span class="number">4</span>, <span class="number">5</span>) &lt;&lt; endl;</span><br><span class="line">cout &lt;&lt; <span class="string">&quot;7^2 = &quot;</span> &lt;&lt; <span class="built_in">power2</span>(<span class="number">7</span>) &lt;&lt; endl; <span class="comment">// 来自内联定义</span></span><br><span class="line">cout &lt;&lt; <span class="string">&quot;9^2 (via utils) = &quot;</span> &lt;&lt; utils::<span class="built_in">square</span>(<span class="number">9</span>) &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>✅ 注意：import <iostream>; 要求编译器支持标准库模块（MSVC 支持较好，Clang&#x2F;GCC 需额外配置或暂时回退到 #include）。</p>
+<p>如果你的编译器不支持 import <iostream>，可临时改为：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="comment">// 并移除 import &lt;iostream&gt;;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>▶️ 6. 构建与运行</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 进入项目目录</span></span><br><span class="line"><span class="built_in">cd</span> modules_demo</span><br><span class="line"><span class="comment"># 配置（自动检测编译器，推荐 clang++ 或 cl.exe）</span></span><br><span class="line">xmake f -c</span><br><span class="line"><span class="comment"># 构建</span></span><br><span class="line">xmake</span><br><span class="line"><span class="comment"># 运行</span></span><br><span class="line">xmake run</span><br></pre></td></tr></table></figure>
+<p>预期输出：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2 + 3 = 5</span><br><span class="line">4 5 = 20</span><br><span class="line">7^2 = 49</span><br><span class="line">9^2 (via utils) = 81</span><br></pre></td></tr></table></figure>
+<p>如果输出符合预期, 那么恭喜, 你已经成功使用 C++20 Modules 构建了一个完整的项目。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Modules%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 Modules是什么？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%A4%B4%E6%96%87%E4%BB%B6%E5%AD%98%E5%9C%A8%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.</span> <span class="toc-text">2 头文件存在的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%B4%E6%96%87%E4%BB%B6%E6%9C%BA%E5%88%B6%E7%9A%84%E4%BB%A3%E7%A0%81%E6%A1%88%E4%BE%8B"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统头文件机制的代码案例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E4%BC%A0%E7%BB%9F%E5%A4%B4%E6%96%87%E4%BB%B6%E6%9C%BA%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 传统头文件机制的问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Modules-%E6%89%80%E8%A7%A3%E5%86%B3%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">3.</span> <span class="toc-text">3 Modules 所解决的问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E7%BC%96%E8%AF%91%E9%80%9F%E5%BA%A6%E6%8F%90%E5%8D%87"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 编译速度提升</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E7%AC%A6%E5%8F%B7%E6%B1%A1%E6%9F%93%E9%97%AE%E9%A2%98"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 符号污染问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Modules-%E8%AF%AD%E6%B3%95%E8%AF%A6%E8%A7%A3"><span class="toc-number">4.</span> <span class="toc-text">4 Modules 语法详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E6%A8%A1%E5%9D%97%E5%A3%B0%E6%98%8E"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 模块声明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E5%AF%BC%E5%85%A5%E5%AF%BC%E5%87%BA%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 导入导出的方法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-%E5%AF%BC%E5%87%BA%EF%BC%88Export%EF%BC%89"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 导出（Export）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-%E5%AF%BC%E5%85%A5%EF%BC%88Import%EF%BC%89"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 导入（Import）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%85%A8%E5%B1%80%E5%92%8C%E7%A7%81%E6%9C%89%E6%A8%A1%E5%9D%97%E7%89%87%E6%AE%B5"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 全局和私有模块片段</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-%E5%AD%90%E6%A8%A1%E5%9D%97%E5%88%92%E5%88%86"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 子模块划分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-5-%E6%89%80%E6%9C%89%E6%9D%83%E9%97%AE%E9%A2%98"><span class="toc-number">4.5.</span> <span class="toc-text">4.5 所有权问题</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%AE%9E%E6%88%98-Demo"><span class="toc-number">5.</span> <span class="toc-text">5 实战 Demo</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&text=C++新特性梳理-Modules"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&is_video=false&description=C++新特性梳理-Modules"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++新特性梳理-Modules&body=Check out this article: http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&title=C++新特性梳理-Modules"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&name=C++新特性梳理-Modules&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/11/09/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%86-Modules/&t=C++新特性梳理-Modules"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

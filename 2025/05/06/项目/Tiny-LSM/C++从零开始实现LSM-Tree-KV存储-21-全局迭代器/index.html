@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本章是对目前的LSM Tree功能的补全, 提供全局的迭代器遍历功能。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;avo6166ew2u.feishu.cn&#x2F;doc">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-21-全局迭代器">
+<meta property="og:url" content="http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本章是对目前的LSM Tree功能的补全, 提供全局的迭代器遍历功能。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本项目同步更新的从零开始实现的视频教程：https:&#x2F;&#x2F;avo6166ew2u.feishu.cn&#x2F;doc">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/Tiny-LSM-arch.drawio.png">
+<meta property="article:published_time" content="2025-05-06T07:39:23.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.670Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/Tiny-LSM-arch.drawio.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-21-全局迭代器</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/05/08/%E9%A1%B9%E7%9B%AE/Tiny-LSM/%E7%95%AA%E5%A4%96-%E6%88%91%E5%81%9A%E4%BA%86%E4%B8%80%E4%B8%AA%20LSM%20%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%20Lab%20%E7%AD%89%E4%BD%A0%E6%9D%A5%E6%8C%91%E6%88%98/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&text=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器&body=Check out this article: http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&name=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&t=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%9E%B6%E6%9E%84%E5%9B%9E%E9%A1%BE"><span class="toc-number">1.</span> <span class="toc-text">1 架构回顾</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">2 全局迭代器的设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 数据结构设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 构造函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E8%87%AA%E5%A2%9E%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD"><span class="toc-number">2.3.</span> <span class="toc-text">2.2 自增运算符重载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E6%95%B4%E4%BD%93%E9%87%8D%E8%BD%BD%E9%80%BB%E8%BE%91"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.2.1 整体重载逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E9%87%8D%E6%96%B0%E9%80%89%E6%8B%A9%E8%BF%AD%E4%BB%A3%E5%99%A8"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.2.2 重新选择迭代器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E7%9A%84%E8%A1%A5%E5%85%A8"><span class="toc-number">2.3.3.</span> <span class="toc-text">2.2.3 构造函数的补全</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%A7%A3%E5%BC%95%E7%94%A8%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD"><span class="toc-number">2.4.</span> <span class="toc-text">2.3 解引用运算符重载</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.</span> <span class="toc-text">3 全局迭代器的接口</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B0%8F%E8%8A%82"><span class="toc-number">4.</span> <span class="toc-text">4 小节</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-21-全局迭代器
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-05-06T07:39:23.000Z" class="dt-published" itemprop="datePublished">2025-05-06</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本章是对目前的<code>LSM Tree</code>功能的补全, 提供全局的迭代器遍历功能。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a> 感谢您的 <code>Star</code>!</p>
+<p>欢迎支持本项目同步更新的从零开始实现的视频教程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+<p>欢迎加入讨论群：<a target="_blank" rel="noopener" href="https://qm.qq.com/q/lkIzCPvcdM">Tiny-LSM项目交流群</a></p>
+<h1 id="1-架构回顾"><a href="#1-架构回顾" class="headerlink" title="1 架构回顾"></a>1 架构回顾</h1><p>首先回顾<code>LSM Tree</code>的架构:</p>
+<p><img src="/../../../images/Proj/LSM/Tiny-LSM-arch.drawio.png" alt="LSM Tree架构"></p>
+<p>可以看到, 越靠近左上角的组件, 优先级越高, 在查询时我们按照优先级依次从<code>active skiplist</code>、<code>frzozen skiplist</code>、<code>l0 sst</code>、<code>l1 sst</code>中查找, 如果查到就返回, 否则继续向下查找。</p>
+<p>但我们要实现全局迭代器就会存在问题, 有点<code>key</code>只在底层的<code>sst</code>中存在, 有的<code>key</code>同时在多个<code>sst</code>和<code>skiplist</code>中存在（此时需要按照优先级进行滤除）。同时，我们还需要考虑到事务<code>id</code>的可见性对某些重复的键值对进行屏蔽。因此，我们需要实现一个全局的迭代器，将以上组件进行串联，最终实现全局迭代器。</p>
+<h1 id="2-全局迭代器的设计"><a href="#2-全局迭代器的设计" class="headerlink" title="2 全局迭代器的设计"></a>2 全局迭代器的设计</h1><h2 id="2-1-数据结构设计"><a href="#2-1-数据结构设计" class="headerlink" title="2.1 数据结构设计"></a>2.1 数据结构设计</h2><p>由于前述分析可知, 我们的这个迭代器就是按照优先级的不同, 将不同组件的迭代器进行逐次遍历, 因此其需要将不同组件的优先级进行区分, 这里可以采用将各个组件的迭代器按序存入一个<code>vector</code>实现, 每个迭代器在<code>vector</code>中的位置就是其优先级, 因此, 我们如下定义头文件:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// include/lsm/level_iterator.h</span></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> once</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../iterator/iterator.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;memory&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;optional&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;shared_mutex&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">LSMEngine</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Level_Iterator</span> : <span class="keyword">public</span> BaseIterator &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="built_in">Level_Iterator</span>() = <span class="keyword">default</span>;</span><br><span class="line">  <span class="built_in">Level_Iterator</span>(std::shared_ptr&lt;LSMEngine&gt; engine_, <span class="type">uint64_t</span> max_tranc_id);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">virtual</span> BaseIterator &amp;<span class="keyword">operator</span>++() <span class="keyword">override</span>;</span><br><span class="line">  <span class="keyword">virtual</span> <span class="type">bool</span> <span class="keyword">operator</span>==(<span class="type">const</span> BaseIterator &amp;other) <span class="type">const</span> <span class="keyword">override</span>;</span><br><span class="line">  <span class="keyword">virtual</span> <span class="type">bool</span> <span class="keyword">operator</span>!=(<span class="type">const</span> BaseIterator &amp;other) <span class="type">const</span> <span class="keyword">override</span>;</span><br><span class="line">  <span class="keyword">virtual</span> value_type <span class="keyword">operator</span>*() <span class="type">const</span> <span class="keyword">override</span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> IteratorType <span class="title">get_type</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">uint64_t</span> <span class="title">get_tranc_id</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">is_end</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span>;</span><br><span class="line">  <span class="function"><span class="keyword">virtual</span> <span class="type">bool</span> <span class="title">is_valid</span><span class="params">()</span> <span class="type">const</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line">  BaseIterator::pointer <span class="keyword">operator</span>-&gt;() <span class="type">const</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  std::shared_ptr&lt;LSMEngine&gt; engine_;</span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;BaseIterator&gt;&gt; iter_vec;</span><br><span class="line">  <span class="type">size_t</span> cur_idx_;</span><br><span class="line">  <span class="type">uint64_t</span> max_tranc_id_;</span><br><span class="line">  <span class="keyword">mutable</span> std::optional&lt;value_type&gt; cached_value; <span class="comment">// 缓存当前值</span></span><br><span class="line">  std::shared_lock&lt;std::shared_mutex&gt; rlock_;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">update_current</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">  <span class="function">std::pair&lt;<span class="type">size_t</span>, std::string&gt; <span class="title">get_min_key_idx</span><span class="params">()</span> <span class="type">const</span></span>;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">skip_key</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>其中, 这里最重要的数据结构就是:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">std::vector&lt;std::shared_ptr&lt;BaseIterator&gt;&gt; iter_vec</span><br></pre></td></tr></table></figure>
+<p>其存储了不同组件的迭代器指针, 因为这里所有迭代器都是<code>BaseIterator</code>的父类, 所以我们可以对各种算法或子迭代器类进行良好的代码复用。</p>
+<p>另外<code>cur_idx_</code>标记当前迭代器应该选择哪一个组件的迭代器进行输出, 也就是当前生效的迭代器在<code>iter_vec</code>中的索引。其余数据结构就是一些简单的记录, 比如获取父<code>engine</code>的智能指针、当前查询事务<code>id</code>、锁和缓存键值对等。</p>
+<h2 id="2-2-构造函数"><a href="#2-2-构造函数" class="headerlink" title="2.2 构造函数"></a>2.2 构造函数</h2><p>构造函数中需要构建这个<code>item_vec</code>, 也就是初始化各个组件的迭代器, 代码如下:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line">Level_Iterator::<span class="built_in">Level_Iterator</span>(std::shared_ptr&lt;LSMEngine&gt; engine,</span><br><span class="line">                               <span class="type">uint64_t</span> max_tranc_id)</span><br><span class="line">    : <span class="built_in">engine_</span>(engine), <span class="built_in">max_tranc_id_</span>(max_tranc_id), <span class="built_in">rlock_</span>(engine_-&gt;ssts_mtx) &#123;</span><br><span class="line">  <span class="comment">// 成员变量获取sst读锁</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 1. 获取内存部分迭代器</span></span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> 这里最好修改 memtable.begin 使其返回一个指针, 避免多余的内存拷贝</span></span><br><span class="line">  <span class="keyword">auto</span> mem_iter = engine_-&gt;memtable.<span class="built_in">begin</span>(max_tranc_id_);</span><br><span class="line">  std::shared_ptr&lt;HeapIterator&gt; mem_iter_ptr = std::<span class="built_in">make_shared</span>&lt;HeapIterator&gt;();</span><br><span class="line">  *mem_iter_ptr = mem_iter;</span><br><span class="line">  iter_vec.<span class="built_in">push_back</span>(mem_iter_ptr);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. 获取 L0 层的迭代器</span></span><br><span class="line">  std::vector&lt;SearchItem&gt; item_vec;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;sst_id : engine_-&gt;level_sst_ids[<span class="number">0</span>]) &#123;</span><br><span class="line">    <span class="keyword">auto</span> sst = engine_-&gt;ssts[sst_id];</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> iter = sst-&gt;<span class="built_in">begin</span>(max_tranc_id_);</span><br><span class="line">         iter.<span class="built_in">is_valid</span>() &amp;&amp; iter != sst-&gt;<span class="built_in">end</span>(); ++iter) &#123;</span><br><span class="line">      <span class="comment">// 这里越新的sst的idx越大, 我们需要让新的sst优先在堆顶</span></span><br><span class="line">      <span class="comment">// 让新的sst(拥有更大的idx)排序在前面, 反转符号就行了</span></span><br><span class="line">      <span class="keyword">if</span> (max_tranc_id_ != <span class="number">0</span> &amp;&amp; iter.<span class="built_in">get_tranc_id</span>() &gt; max_tranc_id_) &#123;</span><br><span class="line">        <span class="comment">// 如果开启了事务, 比当前事务 id 更大的记录是不可见的</span></span><br><span class="line">        <span class="keyword">continue</span>;</span><br><span class="line">      &#125;</span><br><span class="line">      item_vec.<span class="built_in">emplace_back</span>(iter.<span class="built_in">key</span>(), iter.<span class="built_in">value</span>(), -sst_id, <span class="number">0</span>,</span><br><span class="line">                            iter.<span class="built_in">get_tranc_id</span>());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  std::shared_ptr&lt;HeapIterator&gt; l0_iter_ptr =</span><br><span class="line">      std::<span class="built_in">make_shared</span>&lt;HeapIterator&gt;(item_vec, max_tranc_id);</span><br><span class="line">  iter_vec.<span class="built_in">push_back</span>(l0_iter_ptr);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 3. 获取其他层的迭代器</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;[level, sst_id_list] : engine_-&gt;level_sst_ids) &#123;</span><br><span class="line">    <span class="keyword">if</span> (level == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; ssts;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">auto</span> sst_id : sst_id_list) &#123;</span><br><span class="line">      <span class="keyword">auto</span> sst = engine_-&gt;ssts[sst_id];</span><br><span class="line">      ssts.<span class="built_in">push_back</span>(sst);</span><br><span class="line">      std::shared_ptr&lt;ConcactIterator&gt; level_i_iter =</span><br><span class="line">          std::<span class="built_in">make_shared</span>&lt;ConcactIterator&gt;(ssts, max_tranc_id);</span><br><span class="line">      iter_vec.<span class="built_in">push_back</span>(level_i_iter);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里迭代器包括:</p>
+<ol>
+<li>内存迭代器<code>mem_iter</code>: 就是遍历整个内存中的键值对, 并使用<code>HeapIterator</code>进行排序和去重, <code>HeapIterator</code>就是使用了一个堆结构, 将所有键值对按照优先级进行排序, 并且去重, 具体内容可以参见之前的第8章。</li>
+<li><code>L0</code>层迭代器<code>l0_iter_ptr</code>: 由于<code>L0</code>这一层的<code>SST</code>之间不是排序且无重叠的, 因此这里同样要求进行去重, 我们仍然使用了<code>HeapIterator</code>实现去重和排序, 这一实现方案存在一定缺陷, 因为<code>L0</code>的数据量还是不小的, 后续可以考虑在这一层嵌套一个<code>Level_Iterator</code>, 因为<code>L0</code>这一层的<code>SST</code>也是按照先后优先级进行排序的, 符合<code>Level_Iterator</code>的迭代器设计原则, 可以减少内存开销。</li>
+<li>其余<code>Level</code>的迭代器<code>level_i_iter</code>: 其余层的迭代器都是按照<code>SST</code>的先后顺序进行排序的, 因此这里直接使用<code>ConcactIterator</code>进行迭代即可, <code>ConcactIterator</code>就是将多个迭代器进行拼接, 并且按照<code>sst</code>的<code>id</code>顺序作为优先级进行排序, 不需要进行额外的去重操作, 且支持惰性的文件<code>IO</code>读取, 避免了文件<code>IO</code>开销。<code>ConcactIterator</code>的内容可以参考第19章中的介绍。</li>
+</ol>
+<blockquote>
+<p>注意代码中的<code>...</code>, 这是非常重要的步骤, 后续进行介绍</p>
+</blockquote>
+<h2 id="2-2-自增运算符重载"><a href="#2-2-自增运算符重载" class="headerlink" title="2.2 自增运算符重载"></a>2.2 自增运算符重载</h2><h3 id="2-2-1-整体重载逻辑"><a href="#2-2-1-整体重载逻辑" class="headerlink" title="2.2.1 整体重载逻辑"></a>2.2.1 整体重载逻辑</h3><p>这里的自增操作的逻辑就是将<code>iter_vec</code>中解引用后等于当前<code>key</code>的迭代器进行自增, 这里的逻辑是:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line">BaseIterator &amp;Level_Iterator::<span class="keyword">operator</span>++() &#123;</span><br><span class="line">  <span class="comment">// 先跳过和当前 key 相同的部分</span></span><br><span class="line">  <span class="built_in">skip_key</span>(cached_value-&gt;first);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 重新选择key最小的迭代器</span></span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">is_end</span>()) &#123;</span><br><span class="line">    <span class="keyword">auto</span> [min_idx, _] = <span class="built_in">get_min_key_idx</span>();</span><br><span class="line">    cur_idx_ = min_idx;</span><br><span class="line">    <span class="built_in">update_current</span>();</span><br><span class="line">    <span class="keyword">if</span> (cached_value-&gt;second.<span class="built_in">size</span>() == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">// 如果当前值为空, 说明当前key已经被删除了</span></span><br><span class="line">      <span class="comment">// 需要跳过这个key</span></span><br><span class="line">      <span class="built_in">skip_key</span>(cached_value-&gt;first);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 找到一个合法的键值对, 跳出循环</span></span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先, 需要将当前活跃的<code>key</code>所属的迭代器进行自增, 也就是<code>skip_key</code>函数所做的事儿:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Level_Iterator::skip_key</span><span class="params">(<span class="type">const</span> std::string &amp;key)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; iter_vec.<span class="built_in">size</span>(); ++i) &#123;</span><br><span class="line">    <span class="keyword">while</span> ((*iter_vec[i]).<span class="built_in">is_valid</span>() &amp;&amp; (**iter_vec[i]).first == key) &#123;</span><br><span class="line">      <span class="comment">// 如果找到当前key, 则跳过这个key</span></span><br><span class="line">      ++(*iter_vec[i]);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里不仅要将当前<code>key</code>所属的活跃迭代器进行自增, 其余解引用后拥有相同<code>key</code>的迭代器也要进行自增, 因为多个迭代器存在相同的<code>key</code>是允许的情况, 只是由于不同迭代器在数组中索引不同或其事务<code>id</code>不同, 才导致只有一个活跃迭代器被选中(即<code>cur_idx_</code>指向的迭代器)。</p>
+<h3 id="2-2-2-重新选择迭代器"><a href="#2-2-2-重新选择迭代器" class="headerlink" title="2.2.2 重新选择迭代器"></a>2.2.2 重新选择迭代器</h3><p>在对原本的<code>当前迭代器</code>的<code>key</code>进行自增后, 需要重新选择当前<code>key</code>最小的迭代器, 也就是重新选择当前<code>key</code>所属的迭代器, 也就是<code>Level_Iterator::operator++()</code>代码中的<code>while</code>循环部分。这里的逻辑是，只要当前迭代器没有到达<code>end</code>, 就选择所有迭代器中<code>key</code>最小的迭代器作为当前迭代器, 这家就是<code>get_min_key_idx</code>的逻辑:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line"><span class="function">std::pair&lt;<span class="type">size_t</span>, std::string&gt; <span class="title">Level_Iterator::get_min_key_idx</span><span class="params">()</span> <span class="type">const</span> </span>&#123;</span><br><span class="line">  <span class="type">size_t</span> min_idx = <span class="number">0</span>;</span><br><span class="line">  std::string min_key = <span class="string">&quot;&quot;</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; iter_vec.<span class="built_in">size</span>(); ++i) &#123;</span><br><span class="line">    <span class="keyword">if</span> (!iter_vec[i]-&gt;<span class="built_in">is_valid</span>()) &#123;</span><br><span class="line">      <span class="comment">// 如果当前迭代器无效, 则跳过</span></span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (min_key == <span class="string">&quot;&quot;</span>) &#123;</span><br><span class="line">      <span class="comment">// 第一次初始化</span></span><br><span class="line">      min_key = (**iter_vec[i]).first;</span><br><span class="line">      min_idx = i;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((**iter_vec[i]).first &lt; (**iter_vec[min_idx]).first) &#123;</span><br><span class="line">      <span class="comment">// 更新最小key和索引</span></span><br><span class="line">      min_key = (**iter_vec[i]).first;</span><br><span class="line">      min_idx = i;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((**iter_vec[i]).first == min_key) &#123;</span><br><span class="line">      <span class="comment">// key相同时, 事务id大的排前面</span></span><br><span class="line">      <span class="keyword">if</span> (max_tranc_id_ != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ((*iter_vec[i]).<span class="built_in">get_tranc_id</span>() &gt;</span><br><span class="line">            (*iter_vec[min_idx]).<span class="built_in">get_tranc_id</span>()) &#123;</span><br><span class="line">          min_idx = i;</span><br><span class="line">        &#125;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> std::<span class="built_in">make_pair</span>(min_idx, min_key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>get_min_key_idx</code>在比较<code>key</code>之前, 还需判断迭代器是否有效, 比较<code>key</code>之后还需要判断事物<code>id</code>的可见性, 这里的<code>max_tranc_id_</code>就是当前事务<code>id</code>, 其查询到的事务的<code>id</code>不能比这个事务<code>id</code>大, 否则该事务的记录是不可见的。</p>
+<h3 id="2-2-3-构造函数的补全"><a href="#2-2-3-构造函数的补全" class="headerlink" title="2.2.3 构造函数的补全"></a>2.2.3 构造函数的补全</h3><p>之前提到了, 构造函数中的<code>...</code>部分需要进行补全, 原因就是, 默认的<code>cur_idx_</code>为0, 但第0个迭代器可能是删除标记，也可能齐全<code>key</code>不是最小的, 又或者其事务<code>id</code>对当前迭代器不可见, 因此也需要进行初始迭代器的选举和滤除:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line">Level_Iterator::<span class="built_in">Level_Iterator</span>(std::shared_ptr&lt;LSMEngine&gt; engine,</span><br><span class="line">                               <span class="type">uint64_t</span> max_tranc_id)</span><br><span class="line">    : <span class="built_in">engine_</span>(engine), <span class="built_in">max_tranc_id_</span>(max_tranc_id), <span class="built_in">rlock_</span>(engine_-&gt;ssts_mtx) &#123;</span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line">  <span class="comment">// 之前部分的代码</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (!<span class="built_in">is_end</span>()) &#123;</span><br><span class="line">    <span class="keyword">auto</span> [min_idx, _] = <span class="built_in">get_min_key_idx</span>();</span><br><span class="line">    cur_idx_ = min_idx;</span><br><span class="line">    <span class="built_in">update_current</span>();</span><br><span class="line">    <span class="keyword">auto</span> cached_kv = *cached_value;</span><br><span class="line">    <span class="keyword">if</span> (cached_kv.second.<span class="built_in">size</span>() == <span class="number">0</span>) &#123;</span><br><span class="line">      <span class="comment">// 如果当前值为空, 说明当前key已经被删除了</span></span><br><span class="line">      <span class="comment">// 需要跳过这个key</span></span><br><span class="line">      <span class="built_in">skip_key</span>(cached_value-&gt;first);</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="comment">// 找到一个合法的键值对, 跳出循环</span></span><br><span class="line">      <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-解引用运算符重载"><a href="#2-3-解引用运算符重载" class="headerlink" title="2.3 解引用运算符重载"></a>2.3 解引用运算符重载</h2><p>这部分就很简单了, 直接获取缓存值即可, 缓存值会在构造函数以及后续每一次自增时进行更新:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/level_iterator.cpp</span></span><br><span class="line">BaseIterator::value_type Level_Iterator::<span class="keyword">operator</span>*() <span class="type">const</span> &#123;</span><br><span class="line">  <span class="keyword">if</span> (!cached_value.<span class="built_in">has_value</span>()) &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;Level_Iterator is invalid&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">return</span> *cached_value;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="3-全局迭代器的接口"><a href="#3-全局迭代器的接口" class="headerlink" title="3 全局迭代器的接口"></a>3 全局迭代器的接口</h1><p>现在我们可以在上层组件中暴露<code>begin</code>和<code>end</code>来获取当前迭代器的全局接口了:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line"><span class="function">Level_Iterator <span class="title">LSMEngine::begin</span><span class="params">(<span class="type">uint64_t</span> tranc_id)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">Level_Iterator</span>(<span class="built_in">shared_from_this</span>(), tranc_id);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function">Level_Iterator <span class="title">LSMEngine::end</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> Level_Iterator&#123;&#125;; &#125;</span><br></pre></td></tr></table></figure>
+
+<p>我们可以在外部如下使用全局迭代器:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// example/main.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/lsm/engine.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;../include/lsm/level_iterator.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="comment">// create lsm instance, data_dir is the directory to store data</span></span><br><span class="line">  <span class="function">LSM <span class="title">lsm</span><span class="params">(<span class="string">&quot;example_data&quot;</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ...</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// iterator</span></span><br><span class="line">  std::cout &lt;&lt; <span class="string">&quot;All key-value pairs:&quot;</span> &lt;&lt; std::endl;</span><br><span class="line">  <span class="comment">// begin(id): id means transaction id, 0 means disable mvcc</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> it = lsm.<span class="built_in">begin</span>(<span class="number">0</span>); it != lsm.<span class="built_in">end</span>(); ++it) &#123;</span><br><span class="line">    std::cout &lt;&lt; it-&gt;first &lt;&lt; <span class="string">&quot;: &quot;</span> &lt;&lt; it-&gt;second &lt;&lt; std::endl;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="4-小节"><a href="#4-小节" class="headerlink" title="4 小节"></a>4 小节</h1><p>本小节没有什么复杂的内容, 就是赋予不同组件的迭代器不同的优先级, 将其整合形成一个更高级的迭代器。通过这章的学习，相比大家对于<code>C++</code>中迭代器的理解应该会更加清晰, 迭代器是不同组件信息交流的桥梁, 非常重要。</p>
+<p>本项目的初版差不多已经完结了，后续会不定期更新一些功能的补全。然后会开一个新坑————基于目前的单机的存储引擎<code>Tiny-LSM</code>, 进行<code>raft</code>或<code>curp</code>共识算法的封装, 最终形成一个分布式数据库。（不知道什么时候开坑，速度可能有点慢，但肯定不会鸽）。</p>
+<p>如果本项目有帮到你，请给个<code>star</code>吧，您的支持是我继续维护和开发这个项目的动力。如果你想自己从零开始手敲代码实现这个项目，欢迎支持我的付费视频课程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%9E%B6%E6%9E%84%E5%9B%9E%E9%A1%BE"><span class="toc-number">1.</span> <span class="toc-text">1 架构回顾</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.</span> <span class="toc-text">2 全局迭代器的设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 数据结构设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 构造函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E8%87%AA%E5%A2%9E%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD"><span class="toc-number">2.3.</span> <span class="toc-text">2.2 自增运算符重载</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-1-%E6%95%B4%E4%BD%93%E9%87%8D%E8%BD%BD%E9%80%BB%E8%BE%91"><span class="toc-number">2.3.1.</span> <span class="toc-text">2.2.1 整体重载逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-2-%E9%87%8D%E6%96%B0%E9%80%89%E6%8B%A9%E8%BF%AD%E4%BB%A3%E5%99%A8"><span class="toc-number">2.3.2.</span> <span class="toc-text">2.2.2 重新选择迭代器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-3-%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E7%9A%84%E8%A1%A5%E5%85%A8"><span class="toc-number">2.3.3.</span> <span class="toc-text">2.2.3 构造函数的补全</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E8%A7%A3%E5%BC%95%E7%94%A8%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD"><span class="toc-number">2.4.</span> <span class="toc-text">2.3 解引用运算符重载</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8%E7%9A%84%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.</span> <span class="toc-text">3 全局迭代器的接口</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B0%8F%E8%8A%82"><span class="toc-number">4.</span> <span class="toc-text">4 小节</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&text=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器&body=Check out this article: http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&title=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&name=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/05/06/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-21-%E5%85%A8%E5%B1%80%E8%BF%AD%E4%BB%A3%E5%99%A8/&t=C++从零开始实现LSM-Tree-KV存储-21-全局迭代器"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

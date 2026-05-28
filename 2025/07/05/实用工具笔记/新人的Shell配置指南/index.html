@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本人将为新人介绍常用的 Shell 配置和工具，帮助提升命令行效率。本文将涵盖 Zsh、Oh My Zsh、Zoxide、FZF 和 Ripgrep 等工具的安装和配置和简单教学。  1 Zsh 安装和配置你可能已经习惯了 Linux 默认的 Bash Shell，但现在是时候考虑升级到 Zsh 了。Zsh 提供了许多 Bash 不具备的强大功能，例如：  更强大的自动补全：Zsh 的自动补全功能">
+<meta property="og:type" content="article">
+<meta property="og:title" content="新人的Shell配置指南">
+<meta property="og:url" content="http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本人将为新人介绍常用的 Shell 配置和工具，帮助提升命令行效率。本文将涵盖 Zsh、Oh My Zsh、Zoxide、FZF 和 Ripgrep 等工具的安装和配置和简单教学。  1 Zsh 安装和配置你可能已经习惯了 Linux 默认的 Bash Shell，但现在是时候考虑升级到 Zsh 了。Zsh 提供了许多 Bash 不具备的强大功能，例如：  更强大的自动补全：Zsh 的自动补全功能">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/tools/zsh.png">
+<meta property="og:image" content="http://example.com/images/tools/fzf-ctrl-R.png">
+<meta property="article:published_time" content="2025-07-05T11:59:55.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.666Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="WSL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/tools/zsh.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>新人的Shell配置指南</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/09/21/C++/C++%E6%96%B0%E7%89%B9%E6%80%A7%E6%A2%B3%E7%90%8604-Concepts/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/05/27/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-22-%E4%BB%A3%E7%A0%81%E8%A6%86%E7%9B%96%E7%8E%87/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&text=新人的Shell配置指南"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&is_video=false&description=新人的Shell配置指南"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=新人的Shell配置指南&body=Check out this article: http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&name=新人的Shell配置指南&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&t=新人的Shell配置指南"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Zsh-%E5%AE%89%E8%A3%85%E5%92%8C%E9%85%8D%E7%BD%AE"><span class="toc-number">1.</span> <span class="toc-text">1 Zsh 安装和配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%A6%82%E4%BD%95%E5%AE%89%E8%A3%85-Zsh"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 如何安装 Zsh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E8%AE%BE%E7%BD%AE-Zsh-%E4%B8%BA%E9%BB%98%E8%AE%A4-Shell"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 设置 Zsh 为默认 Shell</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Oh-My-Zsh%EF%BC%9AZsh-%E9%85%8D%E7%BD%AE%E6%A1%86%E6%9E%B6"><span class="toc-number">2.</span> <span class="toc-text">2 Oh My Zsh：Zsh 配置框架</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%AE%89%E8%A3%85-Oh-My-Zsh"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 安装 Oh My Zsh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%BC%BA%E5%A4%A7%E7%9A%84%E6%8F%92%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 强大的插件系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Zsh-%E9%BB%98%E8%AE%A4%E4%B8%BB%E9%A2%98%E6%A6%82%E8%A7%88"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Zsh 默认主题概览</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Zoxide%EF%BC%9A%E6%9B%B4%E6%99%BA%E8%83%BD%E7%9A%84%E7%9B%AE%E5%BD%95%E5%88%87%E6%8D%A2"><span class="toc-number">3.</span> <span class="toc-text">3 Zoxide：更智能的目录切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%AE%89%E8%A3%85-Zoxide"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 安装 Zoxide</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%85%8D%E7%BD%AE-Zoxide"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 配置 Zoxide</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-Zoxide"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 如何使用 Zoxide</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-FZF%EF%BC%9A%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E7%B3%8A%E6%9F%A5%E6%89%BE%E5%88%A9%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 FZF：命令行模糊查找利器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%89%E8%A3%85-FZF"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 安装 FZF</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-FZF-%E7%9A%84%E5%B8%B8%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 FZF 的常用场景</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Ripgrep%EF%BC%9A%E6%9E%81%E9%80%9F%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9%E6%90%9C%E7%B4%A2"><span class="toc-number">5.</span> <span class="toc-text">5 Ripgrep：极速文件内容搜索</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%AE%89%E8%A3%85-Ripgrep"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 安装 Ripgrep</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-Ripgrep"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 如何使用 Ripgrep</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Ripgrep-%E4%B8%8E-Grep-%E7%9A%84%E4%B8%8D%E5%90%8C%E4%B9%8B%E5%A4%84%E5%8F%8A%E9%BB%98%E8%AE%A4%E8%A1%8C%E4%B8%BA"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Ripgrep 与 Grep 的不同之处及默认行为</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        新人的Shell配置指南
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-07-05T11:59:55.000Z" class="dt-published" itemprop="datePublished">2025-07-05</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/WSL/" rel="tag">WSL</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本人将为新人介绍常用的 <code>Shell</code> 配置和工具，帮助提升命令行效率。本文将涵盖 <code>Zsh</code>、<code>Oh My Zsh</code>、<code>Zoxide</code>、<code>FZF</code> 和 <code>Ripgrep</code> 等工具的安装和配置和简单教学。</p>
+<hr>
+<h1 id="1-Zsh-安装和配置"><a href="#1-Zsh-安装和配置" class="headerlink" title="1 Zsh 安装和配置"></a>1 Zsh 安装和配置</h1><p>你可能已经习惯了 <code>Linux</code> 默认的 <code>Bash Shell</code>，但现在是时候考虑升级到 <strong>Zsh</strong> 了。<code>Zsh</code> 提供了许多 <code>Bash</code> 不具备的强大功能，例如：</p>
+<ul>
+<li><strong>更强大的自动补全</strong>：<code>Zsh</code> 的自动补全功能非常智能，可以补全命令、文件路径、选项、甚至是 Git 分支等，大大减少你的输入量。</li>
+<li><strong>命令历史共享</strong>：在多个 <code>Zsh</code> 会话中共享命令历史，方便你随时查找和重复执行之前的命令。</li>
+<li><strong>主题和插件支持</strong>：通过各种主题美化你的终端界面，并通过插件扩展 <code>Zsh</code> 的功能，使其更加强大。</li>
+</ul>
+<h2 id="1-1-如何安装-Zsh"><a href="#1-1-如何安装-Zsh" class="headerlink" title="1.1 如何安装 Zsh"></a>1.1 如何安装 Zsh</h2><p>根据你的操作系统，安装 Zsh 的方法略有不同：</p>
+<ul>
+<li><strong>macOS</strong>: Zsh 通常已经预装。你可以通过运行 <code>zsh --version</code> 来检查。如果未安装，可以使用 Homebrew：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install zsh</span><br></pre></td></tr></table></figure></li>
+<li><strong>Ubuntu&#x2F;Debian</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install zsh</span><br></pre></td></tr></table></figure></li>
+<li><strong>Fedora&#x2F;RHEL</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo dnf install zsh</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="1-2-设置-Zsh-为默认-Shell"><a href="#1-2-设置-Zsh-为默认-Shell" class="headerlink" title="1.2 设置 Zsh 为默认 Shell"></a>1.2 设置 Zsh 为默认 Shell</h2><p>安装完成后，你需要将 Zsh 设置为你的默认 Shell：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chsh -s $(<span class="built_in">which</span> zsh)</span><br></pre></td></tr></table></figure>
+
+<p>然后，你需要退出当前终端会话并重新登录，或者重新打开终端，Zsh 就会生效。</p>
+<blockquote>
+<p>如果你选择安装后续的<code>Oh My Zsh</code>, 你可以跳过此步骤, 因为<code>Oh My Zsh</code> 会自动将 <code>Zsh</code> 设置为默认 <code>Shell</code>。</p>
+</blockquote>
+<hr>
+<h1 id="2-Oh-My-Zsh：Zsh-配置框架"><a href="#2-Oh-My-Zsh：Zsh-配置框架" class="headerlink" title="2 Oh My Zsh：Zsh 配置框架"></a>2 Oh My Zsh：Zsh 配置框架</h1><p><strong>Oh My Zsh</strong> 是一个开源的、社区驱动的 Zsh 配置框架，它使得管理 Zsh 配置变得异常简单。它包含了数百个有用的函数、助手、主题和插件，可以帮助你快速构建一个功能强大的 <code>Shell</code> 环境。</p>
+<p>官网: <a target="_blank" rel="noopener" href="https://ohmyz.sh/">Oh My Zsh</a></p>
+<h2 id="2-1-安装-Oh-My-Zsh"><a href="#2-1-安装-Oh-My-Zsh" class="headerlink" title="2.1 安装 Oh My Zsh"></a>2.1 安装 Oh My Zsh</h2><p>安装 Oh My Zsh 非常简单，只需执行以下命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh -c <span class="string">&quot;<span class="subst">$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>根据脚本的提升选择性按<code>y</code>或<code>n</code>进行配置即可, 通常全部默认选<code>y</code>即可</p>
+<h2 id="2-2-强大的插件系统"><a href="#2-2-强大的插件系统" class="headerlink" title="2.2 强大的插件系统"></a>2.2 强大的插件系统</h2><p><code>Oh My Zsh</code> 的核心优势之一在于其丰富的插件生态。你可以在 <code>~/.zshrc</code> 文件中配置要启用的插件。找到 <code>plugins=(git)</code> 这一行，然后添加你需要的插件。</p>
+<p>以下是一些常用且推荐的插件：</p>
+<ul>
+<li><strong>git</strong>: 提供了大量的 Git 别名和辅助函数，极大提高了 Git 操作的效率。</li>
+<li><strong>zsh-autosuggestions</strong>: 根据你的历史命令自动建议命令，按右箭头键即可补全。<ul>
+<li><strong>安装</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/zsh-users/zsh-autosuggestions <span class="variable">$&#123;ZSH_CUSTOM:-~/.oh-my-zsh/custom&#125;</span>/plugins/zsh-autosuggestions</span><br></pre></td></tr></table></figure></li>
+<li><strong>启用</strong>: 在 <code>~/.zshrc</code> 中添加 <code>zsh-autosuggestions</code> 到 <code>plugins</code> 数组。</li>
+</ul>
+</li>
+<li><strong>zsh-syntax-highlighting</strong>: 为命令提供语法高亮，让你的命令更易读，并能及时发现输入错误。<ul>
+<li><strong>安装</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> https://github.com/zsh-users/zsh-syntax-highlighting.git <span class="variable">$&#123;ZSH_CUSTOM:-~/.oh-my-zsh/custom&#125;</span>/plugins/zsh-syntax-highlighting</span><br></pre></td></tr></table></figure></li>
+<li><strong>启用</strong>: 在 <code>~/.zshrc</code> 中添加 <code>zsh-syntax-highlighting</code> 到 <code>plugins</code> 数组。</li>
+</ul>
+</li>
+</ul>
+<p><strong>配置示例</strong>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># ~/.zshrc</span><br><span class="line">plugins=(</span><br><span class="line">    git</span><br><span class="line">    zsh-autosuggestions</span><br><span class="line">    zsh-syntax-highlighting</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>修改 <code>~/.zshrc</code> 后，记得运行 <code>source ~/.zshrc</code> 来使更改生效。</p>
+<h2 id="2-3-Zsh-默认主题概览"><a href="#2-3-Zsh-默认主题概览" class="headerlink" title="2.3 Zsh 默认主题概览"></a>2.3 Zsh 默认主题概览</h2><p><img src="/../../images/tools/zsh.png" alt="zsh"></p>
+<p>上图显示的是 <code>Zsh</code> 默认主题。可以看到, 其相比较传统的<code>bash</code>提供了更多有用的信息和功能:</p>
+<ol>
+<li>在安装<code>git</code>插件后, 当你处于<code>git</code>仓库目录时, <code>zsh</code>会自动将在<code>prompt</code>中显示当前分支名。</li>
+<li><code>zsh</code>提供丰富的智能不全, 比如安装<code>git</code>插件后, 可以补全<code>git</code>的子命令</li>
+<li>该默认主题箭头的颜色表达了上一个命令的执行状态: <ul>
+<li>绿色表示上一个命令成功执行</li>
+<li>红色表示上一个命令执行失败</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>更多的插件请参考 <a target="_blank" rel="noopener" href="https://github.com/ohmyzsh/ohmyzsh">Oh My Zsh 插件列表</a></p>
+</blockquote>
+<h1 id="3-Zoxide：更智能的目录切换"><a href="#3-Zoxide：更智能的目录切换" class="headerlink" title="3 Zoxide：更智能的目录切换"></a>3 Zoxide：更智能的目录切换</h1><p>你是否厌倦了在命令行中频繁地 <code>cd</code> 到深层目录？<strong>Zoxide</strong> 是一个更智能的 <code>cd</code> 命令替代品，它会记住你访问过的目录，并允许你通过模糊匹配快速切换。</p>
+<h2 id="3-1-安装-Zoxide"><a href="#3-1-安装-Zoxide" class="headerlink" title="3.1 安装 Zoxide"></a>3.1 安装 Zoxide</h2><ul>
+<li><strong>macOS (Homebrew)</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install zoxide</span><br></pre></td></tr></table></figure></li>
+<li><strong>Ubuntu&#x2F;Debian</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install zoxide</span><br></pre></td></tr></table></figure></li>
+<li><strong>其他方式</strong>: 请参考 Zoxide 的 GitHub 仓库获取更详细的安装指南。</li>
+</ul>
+<h2 id="3-2-配置-Zoxide"><a href="#3-2-配置-Zoxide" class="headerlink" title="3.2 配置 Zoxide"></a>3.2 配置 Zoxide</h2><p>安装完成后，你需要将 Zoxide 的初始化脚本添加到你的 Shell 配置文件中（对于 Zsh 是 <code>~/.zshrc</code>）。在 <code>~/.zshrc</code> 文件的末尾添加以下行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># ~/.zshrc</span><br><span class="line">eval &quot;$(zoxide init zsh)&quot;</span><br></pre></td></tr></table></figure>
+
+<p>然后运行 <code>source ~/.zshrc</code>。</p>
+<h2 id="3-3-如何使用-Zoxide"><a href="#3-3-如何使用-Zoxide" class="headerlink" title="3.3 如何使用 Zoxide"></a>3.3 如何使用 Zoxide</h2><p>现在，你可以直接输入目录名的部分或模糊匹配来切换目录，例如：</p>
+<ul>
+<li><code>z myproj</code>：切换到你最近访问过的名为 <code>myproj</code> 的目录。</li>
+<li><code>z code</code>：切换到包含 <code>code</code> 关键字的目录。</li>
+<li><code>zi</code>：启动交互式选择界面，通过模糊匹配选择要切换的目录。</li>
+</ul>
+<hr>
+<h1 id="4-FZF：命令行模糊查找利器"><a href="#4-FZF：命令行模糊查找利器" class="headerlink" title="4 FZF：命令行模糊查找利器"></a>4 FZF：命令行模糊查找利器</h1><p><strong>FZF</strong>（Fuzzy Finder）是一个通用的命令行模糊查找器，它可以与各种命令结合使用，实现快速、交互式的列表过滤和选择。无论是文件、历史命令、Git 分支，FZF 都能让你轻松找到所需。</p>
+<h2 id="4-1-安装-FZF"><a href="#4-1-安装-FZF" class="headerlink" title="4.1 安装 FZF"></a>4.1 安装 FZF</h2><ul>
+<li><strong>macOS (Homebrew)</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install fzf</span><br></pre></td></tr></table></figure></li>
+<li><strong>Linux (推荐 Git 克隆)</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">git <span class="built_in">clone</span> --depth 1 https://github.com/junegunn/fzf.git ~/.fzf</span><br><span class="line">~/.fzf/install</span><br></pre></td></tr></table></figure>
+在安装过程中，它会询问你是否将 FZF 的键绑定和自动补全添加到你的 Shell 配置中，请选择 <code>y</code>。</li>
+</ul>
+<h2 id="4-2-FZF-的常用场景"><a href="#4-2-FZF-的常用场景" class="headerlink" title="4.2 FZF 的常用场景"></a>4.2 FZF 的常用场景</h2><ul>
+<li><p><strong>文件查找</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vim $(fzf) <span class="comment"># 使用 fzf 查找文件并用 vim 打开</span></span><br></pre></td></tr></table></figure></li>
+<li><p><strong>历史命令搜索</strong>: 按下 <code>Ctrl + R</code>（在 Zsh 中默认已配置），然后输入关键词进行历史命令的模糊搜索。</p>
+</li>
+<li><p><strong>进程查找</strong>:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps aux | fzf <span class="comment"># 查找并过滤进程</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>历史命令搜索</strong>:<br><code>fzf</code>可以搜索历史命令，只需按下 <code>Ctrl + R</code>（在 Zsh 中默认已配置），然后输入关键词进行历史命令的模糊搜索。例如:</p>
+<p><img src="/../../images/tools/fzf-ctrl-R.png" alt="fzf-ctrl-R"></p>
+</li>
+</ul>
+<hr>
+<h1 id="5-Ripgrep：极速文件内容搜索"><a href="#5-Ripgrep：极速文件内容搜索" class="headerlink" title="5 Ripgrep：极速文件内容搜索"></a>5 Ripgrep：极速文件内容搜索</h1><p><strong>Ripgrep</strong> 是一个极速的行式搜索工具，它递归地在当前目录中搜索正则表达式模式。它比 <code>grep</code> 更快，并且默认会忽略 <code>.gitignore</code> 中的文件，极大提高了搜索效率。</p>
+<h2 id="5-1-安装-Ripgrep"><a href="#5-1-安装-Ripgrep" class="headerlink" title="5.1 安装 Ripgrep"></a>5.1 安装 Ripgrep</h2><ul>
+<li><strong>macOS (Homebrew)</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install ripgrep</span><br></pre></td></tr></table></figure></li>
+<li><strong>Ubuntu&#x2F;Debian</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt install ripgrep</span><br></pre></td></tr></table></figure></li>
+<li><strong>Fedora&#x2F;RHEL</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo dnf install ripgrep</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="5-2-如何使用-Ripgrep"><a href="#5-2-如何使用-Ripgrep" class="headerlink" title="5.2 如何使用 Ripgrep"></a>5.2 如何使用 Ripgrep</h2><p>Ripgrep 的基本用法与 <code>grep</code> 类似，但速度更快且功能更强大。</p>
+<ul>
+<li><strong>搜索文件内容</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rg <span class="string">&quot;your_pattern&quot;</span> <span class="comment"># 在当前目录递归搜索 &quot;your_pattern&quot;</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>显示行号</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rg -n <span class="string">&quot;your_pattern&quot;</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>只搜索特定类型文件</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rg <span class="string">&quot;your_pattern&quot;</span> -t js <span class="comment"># 只搜索 JavaScript 文件</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>不区分大小写</strong>:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rg -i <span class="string">&quot;your_pattern&quot;</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="5-3-Ripgrep-与-Grep-的不同之处及默认行为"><a href="#5-3-Ripgrep-与-Grep-的不同之处及默认行为" class="headerlink" title="5.3 Ripgrep 与 Grep 的不同之处及默认行为"></a>5.3 Ripgrep 与 Grep 的不同之处及默认行为</h2><p>Ripgrep 在设计上旨在提供比传统 <code>grep</code> 更优越的体验。除了速度上的显著优势外，它还有一些默认行为与 <code>grep</code> 不同，这些差异通常能更好地满足现代开发的需求：</p>
+<ul>
+<li><strong>默认忽略 <code>.gitignore</code> 文件</strong>: Ripgrep 会自动读取当前目录及其父目录中的 <code>.gitignore</code> 文件，并忽略其中指定的文件和目录。这意味着在搜索代码仓库时，您不必担心搜索到编译生成的文件、依赖包目录（如 <code>node_modules</code>）或其他无关文件，从而使搜索结果更加聚焦和准确。如果您需要搜索被 <code>.gitignore</code> 忽略的文件，可以使用 <code>-u</code> 或 <code>--unrestricted</code> 选项：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rg -u <span class="string">&quot;your_pattern&quot;</span> <span class="comment"># 搜索所有文件，包括被 .gitignore 忽略的</span></span><br></pre></td></tr></table></figure></li>
+<li><strong>默认忽略隐藏文件和二进制文件</strong>: Ripgrep 默认情况下会跳过隐藏文件（以 <code>.</code> 开头的文件和目录）以及被识别为二进制的文件。这可以避免在搜索结果中出现大量无关的二进制数据，并提高搜索效率。</li>
+<li><strong>智能识别文件类型</strong>: Ripgrep 能够智能地识别多种文件类型（例如 <code>js</code>、<code>py</code>、<code>md</code> 等），并支持按文件类型进行过滤搜索，这比 <code>grep</code> 更为方便。</li>
+</ul>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-Zsh-%E5%AE%89%E8%A3%85%E5%92%8C%E9%85%8D%E7%BD%AE"><span class="toc-number">1.</span> <span class="toc-text">1 Zsh 安装和配置</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%A6%82%E4%BD%95%E5%AE%89%E8%A3%85-Zsh"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 如何安装 Zsh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E8%AE%BE%E7%BD%AE-Zsh-%E4%B8%BA%E9%BB%98%E8%AE%A4-Shell"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 设置 Zsh 为默认 Shell</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-Oh-My-Zsh%EF%BC%9AZsh-%E9%85%8D%E7%BD%AE%E6%A1%86%E6%9E%B6"><span class="toc-number">2.</span> <span class="toc-text">2 Oh My Zsh：Zsh 配置框架</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%AE%89%E8%A3%85-Oh-My-Zsh"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 安装 Oh My Zsh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%BC%BA%E5%A4%A7%E7%9A%84%E6%8F%92%E4%BB%B6%E7%B3%BB%E7%BB%9F"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 强大的插件系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-Zsh-%E9%BB%98%E8%AE%A4%E4%B8%BB%E9%A2%98%E6%A6%82%E8%A7%88"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 Zsh 默认主题概览</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Zoxide%EF%BC%9A%E6%9B%B4%E6%99%BA%E8%83%BD%E7%9A%84%E7%9B%AE%E5%BD%95%E5%88%87%E6%8D%A2"><span class="toc-number">3.</span> <span class="toc-text">3 Zoxide：更智能的目录切换</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%AE%89%E8%A3%85-Zoxide"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 安装 Zoxide</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%85%8D%E7%BD%AE-Zoxide"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 配置 Zoxide</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-Zoxide"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 如何使用 Zoxide</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-FZF%EF%BC%9A%E5%91%BD%E4%BB%A4%E8%A1%8C%E6%A8%A1%E7%B3%8A%E6%9F%A5%E6%89%BE%E5%88%A9%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 FZF：命令行模糊查找利器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%89%E8%A3%85-FZF"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 安装 FZF</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-FZF-%E7%9A%84%E5%B8%B8%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 FZF 的常用场景</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Ripgrep%EF%BC%9A%E6%9E%81%E9%80%9F%E6%96%87%E4%BB%B6%E5%86%85%E5%AE%B9%E6%90%9C%E7%B4%A2"><span class="toc-number">5.</span> <span class="toc-text">5 Ripgrep：极速文件内容搜索</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%AE%89%E8%A3%85-Ripgrep"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 安装 Ripgrep</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8-Ripgrep"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 如何使用 Ripgrep</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-3-Ripgrep-%E4%B8%8E-Grep-%E7%9A%84%E4%B8%8D%E5%90%8C%E4%B9%8B%E5%A4%84%E5%8F%8A%E9%BB%98%E8%AE%A4%E8%A1%8C%E4%B8%BA"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 Ripgrep 与 Grep 的不同之处及默认行为</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&text=新人的Shell配置指南"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&is_video=false&description=新人的Shell配置指南"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=新人的Shell配置指南&body=Check out this article: http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&title=新人的Shell配置指南"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&name=新人的Shell配置指南&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/07/05/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/%E6%96%B0%E4%BA%BA%E7%9A%84Shell%E9%85%8D%E7%BD%AE%E6%8C%87%E5%8D%97/&t=新人的Shell配置指南"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 多核处理器进阶知识(续上一节课)上一节课展示了CPU的ALU运算可能会被内存的延迟拖累, 因此实际上数据加载和ALU运算是同时进行的, CPU核心其实还包括加载存储单元: 其运行流程如下图:  在这张图中，绿色方块表示的加载指令（Load instruction）代表的是CPU发起的加载请求。完整的加载过程是：  绿色方块（Load instruction）：  这是CPU执行加载指令的阶段">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc">
+<meta property="og:url" content="http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 多核处理器进阶知识(续上一节课)上一节课展示了CPU的ALU运算可能会被内存的延迟拖累, 因此实际上数据加载和ALU运算是同时进行的, CPU核心其实还包括加载存储单元: 其运行流程如下图:  在这张图中，绿色方块表示的加载指令（Load instruction）代表的是CPU发起的加载请求。完整的加载过程是：  绿色方块（Load instruction）：  这是CPU执行加载指令的阶段">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec03/cpu-core.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec03/cpu-core-flow.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec03/ispc-sinx.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec03/ispc-gang.png">
+<meta property="article:published_time" content="2024-11-20T13:33:17.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec03/cpu-core.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/11/24/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec04-%E7%AC%94%E8%AE%B0-%E5%B9%B6%E8%A1%8C%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&text=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&is_video=false&description=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc&body=Check out this article: http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&name=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&t=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%A4%9A%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E8%BF%9B%E9%98%B6%E7%9F%A5%E8%AF%86-%E7%BB%AD%E4%B8%8A%E4%B8%80%E8%8A%82%E8%AF%BE"><span class="toc-number">1.</span> <span class="toc-text">1 多核处理器进阶知识(续上一节课)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-ISPC"><span class="toc-number">2.</span> <span class="toc-text">2 ISPC</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E7%9A%84%E4%BB%A3%E7%A0%81%E8%AF%B4%E6%98%8E"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 课程介绍的代码说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-ispc%E7%9A%84%E5%AE%9E%E9%99%85%E4%BD%BF%E7%94%A8"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 ispc的实际使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-ISPC%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 ISPC的实现原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-ispc%E7%9A%84%E8%BF%9B%E9%98%B6%E4%BD%BF%E7%94%A8"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 ispc的进阶使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-1-%E4%BD%BF%E7%94%A8ispc%E7%9A%84foreach"><span class="toc-number">2.4.1.</span> <span class="toc-text">2.4.1 使用ispc的foreach</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-2-%E4%BD%BF%E7%94%A8ispc%E7%9A%84task"><span class="toc-number">2.4.2.</span> <span class="toc-text">2.4.2 使用ispc的task</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-11-20T13:33:17.000Z" class="dt-published" itemprop="datePublished">2024-11-20</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-多核处理器进阶知识-续上一节课"><a href="#1-多核处理器进阶知识-续上一节课" class="headerlink" title="1 多核处理器进阶知识(续上一节课)"></a>1 多核处理器进阶知识(续上一节课)</h1><p>上一节课展示了CPU的<code>ALU</code>运算可能会被内存的延迟拖累, 因此实际上数据加载和<code>ALU</code>运算是同时进行的, <code>CPU</code>核心其实还包括加载存储单元:<br><img src="/../../images/CS149/Lec03/cpu-core.png" alt="cpu-core"></p>
+<p>其运行流程如下图:</p>
+<p><img src="/../../images/CS149/Lec03/cpu-core-flow.png" alt="cpu-core-flow"></p>
+<p>在这张图中，绿色方块表示的加载指令（Load instruction）代表的是<strong>CPU发起的加载请求</strong>。完整的加载过程是：</p>
+<ol>
+<li><p><strong>绿色方块</strong>（Load instruction）：</p>
+<ul>
+<li>这是CPU执行加载指令的阶段</li>
+<li>表示CPU发出了一个加载请求</li>
+<li>这个阶段很快，只占用一个时钟周期</li>
+</ul>
+</li>
+<li><p><strong>灰色方块</strong>（Load command sent to memory）：</p>
+<ul>
+<li>表示加载请求已经发送到内存系统</li>
+<li>这是内存延迟的一部分</li>
+</ul>
+</li>
+<li><p><strong>蓝色方块</strong>（Transferring data from memory）：</p>
+<ul>
+<li>表示实际从内存中传输数据的过程</li>
+<li>数据传输速度是8字节&#x2F;时钟周期</li>
+<li>需要8个时钟周期来完成64字节的传输</li>
+</ul>
+</li>
+</ol>
+<p>所以整个过程是：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CPU发出加载请求（绿色）-&gt; 请求传递到内存（灰色）-&gt; 数据从内存传回CPU（蓝色）</span><br></pre></td></tr></table></figure>
+
+<p>这就是为什么图中标注”Loads in progress”时会同时显示这三种颜色的方块，因为它们代表了完整的内存加载过程的不同阶段。当达到3个并发加载请求时，CPU就无法发起新的加载请求，导致出现”Stall”（停顿）状态。</p>
+<p>另一方面, 图中显示了两次<code>Stall</code>情况，这是因为达到了最大并发加载请求数（3个）, 这些停顿表明处理器必须等待之前的加载操作完成才能继续执行新的加载指令, 而且这里多次的内存加载操作是无法并行实现的, 每一个蓝条结束后, 下一个蓝条才能开始。但现代实际的CPU内存系统要复杂得多，而且确实支持并行数据传输。现代处理器采用以下技术来缓解这个问题：</p>
+<ol>
+<li><p><strong>多通道内存架构（Multi-Channel Memory）</strong>：</p>
+<ul>
+<li>提供多个并行的数据传输通道</li>
+<li>每个通道都有独立的数据传输路径</li>
+<li>可以同时处理多个内存请求</li>
+<li>例如：双通道DDR4-3200可以达到51.2 GB&#x2F;s的理论带宽</li>
+</ul>
+<blockquote>
+<p>现在终于明白之前看到硬件评测节目中所说的<code>双通道</code>和<code>四通道</code>内存是什么了。</p>
+</blockquote>
+</li>
+<li><p><strong>内存控制器优化</strong>（其实不算对通道传输的优化， 是调度的优化）：</p>
+<ul>
+<li>多个内存控制器并行工作</li>
+<li>智能调度算法重排内存请求</li>
+<li>合并相邻的内存请求</li>
+<li>优化页面访问策略</li>
+</ul>
+</li>
+<li><p><strong>新型内存技术</strong>：</p>
+<ul>
+<li>HBM（高带宽内存）：提供更多并行传输通道，具体是将多个DRAM芯片垂直堆叠，每层都有独立的内存控制器，所有层可以并行工作</li>
+<li>GDDR（图形双倍数据率内存）：更高的传输带宽，DDR内存的特殊变体，专为图形处理优化</li>
+<li>3D堆叠内存：缩短传输距离，提高并行度</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>注：多层级缓存系统虽然也是内存系统的一部分，但它主要解决的是访问延迟问题，而不是内存传输的串行化问题。我们这里讨论的重点是如何实现多个内存传输请求的并行处理。</p>
+</blockquote>
+<p>举例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">AMD Ryzen 处理器：</span><br><span class="line">- 支持双通道/四通道DDR4</span><br><span class="line">- 每个内存通道独立运作</span><br><span class="line">- 可以同时处理多个内存请求</span><br><span class="line">- L3缓存可以被多个核心同时访问</span><br><span class="line"></span><br><span class="line">Intel处理器：</span><br><span class="line">- 集成内存控制器</span><br><span class="line">- 多通道支持</span><br><span class="line">- QPI（快速通道互联）技术</span><br></pre></td></tr></table></figure>
+
+<h1 id="2-ISPC"><a href="#2-ISPC" class="headerlink" title="2 ISPC"></a>2 ISPC</h1><h2 id="2-1-课程介绍的代码说明"><a href="#2-1-课程介绍的代码说明" class="headerlink" title="2.1 课程介绍的代码说明"></a>2.1 课程介绍的代码说明</h2><p>课程的第二部分是介绍<code>ISPC</code>， 根据官方的定义:</p>
+<blockquote>
+<p>ispc 是 C 编程语言变体的编译器，具有单程序、多数据编程的扩展。在SPMD模型下，程序员编写的程序通常看起来是一个常规的串行程序，但执行模型实际上是多个程序实例在硬件上并行执行。</p>
+</blockquote>
+<p>课程以<code>sinx</code>的计算为例， 展示了如何使用<code>ISPC</code>编写并行程序:</p>
+<p><img src="/../../images/CS149/Lec03/ispc-sinx.png" alt="ispc-sinx"></p>
+<p>需要注意的是, PPT中的函数实际上无法运行(可能类似伪代码吧), 这里我进行了更改:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sinx_ispc.ispc</span></span><br><span class="line">export <span class="type">void</span> <span class="title function_">ispc_sinx</span><span class="params">( </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> N, </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> terms, </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> x[], </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> result[])</span> </span><br><span class="line">&#123; </span><br><span class="line">   <span class="comment">// assumes N % programCount = 0 </span></span><br><span class="line">   <span class="keyword">for</span> (uniform <span class="type">int</span> i=<span class="number">0</span>; i&lt;N; i+=programCount) </span><br><span class="line">   &#123; </span><br><span class="line">    <span class="type">int</span> idx = i + programIndex; </span><br><span class="line">    <span class="type">float</span> value = x[idx]; </span><br><span class="line">    <span class="type">float</span> numer = x[idx] * x[idx] * x[idx]; </span><br><span class="line">    uniform <span class="type">int</span> denom = <span class="number">6</span>;  <span class="comment">// 3! </span></span><br><span class="line">    uniform <span class="type">int</span> sign = <span class="number">-1</span>; </span><br><span class="line">    <span class="keyword">for</span> (uniform <span class="type">int</span> j=<span class="number">1</span>; j&lt;=terms; j++) </span><br><span class="line">    &#123;  </span><br><span class="line">       value += sign * numer / denom; </span><br><span class="line">       numer *= x[idx] * x[idx]; </span><br><span class="line">       denom *= (<span class="number">2</span>*j+<span class="number">2</span>) * (<span class="number">2</span>*j+<span class="number">3</span>); </span><br><span class="line">       sign *= <span class="number">-1</span>; </span><br><span class="line">      &#125; </span><br><span class="line">      result[idx] = value; </span><br><span class="line">   &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>主函数:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;sinx_ispc.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> &#123;</span><br><span class="line">  <span class="type">int</span> N = <span class="number">1024</span>;</span><br><span class="line">  <span class="type">int</span> terms = <span class="number">5</span>;</span><br><span class="line">  <span class="type">float</span> *x = new <span class="type">float</span>[N];</span><br><span class="line">  <span class="type">float</span> *result = new <span class="type">float</span>[N];</span><br><span class="line"></span><br><span class="line">  <span class="comment">// initialize x here</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    x[i] = <span class="number">1.0f</span> * (i % <span class="number">5</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 打印 x 的前 10 个元素</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; x[i] &lt;&lt; <span class="string">&#x27; &#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">  <span class="comment">// execute ISPC code</span></span><br><span class="line">  ispc::ispc_sinx(N, terms, x, result);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 展示结果的前 10 个元素</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; result[i] &lt;&lt; <span class="string">&#x27; &#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p><code>ispc</code>函数用<code>export</code>标识, 调用它就创建了一个<code>gang</code>。在 ISPC 中,<code>gang</code> 是一个非常重要的概念。 每个 <code>gang</code> 包含多个程序实例(<code>program instances</code>),数量由 <code>programCount</code> 决定:</p>
+<ul>
+<li>在现代 CPU 上,通常 <code>programCount</code> 是:<ul>
+<li>SSE: 4 个实例</li>
+<li>AVX: 8 个实例</li>
+<li>AVX-512: 16 个实例</li>
+</ul>
+</li>
+</ul>
+<p>在我们的代码中:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">export <span class="type">void</span> <span class="title function_">ispc_sinx</span><span class="params">( </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> N, </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> terms, </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> x[], </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> result[])</span> </span><br><span class="line">&#123; </span><br><span class="line">   <span class="comment">// 这里的 programCount 就是一个 gang 中的实例数</span></span><br><span class="line">   <span class="keyword">for</span> (uniform <span class="type">int</span> i=<span class="number">0</span>; i&lt;N; i+=programCount) </span><br><span class="line">   &#123; </span><br><span class="line">       <span class="type">int</span> idx = i + programIndex;  <span class="comment">// programIndex 是每个实例的索引(0 到 programCount-1)</span></span><br><span class="line">       <span class="comment">// ... </span></span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行流程:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Gang 执行示例 (假设使用 AVX 指令集,programCount=8):</span><br><span class="line"></span><br><span class="line">循环第一次迭代:</span><br><span class="line">idx = 0 + 0  (实例 0)</span><br><span class="line">idx = 0 + 1  (实例 1)</span><br><span class="line">idx = 0 + 2  (实例 2)</span><br><span class="line">...</span><br><span class="line">idx = 0 + 7  (实例 7)</span><br><span class="line"></span><br><span class="line">循环第二次迭代:</span><br><span class="line">idx = 8 + 0  (实例 0)</span><br><span class="line">idx = 8 + 1  (实例 1)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>示意图如下:<br><img src="/../../images/CS149/Lec03/ispc-gang.png" alt="ispc-gang"></p>
+<p>重要特点:</p>
+<ul>
+<li>所有实例并行执行相同的代码</li>
+<li><code>uniform</code> 变量在所有实例中共享同一个值</li>
+<li>非 <code>uniform</code> 变量每个实例可以有不同的值</li>
+<li><code>programIndex</code> 用于区分不同实例</li>
+<li><code>programCount</code> 是 <code>gang</code> 中实例的数量</li>
+</ul>
+<h2 id="2-2-ispc的实际使用"><a href="#2-2-ispc的实际使用" class="headerlink" title="2.2 ispc的实际使用"></a>2.2 <code>ispc</code>的实际使用</h2><p>课程没有具体介绍<code>ispc</code>的实际使用, 只是展示了如何编写<code>ispc</code>代码, 以及<code>ispc</code>代码的执行流程。这里我进行补全:</p>
+<ol>
+<li>安装<code>ispc</code><ol>
+<li>使用<code>snap</code>安装:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo snap install ispc</span><br></pre></td></tr></table></figure></li>
+<li>官方下载: <a target="_blank" rel="noopener" href="https://github.com/ispc/ispc">https://github.com/ispc/ispc</a></li>
+</ol>
+</li>
+<li>编译<code>ispc</code>代码<ol>
+<li>使用<code>ispc</code>编译器编译<code>ispc</code>代码:<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ispc sinx_ispc.ispc -o sinx_ispc.o -h sinx_ispc.h <span class="comment"># 生成.o文件和.h文件</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+</li>
+<li>编译主函数:   <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ -o sinx_ispc sinx_ispc.o main.cpp <span class="comment"># 生成可执行文件</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>我将官方案例整理成了一个小<code>demo</code>项目, 其层次结构为:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">$ tree .</span><br><span class="line">.</span><br><span class="line">├── Makefile</span><br><span class="line">├── main.cpp</span><br><span class="line">└── sinx_ispc.ispc</span><br><span class="line"></span><br><span class="line">0 directories, 3 files</span><br></pre></td></tr></table></figure>
+<p><code>main.cpp</code>是主函数, <code>sinx_ispc.ispc</code>是<code>ispc</code>代码, <code>Makefile</code>是<code>makefile</code>文件。前二者参考之前的代码， <code>makefile</code>文件展示了如何编译和运行这个项目和<code>ispc</code>的使用:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ispc: sinx_ispc.ispc</span><br><span class="line">	ispc sinx_ispc.ispc -o sinx_ispc.o -h sinx_ispc.h</span><br><span class="line"></span><br><span class="line">all: ispc</span><br><span class="line">	g++ main.cpp sinx_ispc.o -o a.out</span><br><span class="line">clean:</span><br><span class="line">	<span class="built_in">rm</span> -f sinx_ispc.o sinx_ispc.h a.out</span><br></pre></td></tr></table></figure>
+
+<p>编译和运行:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">$ make</span><br><span class="line">ispc sinx_ispc.ispc -o sinx_ispc.o -h sinx_ispc.h</span><br><span class="line">Warning: No --target specified on command-line. Using default system target <span class="string">&quot;avx2vnni-i32x8&quot;</span>. </span><br><span class="line">$ ./a.out </span><br><span class="line">0 1 2 3 4 0 1 2 3 4 </span><br><span class="line">0 0.841471 0.909296 0.140875 -0.766804 0 0.841471 0.909296 0.140875 -0.766804</span><br></pre></td></tr></table></figure>
+
+<h2 id="2-3-ISPC的实现原理"><a href="#2-3-ISPC的实现原理" class="headerlink" title="2.3 ISPC的实现原理"></a>2.3 ISPC的实现原理</h2><p><code>ISPC</code> 的 <code>gang</code> 就是基于 SIMD 实现的,<code>programCount</code> 直接对应 <code>SIMD</code> 的通道数。</p>
+<ol>
+<li><p>SIMD 对应关系:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">指令集     SIMD 寄存器宽度    programCount</span><br><span class="line">SSE        128-bit           4  (4个32位float)</span><br><span class="line">AVX        256-bit           8  (8个32位float)</span><br><span class="line">AVX-512    512-bit           16 (16个32位float)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>实际执行示例:</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">float</span> value = x[idx];  <span class="comment">// 加载操作</span></span><br></pre></td></tr></table></figure>
+<p> 会被编译成类似这样的 SIMD 指令(以 AVX 为例):</p>
+ <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vmovups ymm0, [rax + idx]  <span class="comment">// 一次性加载8个float到YMM寄存器</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>ISPC 的优势:</p>
+<ul>
+<li>自动向量化: 把你写的标量代码自动转换为 SIMD 指令</li>
+<li>抽象硬件细节: 不需要直接编写 SIMD 汇编或内联函数</li>
+<li>可移植性: 同样的代码可以针对不同的 SIMD 指令集编译</li>
+</ul>
+</li>
+<li><p>编译选项影响:</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 指定目标架构</span></span><br><span class="line">ispc --target=sse2   <span class="comment"># programCount = 4</span></span><br><span class="line">ispc --target=avx    <span class="comment"># programCount = 8</span></span><br><span class="line">ispc --target=avx512 <span class="comment"># programCount = 16</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>这就是为什么在代码中:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (uniform <span class="type">int</span> i=<span class="number">0</span>; i&lt;N; i+=programCount) &#123;</span><br><span class="line">    <span class="type">int</span> idx = i + programIndex;</span><br><span class="line">    <span class="type">float</span> value = x[idx];</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>每次循环实际上是在执行一个 SIMD 指令,同时处理 <code>programCount</code> 个数据。</p>
+<h2 id="2-4-ispc的进阶使用"><a href="#2-4-ispc的进阶使用" class="headerlink" title="2.4 ispc的进阶使用"></a>2.4 <code>ispc</code>的进阶使用</h2><h3 id="2-4-1-使用ispc的foreach"><a href="#2-4-1-使用ispc的foreach" class="headerlink" title="2.4.1 使用ispc的foreach"></a>2.4.1 使用<code>ispc</code>的<code>foreach</code></h3><p>之前的代码中, 我们使用<code>programCount</code>和<code>programIndex</code>来控制并行执行的实例数和索引, 实际上<code>ispc</code>还提供了一个更方便的变量<code>foreach</code>, 它可以直接遍历所有实例并自动处理<code>programCount</code>和<code>programIndex</code>:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">export <span class="type">void</span> <span class="title function_">ispc_sinx</span><span class="params">( </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> N, </span></span><br><span class="line"><span class="params">   uniform <span class="type">int</span> terms, </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> x[], </span></span><br><span class="line"><span class="params">   uniform <span class="type">float</span> result[])</span> </span><br><span class="line">&#123; </span><br><span class="line">   foreach (i = <span class="number">0</span> ... N) </span><br><span class="line">   &#123; </span><br><span class="line">    <span class="type">float</span> value = x[i]; </span><br><span class="line">    <span class="type">float</span> numer = x[i] * x[i] * x[i]; </span><br><span class="line">    uniform <span class="type">int</span> denom = <span class="number">6</span>;  <span class="comment">// 3! </span></span><br><span class="line">    uniform <span class="type">int</span> sign = <span class="number">-1</span>; </span><br><span class="line">    <span class="keyword">for</span> (uniform <span class="type">int</span> j=<span class="number">1</span>; j&lt;=terms; j++) </span><br><span class="line">    &#123;  </span><br><span class="line">       value += sign * numer / denom;</span><br><span class="line">       numer *= x[i] * x[i]; </span><br><span class="line">       denom *= (<span class="number">2</span>*j+<span class="number">2</span>) * (<span class="number">2</span>*j+<span class="number">3</span>); </span><br><span class="line">       sign *= <span class="number">-1</span>; </span><br><span class="line">      &#125; </span><br><span class="line">      result[i] = value; </span><br><span class="line">   &#125; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-4-2-使用ispc的task"><a href="#2-4-2-使用ispc的task" class="headerlink" title="2.4.2 使用ispc的task"></a>2.4.2 使用<code>ispc</code>的<code>task</code></h3><p>之前的并行都只是基于单核的<code>SIMD</code>并行, 实际上<code>ispc</code>还支持多核的并行, 通过<code>task</code>来实现:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// main.cpp</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;sinx_ispc.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> **argv)</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> N = <span class="number">1024</span>;</span><br><span class="line">  <span class="type">int</span> terms = <span class="number">5</span>;</span><br><span class="line">  <span class="type">float</span> *x = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line">  <span class="type">float</span> *result = <span class="keyword">new</span> <span class="type">float</span>[N];</span><br><span class="line"></span><br><span class="line">  <span class="comment">// initialize x here</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    x[i] = <span class="number">1.0f</span> * (i % <span class="number">5</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 打印 x 的前 10 个元素</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    std::cout &lt;&lt; x[i] &lt;&lt; <span class="string">&#x27; &#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  std::cout &lt;&lt; std::endl;</span><br><span class="line">  <span class="comment">// execute ISPC code</span></span><br><span class="line">  ispc::<span class="built_in">ispc_sinx_task</span>(N, terms, x, result);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 展示结果的前 10 个元素</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">    std::cout &lt;&lt; result[i] &lt;&lt; <span class="string">&#x27; &#x27;</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  std::cout &lt;&lt; std::endl;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sinx_ispc.ispc</span></span><br><span class="line"><span class="function">task <span class="type">void</span> <span class="title">ispc_sinx_single</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">int</span> N,</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">int</span> terms,</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">float</span> x[],</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">float</span> result[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    uniform <span class="type">int</span> n_per_task = N / taskCount;</span><br><span class="line">    uniform <span class="type">int</span> start_offset = taskIndex * n_per_task;</span><br><span class="line">    </span><br><span class="line">    foreach (i = <span class="number">0</span> ... n_per_task)  </span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">int</span> global_idx = start_offset + i;</span><br><span class="line">        <span class="type">float</span> value = x[global_idx];</span><br><span class="line">        <span class="type">float</span> numer = x[global_idx] * x[global_idx] * x[global_idx];</span><br><span class="line">        uniform <span class="type">int</span> denom = <span class="number">6</span>;  <span class="comment">// 3!</span></span><br><span class="line">        uniform <span class="type">int</span> sign = <span class="number">-1</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> (uniform <span class="type">int</span> j=<span class="number">1</span>; j&lt;=terms; j++) </span><br><span class="line">        &#123;</span><br><span class="line">            value += sign * numer / denom;</span><br><span class="line">            numer *= x[global_idx] * x[global_idx];</span><br><span class="line">            denom *= (<span class="number">2</span>*j+<span class="number">2</span>) * (<span class="number">2</span>*j+<span class="number">3</span>);</span><br><span class="line">            sign *= <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        result[global_idx] = value;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">export</span> <span class="type">void</span> <span class="title">ispc_sinx_task</span><span class="params">(</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">int</span> N,</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">int</span> terms,</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">float</span> x[],</span></span></span><br><span class="line"><span class="params"><span class="function">    uniform <span class="type">float</span> result[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    uniform <span class="type">int</span> numTasks = <span class="number">16</span>;</span><br><span class="line">    launch[numTasks] <span class="built_in">ispc_sinx_single</span>(N, terms, x, result);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的<code>launch</code>关键字用于启动多个任务, 每个任务执行<code>ispc_sinx_single</code>函数。<code>numTasks</code>是任务的数量, 每个任务执行<code>N/numTasks</code>个元素的计算。在<code>task</code>函数中, 有下面几个预设变量:</p>
+<ul>
+<li><code>taskCount</code>: 任务的数量</li>
+<li><code>taskIndex</code>: 当前任务的索引</li>
+</ul>
+<blockquote>
+<p>这里因为使用了 <code>ISPC</code> 的任务系统(task system)，还需要链接必要的运行时库。ISPC 的任务系统需要一些运行时支持函数（如 ISPCAlloc、ISPCLaunch、ISPCSync）。这里可以直接使用<code>Assignment 1</code>中提供的<code>task.cpp</code>文件</p>
+</blockquote>
+<p>这里<code>task</code>可以类比一个线程, <code>ispc</code>会尽量将<code>task</code>均匀分配到所有CPU核心上, 并行执行。</p>
+<p>这里的<code>makefile</code>也要进行修改, 添加<code>task.cpp</code>文件:</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CXXFLAGS=-O3 -Wall -fPIC -ffp-contract=off</span><br><span class="line">ISPCFLAGS=-O3 --target=avx2-i32x8 --arch=x86-64 --opt=disable-fma --pic</span><br><span class="line"></span><br><span class="line"><span class="section">ispc: sinx_ispc.ispc</span></span><br><span class="line">	ispc <span class="variable">$(ISPCFLAGS)</span> sinx_ispc.ispc -o sinx_ispc.o -h sinx_ispc.h</span><br><span class="line"></span><br><span class="line"><span class="section">all: ispc</span></span><br><span class="line">	g++ <span class="variable">$(CXXFLAGS)</span> main.cpp task.cpp  sinx_ispc.o -o a.out</span><br><span class="line"><span class="section">clean:</span></span><br><span class="line">	rm -f sinx_ispc.o sinx_ispc.h a.out</span><br></pre></td></tr></table></figure>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%A4%9A%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E8%BF%9B%E9%98%B6%E7%9F%A5%E8%AF%86-%E7%BB%AD%E4%B8%8A%E4%B8%80%E8%8A%82%E8%AF%BE"><span class="toc-number">1.</span> <span class="toc-text">1 多核处理器进阶知识(续上一节课)</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-ISPC"><span class="toc-number">2.</span> <span class="toc-text">2 ISPC</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E8%AF%BE%E7%A8%8B%E4%BB%8B%E7%BB%8D%E7%9A%84%E4%BB%A3%E7%A0%81%E8%AF%B4%E6%98%8E"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 课程介绍的代码说明</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-ispc%E7%9A%84%E5%AE%9E%E9%99%85%E4%BD%BF%E7%94%A8"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 ispc的实际使用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-ISPC%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 ISPC的实现原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-4-ispc%E7%9A%84%E8%BF%9B%E9%98%B6%E4%BD%BF%E7%94%A8"><span class="toc-number">2.4.</span> <span class="toc-text">2.4 ispc的进阶使用</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-1-%E4%BD%BF%E7%94%A8ispc%E7%9A%84foreach"><span class="toc-number">2.4.1.</span> <span class="toc-text">2.4.1 使用ispc的foreach</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-2-%E4%BD%BF%E7%94%A8ispc%E7%9A%84task"><span class="toc-number">2.4.2.</span> <span class="toc-text">2.4.2 使用ispc的task</span></a></li></ol></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&text=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&is_video=false&description=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc&body=Check out this article: http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&title=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&name=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/11/20/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec03-%E7%AC%94%E8%AE%B0-%E5%A4%9A%E6%A0%B8%E6%9E%B6%E6%9E%84+ispc/&t=Stanford-CS149-并行计算-Lec03-笔记-多核架构+ispc"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

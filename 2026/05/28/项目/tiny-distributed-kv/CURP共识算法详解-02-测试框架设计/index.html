@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="本节介绍 CURP 实现的测试框架设计，用于验证正确性、活性和性能。 1 框架目标验证 CURP 实现的正确性，包括：  安全性（Safety）：线性一致性、数据不丢失 活性（Liveness）：系统持续运行 性能（Performance）：快速路径成功率   2 核心组件12345678910111213141516171819┌─────────────────────────────────">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CURP共识算法详解-02-测试框架设计">
+<meta property="og:url" content="http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="本节介绍 CURP 实现的测试框架设计，用于验证正确性、活性和性能。 1 框架目标验证 CURP 实现的正确性，包括：  安全性（Safety）：线性一致性、数据不丢失 活性（Liveness）：系统持续运行 性能（Performance）：快速路径成功率   2 核心组件12345678910111213141516171819┌─────────────────────────────────">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-28T07:47:00.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:43:34.981Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="分布式系统">
+<meta property="article:tag" content="测试框架">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>CURP共识算法详解-02-测试框架设计</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-01-%E5%AE%9E%E7%8E%B0%E8%AE%A1%E5%88%92/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&text=CURP共识算法详解-02-测试框架设计"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&is_video=false&description=CURP共识算法详解-02-测试框架设计"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-02-测试框架设计&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&name=CURP共识算法详解-02-测试框架设计&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&t=CURP共识算法详解-02-测试框架设计"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A1%86%E6%9E%B6%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">1 框架目标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">2 核心组件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Network-Simulator"><span class="toc-number">3.</span> <span class="toc-text">3 Network Simulator</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 接口</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Node-Controller"><span class="toc-number">4.</span> <span class="toc-text">4 Node Controller</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%8E%A5%E5%8F%A3"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 接口</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Consistency-Checker"><span class="toc-number">5.</span> <span class="toc-text">5 Consistency Checker</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E6%96%B9%E6%B3%95"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 方法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%B5%8B%E8%AF%95%E5%9C%BA%E6%99%AF"><span class="toc-number">6.</span> <span class="toc-text">6 测试场景</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E5%9F%BA%E6%9C%AC%E6%AD%A3%E7%A1%AE%E6%80%A7"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 基本正确性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E6%95%85%E9%9A%9C%E6%81%A2%E5%A4%8D"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 故障恢复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 网络故障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E6%9E%81%E7%AB%AF%E6%83%85%E5%86%B5"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 极端情况</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%B5%8B%E8%AF%95%E6%8C%87%E6%A0%87"><span class="toc-number">7.</span> <span class="toc-text">7 测试指标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">8.</span> <span class="toc-text">8 单元测试示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E9%9B%86%E6%88%90%E6%B5%8B%E8%AF%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">9.</span> <span class="toc-text">9 集成测试示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-%E6%80%BB%E7%BB%93"><span class="toc-number">10.</span> <span class="toc-text">10 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        CURP共识算法详解-02-测试框架设计
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2026-05-28T07:47:00.000Z" class="dt-published" itemprop="datePublished">2026-05-28</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/">tiny-distributed-kv</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" rel="tag">分布式系统</a>, <a class="p-category" href="/tags/%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6/" rel="tag">测试框架</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>本节介绍 CURP 实现的测试框架设计，用于验证正确性、活性和性能。</p>
+<h1 id="1-框架目标"><a href="#1-框架目标" class="headerlink" title="1 框架目标"></a>1 框架目标</h1><p>验证 CURP 实现的正确性，包括：</p>
+<ul>
+<li><strong>安全性（Safety）</strong>：线性一致性、数据不丢失</li>
+<li><strong>活性（Liveness）</strong>：系统持续运行</li>
+<li><strong>性能（Performance）</strong>：快速路径成功率</li>
+</ul>
+<hr>
+<h1 id="2-核心组件"><a href="#2-核心组件" class="headerlink" title="2 核心组件"></a>2 核心组件</h1><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│                      Test Controller                         │</span><br><span class="line">│  (控制测试流程、收集结果、验证正确性)                          │</span><br><span class="line">└─────────────────────────────────────────────────────────────┘</span><br><span class="line">                              │</span><br><span class="line">        ┌─────────────────────┼─────────────────────┐</span><br><span class="line">        ▼                     ▼                     ▼</span><br><span class="line">┌───────────────┐    ┌───────────────┐    ┌───────────────┐</span><br><span class="line">│ Network       │    │ Node          │    │ Consistency   │</span><br><span class="line">│ Simulator     │    │ Controller    │    │ Checker       │</span><br><span class="line">└───────────────┘    └───────────────┘    └───────────────┘</span><br><span class="line">        │                     │                     │</span><br><span class="line">        ▼                     ▼                     ▼</span><br><span class="line">┌─────────────────────────────────────────────────────────────┐</span><br><span class="line">│                     Simulated Cluster                        │</span><br><span class="line">│  ┌─────┐  ┌─────┐  ┌─────┐    ┌─────┐  ┌─────┐            │</span><br><span class="line">│  │Master│  │Backup│  │Backup│    │Witness│×f            │</span><br><span class="line">│  └─────┘  └─────┘  └─────┘    └─────┘                      │</span><br><span class="line">└─────────────────────────────────────────────────────────────┘</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="3-Network-Simulator"><a href="#3-Network-Simulator" class="headerlink" title="3 Network Simulator"></a>3 Network Simulator</h1><h2 id="3-1-功能"><a href="#3-1-功能" class="headerlink" title="3.1 功能"></a>3.1 功能</h2><ul>
+<li><strong>延迟模拟</strong>：消息延迟指定时间</li>
+<li><strong>丢包模拟</strong>：按概率丢弃消息</li>
+<li><strong>网络分区</strong>：模拟节点间通信中断</li>
+<li><strong>消息重排序</strong>：打乱消息顺序</li>
+</ul>
+<h2 id="3-2-接口"><a href="#3-2-接口" class="headerlink" title="3.2 接口"></a>3.2 接口</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">NetworkSimulator</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">set_delay</span><span class="params">(<span class="type">int</span> node1, <span class="type">int</span> node2, <span class="type">int</span> delay_ms)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">set_packet_loss</span><span class="params">(<span class="type">double</span> probability)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">partition</span><span class="params">(std::vector&lt;<span class="type">int</span>&gt; group1, std::vector&lt;<span class="type">int</span>&gt; group2)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">heal</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">send_message</span><span class="params">(<span class="type">int</span> from, <span class="type">int</span> to, <span class="type">const</span> Message&amp; msg)</span></span>;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::unordered_map&lt;std::pair&lt;<span class="type">int</span>,<span class="type">int</span>&gt;, <span class="type">int</span>&gt; delays_;</span><br><span class="line">    <span class="type">double</span> packet_loss_prob_ = <span class="number">0.0</span>;</span><br><span class="line">    std::set&lt;std::pair&lt;<span class="type">int</span>,<span class="type">int</span>&gt;&gt; blocked_links_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="4-Node-Controller"><a href="#4-Node-Controller" class="headerlink" title="4 Node Controller"></a>4 Node Controller</h1><h2 id="4-1-功能"><a href="#4-1-功能" class="headerlink" title="4.1 功能"></a>4.1 功能</h2><ul>
+<li><strong>启动&#x2F;停止节点</strong></li>
+<li><strong>模拟崩溃</strong>：立即停止，丢失内存状态</li>
+<li><strong>恢复节点</strong>：从持久化状态恢复</li>
+<li><strong>控制时钟</strong>：加速&#x2F;暂停时间</li>
+</ul>
+<h2 id="4-2-接口"><a href="#4-2-接口" class="headerlink" title="4.2 接口"></a>4.2 接口</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">NodeController</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">start_node</span><span class="params">(<span class="type">int</span> node_id)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">stop_node</span><span class="params">(<span class="type">int</span> node_id)</span></span>;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">crash_node</span><span class="params">(<span class="type">int</span> node_id)</span></span>;    <span class="comment">// 模拟崩溃（丢失内存）</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">recover_node</span><span class="params">(<span class="type">int</span> node_id)</span></span>;  <span class="comment">// 从持久化恢复</span></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">set_clock_speed</span><span class="params">(<span class="type">int</span> node_id, <span class="type">double</span> factor)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">is_running</span><span class="params">(<span class="type">int</span> node_id)</span></span>;</span><br><span class="line">    <span class="function">NodeState <span class="title">get_state</span><span class="params">(<span class="type">int</span> node_id)</span></span>;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::unordered_map&lt;<span class="type">int</span>, std::unique_ptr&lt;CurpNode&gt;&gt; nodes_;</span><br><span class="line">    std::unordered_map&lt;<span class="type">int</span>, <span class="type">bool</span>&gt; running_;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="5-Consistency-Checker"><a href="#5-Consistency-Checker" class="headerlink" title="5 Consistency Checker"></a>5 Consistency Checker</h1><h2 id="5-1-功能"><a href="#5-1-功能" class="headerlink" title="5.1 功能"></a>5.1 功能</h2><ul>
+<li><strong>线性一致性验证</strong>：使用并发算法验证</li>
+<li><strong>数据完整性检查</strong>：验证所有写入都被持久化</li>
+<li><strong>CURP 特性检查</strong>：验证快速路径正确性</li>
+</ul>
+<h2 id="5-2-方法"><a href="#5-2-方法" class="headerlink" title="5.2 方法"></a>5.2 方法</h2><ul>
+<li>记录所有操作和响应时间戳</li>
+<li>构建实时序关系图</li>
+<li>检测是否存在循环依赖</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">ConsistencyChecker</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">record_write</span><span class="params">(<span class="type">int</span> client_id, <span class="type">const</span> std::string&amp; key, </span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value, </span></span></span><br><span class="line"><span class="params"><span class="function">                      <span class="type">uint64_t</span> start_time, <span class="type">uint64_t</span> end_time)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">record_read</span><span class="params">(<span class="type">int</span> client_id, <span class="type">const</span> std::string&amp; key,</span></span></span><br><span class="line"><span class="params"><span class="function">                     <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; value,</span></span></span><br><span class="line"><span class="params"><span class="function">                     <span class="type">uint64_t</span> start_time, <span class="type">uint64_t</span> end_time)</span></span>;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">check_linearizability</span><span class="params">()</span></span>;  <span class="comment">// 检查线性一致性</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">check_data_integrity</span><span class="params">()</span></span>;   <span class="comment">// 检查数据完整性</span></span><br><span class="line">    </span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    std::vector&lt;OperationRecord&gt; operations_;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 线性一致性检查算法（基于实时序）</span></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">(<span class="type">const</span> std::vector&lt;OperationRecord&gt;&amp; ops)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="6-测试场景"><a href="#6-测试场景" class="headerlink" title="6 测试场景"></a>6 测试场景</h1><h2 id="6-1-基本正确性"><a href="#6-1-基本正确性" class="headerlink" title="6.1 基本正确性"></a>6.1 基本正确性</h2><ul>
+<li>单节点写读</li>
+<li>多节点并发写</li>
+<li>快速路径验证</li>
+</ul>
+<h2 id="6-2-故障恢复"><a href="#6-2-故障恢复" class="headerlink" title="6.2 故障恢复"></a>6.2 故障恢复</h2><ul>
+<li>Master 崩溃恢复</li>
+<li>Witness 崩溃恢复</li>
+<li>同时崩溃恢复</li>
+</ul>
+<h2 id="6-3-网络故障"><a href="#6-3-网络故障" class="headerlink" title="6.3 网络故障"></a>6.3 网络故障</h2><ul>
+<li>网络延迟</li>
+<li>网络分区</li>
+<li>消息丢失</li>
+</ul>
+<h2 id="6-4-极端情况"><a href="#6-4-极端情况" class="headerlink" title="6.4 极端情况"></a>6.4 极端情况</h2><ul>
+<li>高并发</li>
+<li>大量故障</li>
+<li>恢复过程中新故障</li>
+</ul>
+<hr>
+<h1 id="7-测试指标"><a href="#7-测试指标" class="headerlink" title="7 测试指标"></a>7 测试指标</h1><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+<th>目标值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>快速路径成功率</td>
+<td>1 RTT 完成的比例</td>
+<td>&gt; 90%</td>
+</tr>
+<tr>
+<td>写延迟</td>
+<td>平均写操作延迟</td>
+<td>&lt; 10ms</td>
+</tr>
+<tr>
+<td>恢复时间</td>
+<td>崩溃后恢复时间</td>
+<td>&lt; 1s</td>
+</tr>
+<tr>
+<td>数据丢失率</td>
+<td>故障后数据丢失比例</td>
+<td>0%</td>
+</tr>
+<tr>
+<td>线性一致性违反</td>
+<td>检测到的不一致次数</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<hr>
+<h1 id="8-单元测试示例"><a href="#8-单元测试示例" class="headerlink" title="8 单元测试示例"></a>8 单元测试示例</h1><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// test/dtest_witness.cpp</span></span><br><span class="line"><span class="built_in">TEST</span>(WitnessTest, RecordCommutative) &#123;</span><br><span class="line">    Witness w;</span><br><span class="line">    <span class="keyword">auto</span> r1 = w.<span class="built_in">record</span>(<span class="string">&quot;key1&quot;</span>, <span class="number">1</span>, &#123;&#125;);</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(r1, Witness::RecordResult::ACCEPTED);</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">auto</span> r2 = w.<span class="built_in">record</span>(<span class="string">&quot;key2&quot;</span>, <span class="number">2</span>, &#123;&#125;);</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(r2, Witness::RecordResult::ACCEPTED);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">TEST</span>(WitnessTest, RejectNonCommutative) &#123;</span><br><span class="line">    Witness w;</span><br><span class="line">    w.<span class="built_in">record</span>(<span class="string">&quot;key1&quot;</span>, <span class="number">1</span>, &#123;&#125;);</span><br><span class="line">    <span class="keyword">auto</span> r = w.<span class="built_in">record</span>(<span class="string">&quot;key1&quot;</span>, <span class="number">2</span>, &#123;&#125;);</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(r, Witness::RecordResult::REJECTED_NOT_COMMUTATIVE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="9-集成测试示例"><a href="#9-集成测试示例" class="headerlink" title="9 集成测试示例"></a>9 集成测试示例</h1><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// test/dtest_curp.cpp</span></span><br><span class="line"><span class="built_in">TEST</span>(CurpTest, OneRoundTripWrite) &#123;</span><br><span class="line">    <span class="function">CurpClient <span class="title">client</span><span class="params">(config)</span></span>;</span><br><span class="line">    <span class="keyword">auto</span> result = client.<span class="built_in">write</span>(<span class="string">&quot;key&quot;</span>, value);</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(result, CurpClient::WriteResult::SUCCESS);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">TEST</span>(CurpTest, RecoveryAfterCrash) &#123;</span><br><span class="line">    <span class="comment">// 1. 启动 Master + Witness</span></span><br><span class="line">    NodeController nc;</span><br><span class="line">    nc.<span class="built_in">start_node</span>(MASTER);</span><br><span class="line">    nc.<span class="built_in">start_node</span>(WITNESS);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 2. 写入数据（快速路径）</span></span><br><span class="line">    <span class="function">CurpClient <span class="title">client</span><span class="params">(config)</span></span>;</span><br><span class="line">    client.<span class="built_in">write</span>(<span class="string">&quot;key&quot;</span>, value);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 3. 杀死 Master（模拟崩溃）</span></span><br><span class="line">    nc.<span class="built_in">crash_node</span>(MASTER);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 4. 恢复 Master</span></span><br><span class="line">    nc.<span class="built_in">recover_node</span>(MASTER);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 5. 验证数据恢复</span></span><br><span class="line">    <span class="keyword">auto</span> read_value = client.<span class="built_in">read</span>(<span class="string">&quot;key&quot;</span>);</span><br><span class="line">    <span class="built_in">EXPECT_EQ</span>(read_value, value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="10-总结"><a href="#10-总结" class="headerlink" title="10 总结"></a>10 总结</h1><p>测试框架是 CURP 实现的关键组成部分，通过：</p>
+<ul>
+<li><strong>Network Simulator</strong> 模拟各种网络条件</li>
+<li><strong>Node Controller</strong> 控制节点生命周期</li>
+<li><strong>Consistency Checker</strong> 验证系统正确性</li>
+</ul>
+<p>确保 CURP 实现满足安全性、活性和性能要求。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A1%86%E6%9E%B6%E7%9B%AE%E6%A0%87"><span class="toc-number">1.</span> <span class="toc-text">1 框架目标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6"><span class="toc-number">2.</span> <span class="toc-text">2 核心组件</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-Network-Simulator"><span class="toc-number">3.</span> <span class="toc-text">3 Network Simulator</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E6%8E%A5%E5%8F%A3"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 接口</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Node-Controller"><span class="toc-number">4.</span> <span class="toc-text">4 Node Controller</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%8E%A5%E5%8F%A3"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 接口</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Consistency-Checker"><span class="toc-number">5.</span> <span class="toc-text">5 Consistency Checker</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%8A%9F%E8%83%BD"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 功能</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E6%96%B9%E6%B3%95"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 方法</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%B5%8B%E8%AF%95%E5%9C%BA%E6%99%AF"><span class="toc-number">6.</span> <span class="toc-text">6 测试场景</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E5%9F%BA%E6%9C%AC%E6%AD%A3%E7%A1%AE%E6%80%A7"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 基本正确性</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E6%95%85%E9%9A%9C%E6%81%A2%E5%A4%8D"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 故障恢复</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 网络故障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E6%9E%81%E7%AB%AF%E6%83%85%E5%86%B5"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 极端情况</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%B5%8B%E8%AF%95%E6%8C%87%E6%A0%87"><span class="toc-number">7.</span> <span class="toc-text">7 测试指标</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E5%8D%95%E5%85%83%E6%B5%8B%E8%AF%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">8.</span> <span class="toc-text">8 单元测试示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E9%9B%86%E6%88%90%E6%B5%8B%E8%AF%95%E7%A4%BA%E4%BE%8B"><span class="toc-number">9.</span> <span class="toc-text">9 集成测试示例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-%E6%80%BB%E7%BB%93"><span class="toc-number">10.</span> <span class="toc-text">10 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&text=CURP共识算法详解-02-测试框架设计"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&is_video=false&description=CURP共识算法详解-02-测试框架设计"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=CURP共识算法详解-02-测试框架设计&body=Check out this article: http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&title=CURP共识算法详解-02-测试框架设计"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&name=CURP共识算法详解-02-测试框架设计&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-02-%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/&t=CURP共识算法详解-02-测试框架设计"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

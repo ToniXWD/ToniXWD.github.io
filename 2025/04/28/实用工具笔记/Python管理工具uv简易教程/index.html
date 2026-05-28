@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 什么是uv?1.1 uv诞生的背景Python 语言因其灵活性和庞大的生态系统而广受欢迎。然而，长期以来，Python 的依赖管理和环境管理一直是开发者们讨论和面临挑战的领域。从 pip 到 virtualenv&#x2F;venv，再到后来的 pip-tools、Poetry、PDM 等，社区一直在寻求更高效、更可靠的解决方案。 在这场持续的探索中，一个引人注目的新工具出现了—— **uv*">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python管理工具uv简易教程">
+<meta property="og:url" content="http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 什么是uv?1.1 uv诞生的背景Python 语言因其灵活性和庞大的生态系统而广受欢迎。然而，长期以来，Python 的依赖管理和环境管理一直是开发者们讨论和面临挑战的领域。从 pip 到 virtualenv&#x2F;venv，再到后来的 pip-tools、Poetry、PDM 等，社区一直在寻求更高效、更可靠的解决方案。 在这场持续的探索中，一个引人注目的新工具出现了—— **uv*">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-04-28T04:06:11.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.665Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Python管理工具uv简易教程</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/30/%E5%88%86%E5%B8%83%E5%BC%8F/Consul/Consul%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B01-%E7%AE%80%E4%BB%8B%E4%B8%8EDemo/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/23/%E9%9A%8F%E7%AC%94/25%E5%B1%8A%E7%9A%84C++%E5%BC%80%E5%8F%91%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF%E7%BB%8F%E9%AA%8C%E5%88%86%E4%BA%AB/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&text=Python管理工具uv简易教程"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&is_video=false&description=Python管理工具uv简易教程"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Python管理工具uv简易教程&body=Check out this article: http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&name=Python管理工具uv简易教程&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&t=Python管理工具uv简易教程"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFuv"><span class="toc-number">1.</span> <span class="toc-text">1 什么是uv?</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-uv%E8%AF%9E%E7%94%9F%E7%9A%84%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 uv诞生的背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-uv%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 uv的优势</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-uv-%E8%83%BD%E6%9B%BF%E4%BB%A3%E5%93%AA%E4%BA%9B%E5%B7%A5%E5%85%B7%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 uv 能替代哪些工具？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85-uv"><span class="toc-number">2.</span> <span class="toc-text">2 安装 uv</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-uv-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%B7%A5%E4%BD%9C%E6%B5%81%E4%B8%8E%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">3 uv 的核心工作流与常用命令</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%88%9B%E5%BB%BA%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83%EF%BC%9Auv-venv"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 创建虚拟环境：uv venv</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%85%BC%E5%AE%B9-pip-%E7%9A%84%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4-uv-pip"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 兼容 pip 的常用命令 (uv pip)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E4%BE%9D%E8%B5%96%E7%BC%96%E8%AF%91%E4%B8%8E%E9%94%81%E5%AE%9A%EF%BC%9Auv-pip-compile"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 依赖编译与锁定：uv pip compile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%90%8C%E6%AD%A5%E7%8E%AF%E5%A2%83%EF%BC%9Auv-pip-sync"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 同步环境：uv pip sync</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E6%9C%AC%E5%9C%B0%E9%A1%B9%E7%9B%AE%E5%8C%85%E7%AE%A1%E7%90%86%EF%BC%9Auv-add"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 本地项目包管理：uv add</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E4%B8%8E-pyenv-%E7%9A%84%E7%BB%93%E5%90%88%E4%BD%BF%E7%94%A8"><span class="toc-number">4.</span> <span class="toc-text">5 与 pyenv 的结合使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%AE%89%E8%A3%85%E4%B8%8E%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE"><span class="toc-number">4.1.</span> <span class="toc-text">5.1 安装与基础配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-pyenv-%E7%9A%84-Python-%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86"><span class="toc-number">4.2.</span> <span class="toc-text">5.2 pyenv 的 Python 版本管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-1-%E9%80%9A%E8%BF%87-pyenv-%E5%AE%89%E8%A3%85%E5%A4%9A%E7%89%88%E6%9C%AC%E8%A7%A3%E9%87%8A%E5%99%A8"><span class="toc-number">4.2.1.</span> <span class="toc-text">5.2.1 通过 pyenv 安装多版本解释器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-2-%E5%88%87%E6%8D%A2%E5%85%A8%E5%B1%80%E6%88%96%E9%A1%B9%E7%9B%AE%E6%9C%AC%E5%9C%B0%E7%89%88%E6%9C%AC"><span class="toc-number">4.2.2.</span> <span class="toc-text">5.2.2 切换全局或项目本地版本</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-3-%E4%B8%8E-uv-%E7%9A%84%E7%89%88%E6%9C%AC%E5%90%8C%E6%AD%A5"><span class="toc-number">4.2.3.</span> <span class="toc-text">5.2.3 与 uv 的版本同步</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">6 小节</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9-uv%EF%BC%9F%E4%B8%8E%E7%8E%B0%E6%9C%89%E5%B7%A5%E5%85%B7%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">5.1.</span> <span class="toc-text">6.1 为什么选择 uv？与现有工具的对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E6%BD%9C%E5%9C%A8%E7%9A%84%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9%E5%92%8C%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="toc-number">5.2.</span> <span class="toc-text">6.2 潜在的注意事项和未来展望</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E6%80%BB%E7%BB%93"><span class="toc-number">5.3.</span> <span class="toc-text">6.3 总结</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Python管理工具uv简易教程
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-28T04:06:11.000Z" class="dt-published" itemprop="datePublished">2025-04-28</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7/">实用工具</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Python/" rel="tag">Python</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-什么是uv"><a href="#1-什么是uv" class="headerlink" title="1 什么是uv?"></a>1 什么是uv?</h1><h2 id="1-1-uv诞生的背景"><a href="#1-1-uv诞生的背景" class="headerlink" title="1.1 uv诞生的背景"></a>1.1 uv诞生的背景</h2><p>Python 语言因其灵活性和庞大的生态系统而广受欢迎。然而，长期以来，Python 的依赖管理和环境管理一直是开发者们讨论和面临挑战的领域。从 <code>pip</code> 到 <code>virtualenv</code>&#x2F;<code>venv</code>，再到后来的 <code>pip-tools</code>、<code>Poetry</code>、<code>PDM</code> 等，社区一直在寻求更高效、更可靠的解决方案。</p>
+<p>在这场持续的探索中，一个引人注目的新工具出现了—— **<code>uv</code>**。由著名的 Pydantic 和 Rye 工具的创建者 Astral 团队开发，<code>uv</code> 以其惊人的速度和对现有工作流程的兼容性，迅速获得了关注。</p>
+<p>本文将带你深入了解 <code>uv</code> 是什么，它能做什么，为什么你可能想尝试它，以及如何开始使用它。</p>
+<h2 id="1-2-uv的优势"><a href="#1-2-uv的优势" class="headerlink" title="1.2 uv的优势"></a>1.2 uv的优势</h2><p>简单来说，<code>uv</code> 是一个用 Rust 编写的现代 Python 打包工具。它的核心目标是<strong>极速</strong>地替代 <code>pip</code>、<code>pip-tools</code> 和 <code>venv</code> 等工具的功能。</p>
+<p>它之所以特别，主要有以下几个原因：</p>
+<ol>
+<li><strong>极致的速度：</strong> 这是 <code>uv</code> 最引以为傲的特性。由于使用 Rust 编写并进行了大量的性能优化，<code>uv</code> 在依赖解析、下载、安装和环境创建等方面比传统的 Python 工具快几个数量级。无论是处理小型项目还是拥有数百个依赖的大型项目，<code>uv</code> 都能提供几乎即时的反馈。</li>
+<li><strong>单一的可执行文件：</strong> <code>uv</code> 打包成一个独立的二进制文件，安装简单方便，没有额外的依赖项。这避免了“用什么来安装包管理器”的依赖套娃问题。</li>
+<li><strong>兼容性强：</strong> <code>uv</code> 的设计哲学之一是兼容现有的 Python 生态系统。它理解并支持标准的 <code>requirements.txt</code> 文件格式，并采用了类似于 <code>pip-tools</code> 的 <code>.in</code> 和 <code>.txt</code>（锁定文件）的工作流，这意味着许多现有项目可以非常容易地迁移到 <code>uv</code>。</li>
+<li><strong>统一工具：</strong> <code>uv</code> 旨在将虚拟环境管理（<code>venv</code>）、依赖安装（<code>pip install</code>）、依赖解析和锁定（<code>pip-tools compile</code>）以及环境同步（<code>pip-tools sync</code>）等功能集成到一个工具中，简化开发者的工具链。</li>
+<li><strong>可靠的依赖解析：</strong> <code>uv</code> 使用了一个全新的依赖解析器，它被设计得更加健壮和可靠，能够更准确地找到兼容的依赖版本组合，减少版本冲突问题。</li>
+</ol>
+<p>可以把 <code>uv</code> 看作是 Python 包管理领域的一辆“跑车”，它专注于将最核心、最频繁的操作（创建环境、安装依赖、管理依赖版本）做到极致的快和稳。</p>
+<h2 id="1-3-uv-能替代哪些工具？"><a href="#1-3-uv-能替代哪些工具？" class="headerlink" title="1.3 uv 能替代哪些工具？"></a>1.3 uv 能替代哪些工具？</h2><p><code>uv</code> 目前主要针对以下工具的功能进行替代：</p>
+<ul>
+<li><strong><code>venv</code> &#x2F; <code>virtualenv</code>:</strong> 用于创建和管理独立的 Python 虚拟环境。</li>
+<li><strong><code>pip install</code> &#x2F; <code>pip uninstall</code> &#x2F; <code>pip list</code>:</strong> 用于安装、卸载和查看包。</li>
+<li><strong><code>pip-compile</code> &#x2F; <code>pip-sync</code> (来自 <code>pip-tools</code>):</strong> 用于从抽象的依赖列表 (<code>requirements.in</code>) 生成精确锁定的依赖列表 (<code>requirements.txt</code>)，并根据锁定文件同步环境。</li>
+</ul>
+<p>值得注意的是，<code>uv</code> <strong>不是</strong>一个完整的项目管理器，它目前不处理发布包、运行脚本、管理项目元数据（如 <code>pyproject.toml</code> 中的 <code>[project]</code> 部分）等功能。这些是 <code>Poetry</code> 或 <code>PDM</code> 等工具的长处。<code>uv</code> 更专注于底层的依赖和环境操作，并且可以作为其他高级工具（比如 <code>Rye</code> 就内置使用了 <code>uv</code>）的后端引擎。</p>
+<h1 id="2-安装-uv"><a href="#2-安装-uv" class="headerlink" title="2 安装 uv"></a>2 安装 uv</h1><p>安装 <code>uv</code> 非常简单，因为它是一个独立的二进制文件。推荐使用以下方法之一：</p>
+<p><strong>方法 1：使用 <code>curl</code> (推荐)</strong></p>
+<p>这是最直接的方式，它会下载适用于你操作系统的 <code>uv</code> 可执行文件并将其放置在用户可执行路径中。</p>
+<p>在 Linux 或 macOS 上：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -LsSf https://astral.sh/uv/install.sh | sh</span><br></pre></td></tr></table></figure>
+
+<p>在 Windows 上，可以使用 PowerShell：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">irm</span> https://astral.sh/uv/install.ps1 | <span class="built_in">iex</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>方法 2：使用 <code>pipx</code></strong></p>
+<p>如果你已经安装了 <code>pipx</code>（一个用于安装和运行 Python 应用程序的工具），你也可以用它来安装 <code>uv</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pipx install uv</span><br></pre></td></tr></table></figure>
+
+<p>安装完成后，打开新的终端窗口或运行 <code>source ~/.profile</code> (或其他 shell 配置文件) 使 <code>uv</code> 命令生效。你可以通过运行 <code>uv --version</code> 来验证安装是否成功。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">uv --version</span><br><span class="line"><span class="comment"># 输出类似 uv 0.1.x</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="3-uv-的核心工作流与常用命令"><a href="#3-uv-的核心工作流与常用命令" class="headerlink" title="3 uv 的核心工作流与常用命令"></a>3 uv 的核心工作流与常用命令</h1><p><code>uv</code> 采用了一个清晰的工作流，尤其擅长处理基于 <code>requirements.in</code> 和 <code>requirements.txt</code> 的项目。以下是 <code>uv</code> 的核心命令和它们的作用：</p>
+<h2 id="3-1-创建虚拟环境：uv-venv"><a href="#3-1-创建虚拟环境：uv-venv" class="headerlink" title="3.1 创建虚拟环境：uv venv"></a>3.1 创建虚拟环境：<code>uv venv</code></h2><p>在开始安装包之前，通常需要创建一个独立的 Python 环境，以避免项目之间的依赖冲突。<code>uv venv</code> 命令用于此目的。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv venv</span><br></pre></td></tr></table></figure>
+
+<p>这个命令会在当前目录下创建一个名为 <code>.venv</code> 的文件夹（这是社区推荐的虚拟环境名称），并在其中设置一个新的 Python 环境。</p>
+<p><strong>详细解释：</strong><br><code>uv venv</code> 会查找系统中可用的 Python 解释器，并复制或创建指向必要文件的链接，构建一个隔离的环境。在这个环境中安装的包不会影响到系统全局或其他项目的 Python 环境。与 <code>python -m venv</code> 相比，<code>uv venv</code> 通常快很多，尤其是在创建大量虚拟环境时。</p>
+<p>除了在当前目录创建默认的 <code>.venv</code> 环境外，<code>uv venv</code> 还提供了更灵活的选项：</p>
+<ul>
+<li><p><strong>指定虚拟环境的名称或路径：</strong> 你可以在命令后面加上一个路径，来指定虚拟环境的创建位置和名称。这允许你在项目的不同位置创建环境，或者给环境一个自定义的名字。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在当前目录下创建一个名为 my-project-env 的虚拟环境</span></span><br><span class="line">uv venv my-project-env</span><br><span class="line"></span><br><span class="line"><span class="comment"># 在指定的路径下创建一个虚拟环境 (例如，在用户主目录下的 .venvs 文件夹中)</span></span><br><span class="line">uv venv ~/.venvs/another-env</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>指定 Python 版本：</strong> 如果你的系统中安装了多个 Python 版本，并且你希望为这个虚拟环境指定一个特定的 Python 版本（例如 Python 3.9），你可以使用 <code>--python</code> 选项。<code>uv</code> 会在你的系统环境中查找符合指定版本要求的 Python 解释器来创建环境。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 使用系统中的 Python 3.9 创建虚拟环境 (uv 会尝试查找 python3.9, python3 等)</span></span><br><span class="line">uv venv --python 3.9 .venv</span><br><span class="line"></span><br><span class="line"><span class="comment"># 同时指定环境名称和 Python 版本</span></span><br><span class="line">uv venv my-env --python 3.10</span><br></pre></td></tr></table></figure>
+
+<p>  <code>uv</code> 在查找 Python 解释器时非常智能，你可以指定主版本号 (<code>3.9</code>)，也可以指定次版本号 (<code>3.9.10</code>)，甚至可以使用可执行文件的名称 (<code>python3.9</code>)。</p>
+</li>
+</ul>
+<p><strong>激活环境：</strong><br>创建环境后，你需要激活它才能使用其中安装的包。激活环境的方式取决于你使用的 shell：</p>
+<ul>
+<li><strong>Bash&#x2F;Zsh:</strong> <code>source .venv/bin/activate</code></li>
+<li><strong>Fish:</strong> <code>source .venv/bin/activate.fish</code></li>
+<li><strong>Nushell:</strong> <code>source .venv/bin/activate.nu</code></li>
+<li><strong>PowerShell:</strong> <code>. .venv\Scripts\Activate.ps1</code></li>
+<li><strong>Cmd:</strong> <code>.venv\Scripts\activate.bat</code></li>
+</ul>
+<p>激活环境后，你的终端提示符前通常会显示环境的名称（如 <code>(.venv)</code>），并且此时运行 <code>python</code> 或 <code>pip</code> 等命令时，使用的是虚拟环境中的版本。</p>
+<h2 id="3-2-兼容-pip-的常用命令-uv-pip"><a href="#3-2-兼容-pip-的常用命令-uv-pip" class="headerlink" title="3.2 兼容 pip 的常用命令 (uv pip)"></a>3.2 兼容 pip 的常用命令 (<code>uv pip</code>)</h2><p><code>uv</code> 的一个设计目标是与 <code>pip</code> 的常用命令行接口保持兼容性，让用户能够快速上手。大多数你习惯使用的 <code>pip</code> 命令，都可以在 <code>uv pip</code> 下找到对应的功能，并且通常速度更快。</p>
+<p>以下是一些常用的 <code>uv pip</code> 命令及其说明：</p>
+<ul>
+<li><p><strong>安装依赖：<code>uv pip install</code></strong></p>
+<p>  这是最常用的命令，用于安装一个或多个 Python 包到当前激活的环境中。你可以指定包的名称，也可以指定特定的版本或版本范围。<code>uv pip install</code> 会负责解析依赖关系并安装所有必需的包。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装一个包</span></span><br><span class="line">uv pip install requests</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装多个包</span></span><br><span class="line">uv pip install requests flask</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装指定版本的包</span></span><br><span class="line">uv pip install <span class="string">&quot;requests==2.28.1&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装一个包的最新兼容版本</span></span><br><span class="line">uv pip install <span class="string">&quot;requests&gt;=2.20,&lt;3.0&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 从 requirements 文件安装 (同 3.3 节内容，但此处作为兼容 pip 的用法提及)</span></span><br><span class="line">uv pip install -r requirements.txt</span><br></pre></td></tr></table></figure>
+
+<p>  <strong>详细解释：</strong><br>  <code>uv pip install</code> 会在当前的虚拟环境（如果已激活）或全局环境中（如果不使用虚拟环境，但通常不推荐）查找、下载并安装指定的包及其依赖。<code>uv</code> 的依赖解析器会负责找出所有包之间兼容的版本组合。它的速度优势在这里体现得淋𝓮无论是安装单个包还是从 requirements 文件批量安装，<code>uv</code> 都比 <code>pip</code> 快很多。</p>
+</li>
+<li><p><strong>卸载包：<code>uv pip uninstall</code></strong></p>
+<p>  用于从当前环境中移除一个或多个已安装的包。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip uninstall requests flask</span><br></pre></td></tr></table></figure>
+
+<p>  <strong>详细解释：</strong><br>  <code>uv pip uninstall</code> 会从当前激活的虚拟环境中移除指定的包。需要注意的是，手动卸载包后，你的虚拟环境可能就不再与 <code>requirements.txt</code> 文件精确同步了。通常更推荐的工作流是修改 <code>requirements.in</code> 文件（删除你不再需要的顶级依赖），然后重新运行 <code>uv pip compile</code> 更新 <code>requirements.txt</code>，最后运行 <code>uv pip sync</code> 来清理环境，以保持环境与锁定文件的一致。</p>
+</li>
+<li><p><strong>查看已安装的包：<code>uv pip list</code></strong></p>
+<p>  列出当前环境中已安装的所有包及其版本。这是检查环境状态和已安装依赖的便捷方式。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip list</span><br></pre></td></tr></table></figure>
+
+<p>  <strong>详细解释：</strong><br>  这个命令提供了当前虚拟环境中所有包的快照，方便你查看安装了哪些包以及它们的具体版本。</p>
+</li>
+<li><p><strong>查看包的依赖树：<code>uv pip tree</code></strong></p>
+<p>  显示当前环境中已安装包的依赖关系树。这有助于理解为什么某个包会被安装以及包之间的相互依赖关系。</p>
+  <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip tree</span><br></pre></td></tr></table></figure>
+
+<p>  <strong>详细解释：</strong><br>  当你项目的依赖比较复杂时，<code>uv pip tree</code> 可以帮助你理解依赖的来源（它是哪个顶级依赖的子依赖），以及整个依赖图。这对于调试依赖冲突或意外安装的包非常有帮助。</p>
+</li>
+</ul>
+<h2 id="3-3-依赖编译与锁定：uv-pip-compile"><a href="#3-3-依赖编译与锁定：uv-pip-compile" class="headerlink" title="3.3 依赖编译与锁定：uv pip compile"></a>3.3 依赖编译与锁定：<code>uv pip compile</code></h2><p>这是 <code>uv</code>（以及 <code>pip-tools</code>）工作流中非常重要的一步，用于生成一个<strong>精确锁定</strong>项目依赖及其所有子依赖版本的 <code>requirements.txt</code> 文件。这确保了项目的构建和部署在任何地方都能获得完全相同的依赖环境，是实现<strong>可重复构建 (Reproducible Builds)</strong> 的关键。</p>
+<p>你通常会创建一个 <code>requirements.in</code> 文件，其中只包含你项目<strong>直接需要</strong>的顶级依赖：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># requirements.in</span><br><span class="line">requests</span><br><span class="line">flask</span><br><span class="line">pytest</span><br></pre></td></tr></table></figure>
+
+<p>然后运行 <code>uv pip compile</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip compile requirements.in -o requirements.txt</span><br></pre></td></tr></table></figure>
+
+<p><strong>详细解释：</strong><br><code>uv pip compile</code> 会读取 <code>requirements.in</code> 文件中的顶级依赖，然后递归地查找这些依赖所依赖的所有包。它会解析出<strong>整个依赖树</strong>中每一个包的<strong>确切版本</strong>，甚至包括它们的哈希值（用于进一步验证）。最后，它将这个完整的、精确锁定的依赖列表写入 <code>requirements.txt</code> 文件。</p>
+<p>生成的 <code>requirements.txt</code> 文件看起来会像这样（内容会多很多，包含所有间接依赖）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"># This file is autogenerated by uv</span><br><span class="line"># Becomes: requirements.in</span><br><span class="line"></span><br><span class="line">anyio==3.7.1 \</span><br><span class="line">    --hash=sha256:f0d8f...</span><br><span class="line">certifi==2023.11.17 \</span><br><span class="line">    --hash=sha256:6f8f7...</span><br><span class="line">charset-normalizer==3.3.2 \</span><br><span class="line">    --hash=sha256:a34d1...</span><br><span class="line">click==8.1.7 \</span><br><span class="line">    --hash=sha256:1c80c...</span><br><span class="line"># ... 很多很多行 ...</span><br><span class="line">requests==2.31.0 \</span><br><span class="line">    --hash=sha256:79127...</span><br><span class="line">sniffio==1.3.0 \</span><br><span class="line">    --hash=sha256:c7364...</span><br><span class="line">Werkzeug==3.0.1 \</span><br><span class="line">    --hash=sha256:3d45f...</span><br></pre></td></tr></table></figure>
+
+<p>有了这个 <code>requirements.txt</code> 文件，任何人在任何机器上使用 <code>uv pip sync</code> 都可以安装到与你开发时完全相同的依赖环境。</p>
+<p><strong>常见选项：</strong></p>
+<ul>
+<li><code>-o &lt;output_file&gt;</code>: 指定输出的锁定文件（通常是 <code>requirements.txt</code>）。</li>
+<li><code>--upgrade-package &lt;package&gt;</code>: 在编译时升级指定的包到最新兼容版本，即使它已经在 <code>.txt</code> 文件中被锁定。这在你只想升级某个特定依赖时很有用。</li>
+<li><code>--no-header</code>: 不在输出文件顶部添加自动生成的注释。</li>
+</ul>
+<h2 id="3-4-同步环境：uv-pip-sync"><a href="#3-4-同步环境：uv-pip-sync" class="headerlink" title="3.4 同步环境：uv pip sync"></a>3.4 同步环境：<code>uv pip sync</code></h2><p><code>uv pip sync</code> 的作用是让当前活动的虚拟环境的状态与一个或多个精确锁定的 <code>requirements.txt</code> 文件<strong>完全一致</strong>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip <span class="built_in">sync</span> requirements.txt</span><br></pre></td></tr></table></figure>
+
+<p><strong>详细解释：</strong><br>运行 <code>uv pip sync</code> 后，<code>uv</code> 会读取 <code>requirements.txt</code> 文件中列出的所有包和它们的精确版本。然后，它会检查当前虚拟环境中<strong>实际安装</strong>了哪些包。</p>
+<ul>
+<li>如果锁定文件中有的包，但环境中没有，<code>uv</code> 会安装它。</li>
+<li>如果锁定文件中有的包，环境中也有，但版本或哈希不匹配，<code>uv</code> 会重新安装正确版本的包。</li>
+<li>如果环境中有包，但锁定文件中<strong>没有</strong>（这意味着这个包不是项目需要的依赖），<code>uv</code> 会<strong>卸载</strong>它。</li>
+</ul>
+<p>这个过程确保了虚拟环境的内容<strong>精确</strong>地反映了锁定文件的内容，不多不少，版本完全一致。这对于保证开发、测试和生产环境的一致性至关重要。</p>
+<p><strong><code>uv pip sync</code> 和 <code>uv pip install -r</code> 的区别：</strong><br>虽然 <code>uv pip install -r requirements.txt</code> 也可以安装锁定文件中的包，但它<strong>不会</strong>卸载环境中多余的包。<code>uv pip sync</code> 的核心在于实现环境与锁定文件的<strong>完全同步</strong>，包括删除不需要的包。因此，在团队协作或部署时，<code>uv pip sync</code> 是更推荐的命令，以确保环境的纯净和一致。</p>
+<h2 id="3-5-本地项目包管理：uv-add"><a href="#3-5-本地项目包管理：uv-add" class="headerlink" title="3.5 本地项目包管理：uv add"></a>3.5 本地项目包管理：<code>uv add</code></h2><p>如果你需要管理本地项目依赖，可以使用 <code>uv add</code> 命令。这种情况下, <code>uv</code>会将依赖包安装在项目目录下的虚拟环境中, 而不是添加到全局的<code>Python</code>解释器所在的环境。</p>
+<p><strong>本地项目依赖管理</strong></p>
+<p>并且通过 <code>uv add &lt;package&gt;</code> 添加依赖时，UV 会自动更新项目的 <code>pyproject.toml</code> 文件，记录包名及版本约束（如 <code>requests&gt;=2.32.3</code>），并生成或更新锁文件 <code>uv.lock</code>，精确锁定所有直接依赖和子依赖的版本。例如：  </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">uv add requests</span><br><span class="line">```  </span><br><span class="line">此操作确保团队协作或部署时，所有环境依赖版本完全一致，避免“在我机器上能运行”的问题。  </span><br><span class="line"></span><br><span class="line">**开发依赖管理**  </span><br><span class="line"></span><br><span class="line">支持通过 `--dev` 标志区分开发环境依赖（如测试框架），这些依赖会被记录在 `pyproject.toml` 的 `[dependency-groups]` 部分，例如：  </span><br><span class="line">```bash</span><br><span class="line">uv add pytest --dev</span><br><span class="line">```  </span><br><span class="line">开发依赖不会影响生产环境的轻量化部署。  </span><br><span class="line"></span><br><span class="line">**虚拟环境集成**  </span><br><span class="line"></span><br><span class="line">若项目未初始化虚拟环境，`uv add` 会自动创建 `.venv` 目录并安装依赖，无需手动激活环境。通过 `uv run` 可直接在隔离环境中执行脚本，例如：  </span><br><span class="line">```bash</span><br><span class="line">uv run example.py</span><br><span class="line">```  </span><br><span class="line">此特性简化了开发流程，尤其适合单文件脚本的依赖管理。  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">**与`uv pip install` 的区别**</span><br><span class="line"></span><br><span class="line">| 特性               | `uv add`                              | `uv pip install`                     |  </span><br><span class="line">|------------------------|-------------------------------------------|-------------------------------------------|  </span><br><span class="line">| 配置文件修改       | 更新 `pyproject.toml` 和 `uv.lock` | 不修改任何配置文件                |  </span><br><span class="line">| 依赖解析逻辑       | 主动生成确定性锁文件，确保版本一致性 | 安装当前兼容的最新版本，无版本锁定 |  </span><br><span class="line">| 适用场景           | 长期项目管理、团队协作            | 临时测试、全局工具安装            |  </span><br><span class="line">| 虚拟环境管理       | 自动创建或同步项目虚拟环境        | 依赖手动激活的现有环境            |  </span><br><span class="line">| 性能优化           | 依赖解析速度更快（Rust 实现）     | 安装速度提升，但逻辑与传统 pip 对齐   |  </span><br><span class="line"></span><br><span class="line">**使用建议**  </span><br><span class="line">- 优先使用 `uv add`：在需要维护项目依赖声明、锁定版本或协作开发时，应通过 `uv add` 管理依赖，确保环境一致性。  </span><br><span class="line">- 选择性使用 `uv pip install`：在临时调试、安装全局工具（如 `ruff`、`black`）或需要兼容现有 `pip` 脚本时使用，避免污染项目配置。  </span><br><span class="line">- 混合工作流：例如，使用 `uv pip install` 安装 PyTorch 的 GPU 版本后，可手动将依赖添加到 `pyproject.toml`，再通过 `uv <span class="built_in">sync</span>` 同步环境。</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4 结合使用：典型的 uv 工作流</span></span><br><span class="line"></span><br><span class="line">一个使用 `uv` 管理 Python 项目依赖的典型工作流如下：</span><br><span class="line"></span><br><span class="line">1.  **创建环境：**</span><br><span class="line">    ```bash</span><br><span class="line">    uv venv</span><br><span class="line">    <span class="built_in">source</span> .venv/bin/activate</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li><strong>定义顶级依赖：</strong> 在项目根目录创建 <code>requirements.in</code> 文件，列出你项目直接需要的库。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># requirements.in</span><br><span class="line">fastapi</span><br><span class="line">uvicorn[standard]</span><br><span class="line">pydantic_settings</span><br><span class="line">httpx</span><br></pre></td></tr></table></figure></li>
+<li><strong>编译生成锁定文件：</strong> 运行 <code>uv pip compile</code> 生成精确锁定的 <code>requirements.txt</code>。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip compile requirements.in -o requirements.txt</span><br></pre></td></tr></table></figure>
+第一次运行会稍慢一些，因为它需要解析所有依赖并从 PyPI 下载元数据。但比 <code>pip-compile</code> 快得多。</li>
+<li><strong>同步环境：</strong> 根据生成的 <code>requirements.txt</code> 安装依赖。<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv pip <span class="built_in">sync</span> requirements.txt</span><br></pre></td></tr></table></figure>
+这个步骤通常会非常快，因为它只是按照锁定文件执行安装&#x2F;卸载操作，无需再次解析。</li>
+<li><strong>开发过程中添加新依赖：</strong><ul>
+<li>编辑 <code>requirements.in</code>，添加新的顶级依赖。</li>
+<li>重新运行 <code>uv pip compile requirements.in -o requirements.txt</code> 更新锁定文件。</li>
+<li>重新运行 <code>uv pip sync requirements.txt</code> 将新依赖安装到环境中。</li>
+</ul>
+</li>
+<li><strong>开发过程中移除依赖：</strong><ul>
+<li>编辑 <code>requirements.in</code>，移除不再需要的顶级依赖。</li>
+<li>重新运行 <code>uv pip compile requirements.in -o requirements.txt</code> 更新锁定文件。</li>
+<li>重新运行 <code>uv pip sync requirements.txt</code> 将不再需要的依赖从环境中移除。</li>
+</ul>
+</li>
+</ol>
+<p>这个工作流清晰地分离了“我想要什么”（<code>requirements.in</code>）和“我实际安装了什么”（<code>requirements.txt</code>），并利用 <code>uv</code> 的高速特性，使得依赖管理变得高效且可控。</p>
+<h1 id="5-与-pyenv-的结合使用"><a href="#5-与-pyenv-的结合使用" class="headerlink" title="5 与 pyenv 的结合使用"></a>5 与 <code>pyenv</code> 的结合使用</h1><p>需要重点说明的是, <code>uv</code>本身并不会直接管理不同<code>Python</code>解释器的版本，而是基于系统已有的 <code>Python</code> 虚拟环境进行管理。因此, 通常我们需要结合其他的<code>Python</code>虚拟环境管理工具来使用。这里最常见的方式就是使用轻量化的 <code>pyenv</code> 。（都用<code>uv</code>了肯定不再用重量级的<code>anaconda</code>了）</p>
+<p>这里简单介绍<code>pyenv</code>的使用方法:</p>
+<h2 id="5-1-安装与基础配置"><a href="#5-1-安装与基础配置" class="headerlink" title="5.1 安装与基础配置"></a>5.1 安装与基础配置</h2><p><strong>Windows</strong><br>通过 Chocolatey 安装社区维护的 <code>pyenv-win</code>：</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">choco install pyenv<span class="literal">-win</span> <span class="literal">-y</span></span><br><span class="line">refreshenv</span><br></pre></td></tr></table></figure>
+
+<p><strong>Linux&#x2F;macOS</strong><br>直接使用原生 <code>pyenv</code>，并确保在 Shell 配置文件（如 <code>.bashrc</code> 或 <code>.zshrc</code>）中添加初始化代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> PATH=<span class="string">&quot;<span class="variable">$HOME</span>/.pyenv/bin:<span class="variable">$PATH</span>&quot;</span></span><br><span class="line"><span class="built_in">eval</span> <span class="string">&quot;<span class="subst">$(pyenv init -)</span>&quot;</span></span><br></pre></td></tr></table></figure>
+<p><strong>验证安装</strong><br>运行 <code>pyenv versions</code> 查看已安装的 Python 版本。</p>
+<h2 id="5-2-pyenv-的-Python-版本管理"><a href="#5-2-pyenv-的-Python-版本管理" class="headerlink" title="5.2 pyenv 的 Python 版本管理"></a>5.2 pyenv 的 Python 版本管理</h2><h3 id="5-2-1-通过-pyenv-安装多版本解释器"><a href="#5-2-1-通过-pyenv-安装多版本解释器" class="headerlink" title="5.2.1 通过 pyenv 安装多版本解释器"></a>5.2.1 通过 <code>pyenv</code> 安装多版本解释器</h3><p>例如安装 Python 3.10 和 3.12：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pyenv install 3.10.11</span><br><span class="line">pyenv install 3.12.0</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-2-切换全局或项目本地版本"><a href="#5-2-2-切换全局或项目本地版本" class="headerlink" title="5.2.2 切换全局或项目本地版本"></a>5.2.2 切换全局或项目本地版本</h3><ul>
+<li>全局设置：<code>pyenv global 3.12.0</code>  </li>
+<li>项目本地设置：在项目目录中运行 <code>pyenv local 3.10.11</code>，生成 <code>.python-version</code> 文件。</li>
+</ul>
+<h3 id="5-2-3-与-uv-的版本同步"><a href="#5-2-3-与-uv-的版本同步" class="headerlink" title="5.2.3 与 uv 的版本同步"></a>5.2.3 与 <code>uv</code> 的版本同步</h3><p><code>uv</code> 通过读取 <code>.python-version</code> 或 <code>pyproject.toml</code> 中的 <code>requires-python</code> 字段自动选择解释器版本。例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv venv --python 3.10.11  <span class="comment"># 显式指定版本创建虚拟环境</span></span><br></pre></td></tr></table></figure>
+
+<h1 id="6-小节"><a href="#6-小节" class="headerlink" title="6 小节"></a>6 小节</h1><h2 id="6-1-为什么选择-uv？与现有工具的对比"><a href="#6-1-为什么选择-uv？与现有工具的对比" class="headerlink" title="6.1 为什么选择 uv？与现有工具的对比"></a>6.1 为什么选择 uv？与现有工具的对比</h2><p><code>uv</code> 并不是第一个 Python 包管理工具，那么它在众多工具中有什么优势呢？</p>
+<ul>
+<li><strong>vs <code>pip</code> + <code>venv</code>:</strong> 这是最基础的组合。<code>uv</code> 将两者的功能整合，提供更快的环境创建和依赖安装速度。更重要的是，<code>uv</code> 的 <code>compile</code> 和 <code>sync</code> 提供了 <code>pip</code> 本身不具备的强大依赖锁定和环境同步能力，解决了 <code>pip</code> 在可重复构建方面的不足。</li>
+<li><strong>vs <code>pip-tools</code>:</strong> <code>uv</code> 的 <code>pip compile</code> 和 <code>pip sync</code> 直接对标 <code>pip-tools</code> 的同名命令。<code>uv</code> 的主要优势在于<strong>压倒性的速度</strong>。对于大型项目或在 CI&#x2F;CD 环境中，<code>uv</code> 可以显著缩短构建时间。此外，<code>uv</code> 是一个单一工具，而 <code>pip-tools</code> 是一个依赖于 <code>pip</code> 和 Python 环境的 Python 包。</li>
+<li><strong>vs <code>Poetry</code> &#x2F; <code>PDM</code>:</strong> <code>Poetry</code> 和 <code>PDM</code> 是功能更全面的项目管理器。它们使用 <code>pyproject.toml</code> 作为项目配置中心，处理依赖、构建、发布、运行脚本等。<code>uv</code> 目前不涉及这些高级项目管理功能。<code>uv</code> 更专注于底层的依赖解析和安装。对于习惯使用 <code>requirements.txt</code> 工作流或只需要一个快速的 <code>pip</code>&#x2F;<code>venv</code>&#x2F;<code>pip-tools</code> 替代品的项目来说，<code>uv</code> 是一个极好的选择。对于追求 All-in-one 项目管理的团队，Poetry 或 PDM 仍然是强有力的竞争者，但未来它们也可能集成 <code>uv</code> 作为其内部的解析和安装引擎，以获得速度提升。</li>
+<li><strong>vs <code>Rye</code>:</strong> <code>Rye</code> 是 <code>uv</code> 的同门师兄，也是由 Astral 开发的更高级的项目管理器。<code>Rye</code> 专注于简化 Python 工具链的管理（包括 Python 版本本身、虚拟环境、依赖等），并在内部使用了 <code>uv</code> 作为其依赖管理引擎。如果你正在寻找一个全新的、集成的 Python 项目开发环境，<code>Rye</code> 可能更适合你；如果你只想替换现有的 <code>pip</code>&#x2F;<code>venv</code>&#x2F;<code>pip-tools</code> 流程，<code>uv</code> 是一个更直接的切入点。</li>
+</ul>
+<p>总的来说，<code>uv</code> 的最大亮点在于其<strong>无与伦比的速度</strong>和对现有标准的良好支持。它是一个高性能的“引擎”，可以作为现有工作流（特别是基于 <code>requirements.txt</code> 的）的直接加速器，或者作为更高级工具（如 <code>Rye</code>）的基础。</p>
+<h2 id="6-2-潜在的注意事项和未来展望"><a href="#6-2-潜在的注意事项和未来展望" class="headerlink" title="6.2 潜在的注意事项和未来展望"></a>6.2 潜在的注意事项和未来展望</h2><p><code>uv</code> 是一个相对较新的工具，尽管它已经非常强大和稳定，但仍有一些地方需要注意：</p>
+<ul>
+<li><strong>生态系统集成：</strong> 虽然 <code>uv</code> 兼容 <code>requirements.txt</code>，但一些依赖于特定 <code>pip</code> 行为或内部结构的工具可能需要时间来完全支持 <code>uv</code>。</li>
+<li><strong>功能覆盖：</strong> 尽管 <code>uv</code> 覆盖了核心的包管理功能，但 <code>pip</code> 有一些更高级或边缘的功能（如通过 VCS 安装、本地目录安装的复杂选项等）<code>uv</code> 可能尚未完全支持或行为略有不同。在使用前最好查阅官方文档确认。</li>
+<li><strong>持续发展：</strong> <code>uv</code> 正在快速迭代中，新版本可能会带来功能改进或行为变化。</li>
+</ul>
+<p>未来，<code>uv</code> 有潜力成为 Python 打包领域的一个基础性工具，其核心的快速解析和安装能力可能会被更广泛地集成到各种 Python 开发工具和平台中。</p>
+<h2 id="6-3-总结"><a href="#6-3-总结" class="headerlink" title="6.3 总结"></a>6.3 总结</h2><p><code>uv</code> 是 Python 包管理领域令人兴奋的新进展。它以 Rust 带来的极致速度为核心优势，旨在成为 <code>pip</code>、<code>venv</code> 和 <code>pip-tools</code> 的高性能替代品。通过支持标准的 <code>requirements.txt</code> 文件和类似于 <code>pip-tools</code> 的编译&#x2F;同步工作流，<code>uv</code> 提供了一条平滑的迁移路径，让开发者能够轻松地获得更快的环境管理和依赖处理体验。</p>
+<p>如果你厌倦了等待 <code>pip</code> 解析和安装依赖，或者希望在你的 CI&#x2F;CD 流程中大幅缩短构建时间，那么 <code>uv</code> 绝对值得你尝试。开始使用 <code>uv venv</code> 和 <code>uv pip install</code>，体验一下“瞬间”完成依赖安装的快感吧！</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AFuv"><span class="toc-number">1.</span> <span class="toc-text">1 什么是uv?</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-uv%E8%AF%9E%E7%94%9F%E7%9A%84%E8%83%8C%E6%99%AF"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 uv诞生的背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-uv%E7%9A%84%E4%BC%98%E5%8A%BF"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 uv的优势</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-uv-%E8%83%BD%E6%9B%BF%E4%BB%A3%E5%93%AA%E4%BA%9B%E5%B7%A5%E5%85%B7%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 uv 能替代哪些工具？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E5%AE%89%E8%A3%85-uv"><span class="toc-number">2.</span> <span class="toc-text">2 安装 uv</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-uv-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%B7%A5%E4%BD%9C%E6%B5%81%E4%B8%8E%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="toc-number">3.</span> <span class="toc-text">3 uv 的核心工作流与常用命令</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%88%9B%E5%BB%BA%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83%EF%BC%9Auv-venv"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 创建虚拟环境：uv venv</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%85%BC%E5%AE%B9-pip-%E7%9A%84%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4-uv-pip"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 兼容 pip 的常用命令 (uv pip)</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E4%BE%9D%E8%B5%96%E7%BC%96%E8%AF%91%E4%B8%8E%E9%94%81%E5%AE%9A%EF%BC%9Auv-pip-compile"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 依赖编译与锁定：uv pip compile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-4-%E5%90%8C%E6%AD%A5%E7%8E%AF%E5%A2%83%EF%BC%9Auv-pip-sync"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 同步环境：uv pip sync</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-5-%E6%9C%AC%E5%9C%B0%E9%A1%B9%E7%9B%AE%E5%8C%85%E7%AE%A1%E7%90%86%EF%BC%9Auv-add"><span class="toc-number">3.5.</span> <span class="toc-text">3.5 本地项目包管理：uv add</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E4%B8%8E-pyenv-%E7%9A%84%E7%BB%93%E5%90%88%E4%BD%BF%E7%94%A8"><span class="toc-number">4.</span> <span class="toc-text">5 与 pyenv 的结合使用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%AE%89%E8%A3%85%E4%B8%8E%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE"><span class="toc-number">4.1.</span> <span class="toc-text">5.1 安装与基础配置</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-pyenv-%E7%9A%84-Python-%E7%89%88%E6%9C%AC%E7%AE%A1%E7%90%86"><span class="toc-number">4.2.</span> <span class="toc-text">5.2 pyenv 的 Python 版本管理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-1-%E9%80%9A%E8%BF%87-pyenv-%E5%AE%89%E8%A3%85%E5%A4%9A%E7%89%88%E6%9C%AC%E8%A7%A3%E9%87%8A%E5%99%A8"><span class="toc-number">4.2.1.</span> <span class="toc-text">5.2.1 通过 pyenv 安装多版本解释器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-2-%E5%88%87%E6%8D%A2%E5%85%A8%E5%B1%80%E6%88%96%E9%A1%B9%E7%9B%AE%E6%9C%AC%E5%9C%B0%E7%89%88%E6%9C%AC"><span class="toc-number">4.2.2.</span> <span class="toc-text">5.2.2 切换全局或项目本地版本</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-3-%E4%B8%8E-uv-%E7%9A%84%E7%89%88%E6%9C%AC%E5%90%8C%E6%AD%A5"><span class="toc-number">4.2.3.</span> <span class="toc-text">5.2.3 与 uv 的版本同步</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E5%B0%8F%E8%8A%82"><span class="toc-number">5.</span> <span class="toc-text">6 小节</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9-uv%EF%BC%9F%E4%B8%8E%E7%8E%B0%E6%9C%89%E5%B7%A5%E5%85%B7%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">5.1.</span> <span class="toc-text">6.1 为什么选择 uv？与现有工具的对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E6%BD%9C%E5%9C%A8%E7%9A%84%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9%E5%92%8C%E6%9C%AA%E6%9D%A5%E5%B1%95%E6%9C%9B"><span class="toc-number">5.2.</span> <span class="toc-text">6.2 潜在的注意事项和未来展望</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E6%80%BB%E7%BB%93"><span class="toc-number">5.3.</span> <span class="toc-text">6.3 总结</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&text=Python管理工具uv简易教程"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&is_video=false&description=Python管理工具uv简易教程"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Python管理工具uv简易教程&body=Check out this article: http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&title=Python管理工具uv简易教程"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&name=Python管理工具uv简易教程&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/28/%E5%AE%9E%E7%94%A8%E5%B7%A5%E5%85%B7%E7%AC%94%E8%AE%B0/Python%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7uv%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/&t=Python管理工具uv简易教程"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这节课虽然介绍的是Spark，但是实际上更多是介绍分布式计算的，Spark只是分布式计算的一种实现。如果你学过MIT 6.824的分布式系统，那么这节课的内容对你来说应该比较简单。这里对Spark的介绍主要是其设计思路, 具体的语法还是需要看官方文档: https:&#x2F;&#x2F;spark.apache.org&#x2F;docs&#x2F;latest&#x2F;quick-start.html 课程主页: https:&#x2F;&#x2F;gfxco">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec09-spark">
+<meta property="og:url" content="http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这节课虽然介绍的是Spark，但是实际上更多是介绍分布式计算的，Spark只是分布式计算的一种实现。如果你学过MIT 6.824的分布式系统，那么这节课的内容对你来说应该比较简单。这里对Spark的介绍主要是其设计思路, 具体的语法还是需要看官方文档: https:&#x2F;&#x2F;spark.apache.org&#x2F;docs&#x2F;latest&#x2F;quick-start.html 课程主页: https:&#x2F;&#x2F;gfxco">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/distributed_system.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/distributed_file_system.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/mapreduce.png">
+<meta property="og:image" content="http://example.com/images/MapReduce_process.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/rdd_operation.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/rdd_persist.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/narrow_dependency.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/wide_dependency.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/partition.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/partition_strategy.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec09/distributed_not_always_optimal.png">
+<meta property="article:published_time" content="2024-12-09T13:47:23.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.663Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta property="article:tag" content="Spark">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec09/distributed_system.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec09-spark</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/17/%E9%9A%8F%E7%AC%94/%E5%88%A9%E7%94%A8Github%E5%92%8CHexo%E8%87%AA%E5%BB%BA%E5%8D%9A%E5%AE%A2/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&text=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&is_video=false&description=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec09-spark&body=Check out this article: http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&name=Stanford-CS149-并行计算-Lec09-spark&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&t=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 分布式系统的设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GFS%E5%92%8CHDFS"><span class="toc-number">2.</span> <span class="toc-text">2 GFS和HDFS</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-MapReduce"><span class="toc-number">3.</span> <span class="toc-text">3 MapReduce</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Spark"><span class="toc-number">4.</span> <span class="toc-text">4 Spark</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 容错机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E5%90%88%E4%BC%A0%E7%BB%9F-MapReduce-%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6"><span class="toc-number">4.1.1.</span> <span class="toc-text">结合传统 MapReduce 容错机制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-RDD%E6%93%8D%E4%BD%9C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 RDD操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%86%85%E5%AD%98%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 内存持久化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-RDD%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 RDD的机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-1-%E6%83%B0%E6%80%A7"><span class="toc-number">4.4.1.</span> <span class="toc-text">4.4.1 惰性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-2-%E4%BE%9D%E8%B5%96"><span class="toc-number">4.4.2.</span> <span class="toc-text">4.4.2 依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-3-Partition"><span class="toc-number">4.4.3.</span> <span class="toc-text">4.4.3 Partition</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82-%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%8D%E4%B8%80%E5%AE%9A%E6%98%AF%E6%9C%80%E4%BC%98%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 小节: 分布式不一定是最优解</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec09-spark
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-09T13:47:23.000Z" class="dt-published" itemprop="datePublished">2024-12-09</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/Spark/" rel="tag">Spark</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这节课虽然介绍的是<code>Spark</code>，但是实际上更多是介绍分布式计算的，<code>Spark</code>只是分布式计算的一种实现。如果你学过<code>MIT 6.824</code>的分布式系统，那么这节课的内容对你来说应该比较简单。这里对<code>Spark</code>的介绍主要是其设计思路, 具体的语法还是需要看官方文档: <a target="_blank" rel="noopener" href="https://spark.apache.org/docs/latest/quick-start.html">https://spark.apache.org/docs/latest/quick-start.html</a></p>
+<p>课程主页: <a target="_blank" rel="noopener" href="https://gfxcourses.stanford.edu/cs149/fall24">https://gfxcourses.stanford.edu/cs149/fall24</a></p>
+<h1 id="1-分布式系统的设计"><a href="#1-分布式系统的设计" class="headerlink" title="1 分布式系统的设计"></a>1 分布式系统的设计</h1><p><img src="/../../images/CS149/Lec09/distributed_system.png" alt="distributed_system"></p>
+<p>课程介绍了<code>Warehouse-Scale Cluster（WSC）</code>节点（服务器）这种大型的数据中心架构, 这种架构中, 最小的粒度就是单个服务器, 称为<code>node</code>。多个<code>node</code>通过机架(<code>rack</code>)上的交换机连接组成一个小集群, 这个小集群内的网络通信非常快, 但是跨机架的网络通信非常慢。</p>
+<h1 id="2-GFS和HDFS"><a href="#2-GFS和HDFS" class="headerlink" title="2 GFS和HDFS"></a>2 GFS和HDFS</h1><p>尽管物理上, 一个数据中心的机器是多个<code>node</code>组成的集群, 但逻辑上, 他们的文件系统是统一的, 经典的分布式文件系统有<code>GFS</code>和<code>HDFS</code>。</p>
+<p><img src="/../../images/CS149/Lec09/distributed_file_system.png" alt="distributed_file_system"></p>
+<p><code>GFS</code>是<code>Google File System</code>的缩写, 是<code>Google</code>公司开发的一种分布式文件系统, 用于存储和处理大规模数据集。<code>GFS</code>的设计目标是提供高吞吐量、高可靠性和高扩展性的文件存储和访问服务。而<code>HDFS</code>是<code>Hadoop Distributed File System</code>的缩写, 是<code>Apache Hadoop</code>项目的一部分, 用于存储和处理大规模数据集。<code>HDFS</code>的设计目标是提供高吞吐量、高可靠性和高扩展性的文件存储和访问服务。<code>HDFS</code>和<code>GFS</code>在设计上非常相似, 但是<code>HDFS</code>是开源的, 而<code>GFS</code>是<code>Google</code>的私有系统。</p>
+<p><code>GFS</code>和<code>HDFS</code>主要有如下几个基本概念:</p>
+<p><strong>Chunk Servers (块服务器) &#x2F; DataNodes (数据节点)</strong></p>
+<ul>
+<li><strong>定义</strong>：在 GFS 中被称为 Chunk Servers，在 HDFS 中则称为 DataNodes。它们是实际存储数据的物理机器。</li>
+<li><strong>文件分片</strong>：当一个大文件被上传到 DFS 时，它会被分割成固定大小的连续块（chunks），通常是64MB到256MB之间。这种分片策略有助于并行处理和优化磁盘读写操作。</li>
+<li><strong>复制机制</strong>：为了保证数据的安全性和可用性，每个块都会被复制多份（通常是2或3份）。这样即使某些节点发生故障，数据仍然可以从其他副本中恢复。</li>
+<li><strong>机架感知</strong>：在部署 <code>GFS</code> 时，尽量将同一个块的不同副本放置在不同的机架上。这是因为同一机架内的所有服务器可能会因为电力供应或网络交换机的问题同时失效，而跨机架存放可以显著降低这种风险。</li>
+</ul>
+<p><strong>Master Node (主节点) &#x2F; NameNode (名称节点)</strong></p>
+<ul>
+<li><strong>定义</strong>：在 GFS 中称为 Master Node，在 HDFS 中称为 NameNode。它是整个 DFS 的核心组件，负责管理和维护文件系统的命名空间以及元数据。</li>
+<li><strong>元数据管理</strong>：NameNode 存储有关文件和目录结构的信息，包括文件名、权限、修改时间等属性，同时也记录了每个文件的块信息及其所在的位置。这些元数据通常会进行定期备份或复制，以确保即使 NameNode 出现问题，也能迅速恢复。</li>
+<li><strong>客户端交互</strong>：当客户端应用程序想要读取或写入文件时，首先需要与 NameNode 通信，获取所需块的具体位置信息。然后，客户端可以直接与相应的 DataNodes 进行数据传输，而不必每次都经过 NameNode。</li>
+</ul>
+<p><strong>Client Library (客户端库)</strong></p>
+<ul>
+<li><strong>功能</strong>：客户端库是用户程序与 DFS 之间的接口，提供了简单的 API 来执行文件操作，如创建、删除、读取和写入文件。</li>
+<li><strong>工作流程</strong>：<ul>
+<li><strong>查询元数据</strong>：客户端库会先联系 NameNode，询问特定文件的块分布情况。</li>
+<li><strong>直接访问数据</strong>：一旦得到了块的位置信息，客户端就可以直接连接到对应的 <code>DataNodes</code> 来读取或写入数据，从而减少了 <code>NameNode</code> 的负载压力。</li>
+<li><strong>透明性</strong>：对于最终用户来说，使用 DFS 就像使用本地文件系统一样简单，所有的复杂细节都被客户端库所隐藏。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>如果对<code>GFS</code>感兴趣, 可以去学下<code>MIT 6.824</code>的分布式系统课程, 这门课有一章节专门介绍<code>GFS</code>。也可以参考我关于<code>GFS</code>的笔记:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://vanilla-beauty.github.io/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/">https://Vanilla-Beauty.github.io/2023/12/30/MIT6.5840/Lec03%E7%AC%94%E8%AE%B0/</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/675837107">https://zhuanlan.zhihu.com/p/675837107</a></li>
+</ol>
+</blockquote>
+<h1 id="3-MapReduce"><a href="#3-MapReduce" class="headerlink" title="3 MapReduce"></a>3 MapReduce</h1><p>课程下一个内容介绍的是<code>MapReduce</code>。<code>MapReduce</code>是一种编程模型, 用于处理和生成大数据集。它由<code>Google</code>提出, 是<code>Google</code>在2004年发表的一篇论文中提出的。<code>MapReduce</code>的主要思想是将大数据集分解成许多小的数据块, 然后通过多个计算节点并行处理这些数据块, 最后将处理结果合并成最终结果。</p>
+<p><img src="/../../images/CS149/Lec09/mapreduce.png" alt="mapreduce"></p>
+<p>输入首先会被<code>Map</code>操作映射成多个<code>key-value</code>对, 然后这些<code>key-value</code>对会被<code>Shuffle</code>操作分发到不同的<code>reduce</code>节点, 最后这些<code>reduce</code>节点会将这些<code>key-value</code>对合并成最终结果。<strong>需要注意的是, <code>Reduce</code>的输入, 也就是<code>Shuffle</code>的输出, 需要包含这一类<code>key</code>的所有键值对, 因此部分的<code>Reduce</code>任务需要等待多个<code>Map</code>任务完成后才能开始</strong>。</p>
+<blockquote>
+<p>做过<code>MIT 6.824</code>的分布式系统课程的同学应该对<code>MapReduce</code>非常熟悉, 这门课有一章节专门介绍<code>MapReduce</code>, 这也是课程的第一个<code>Lab</code>。也可以参考我关于<code>MapReduce</code>的笔记:</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://vanilla-beauty.github.io/2023/12/24/MIT6.5840/Lec01%E7%AC%94%E8%AE%B0/">https://Vanilla-Beauty.github.io/2023/12/24/MIT6.5840/Lec01%E7%AC%94%E8%AE%B0/</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/675446573">https://zhuanlan.zhihu.com/p/675446573</a></li>
+<li><a target="_blank" rel="noopener" href="https://vanilla-beauty.github.io/2023/12/23/MIT6.5840/Lab1_MapReduce/">https://Vanilla-Beauty.github.io/2023/12/23/MIT6.5840/Lab1_MapReduce/</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/675177101">https://zhuanlan.zhihu.com/p/675177101</a></li>
+</ol>
+</blockquote>
+<p><img src="/../../images/MapReduce_process.png" alt="mapreduce_example"></p>
+<p>上图是一个以统计单词数量为例的<code>MapReduce</code>过程。<code>MapReduce</code>有一个<code>master</code>节点, 负责调度<code>Map</code>和<code>Reduce</code>任务, 以及收集<code>Reduce</code>和<code>Map</code>任务的结果。<code>Map</code>任务的输入是文件, 输出是<code>key-value</code>对, <code>Reduce</code>任务的输入是<code>Map</code>任务的输出, 输出是最终结果。</p>
+<ul>
+<li>这个案例中, <code>Map</code>任务的输入是指定文件的每一行, 输出是<code>key-value</code>对, 其中<code>key</code>是单词, <code>value</code>是(这个案例中每行只有1个单词)。</li>
+<li><code>Reduce</code>任务的输入是<code>Map</code>任务的输出, 输出是最终结果, 也就是每个单词的数量。</li>
+<li>这里有2个<code>Reduce</code>任务的<code>worker</code>其中一个负责处理<code>key=a</code>的键值对, 另一个负责处理<code>key=b</code>的键值对。</li>
+<li><code>Master</code>节点调度任务时需要考虑局部性, 例如<code>Reduce</code>任务应该优先分配本机或者本<code>rack</code>上的<code>Map</code>任务产生的<code>key-value</code>对。同时<code>Master</code>节点需要收集<code>Map</code>和<code>Reduce</code>任务的结果, 并在错误或异常发生时进行重试。更复杂的场景中, <code>Master</code>节点需要完成对不同节点的性能检测, 从而实现负载均衡的任务分配。</li>
+</ul>
+<p><strong>MapReduce的优缺点</strong></p>
+<ul>
+<li><p><strong>MapReduce的优点</strong> </p>
+<ol>
+<li><p>简化集群编程：</p>
+<ul>
+<li>自动任务划分：MapReduce 框架能够自动将一个复杂的作业划分为多个 Map 和 Reduce 任务，使得开发者无需关心底层的并行化细节。</li>
+<li>数据局部性调度：通过将计算尽可能靠近数据存放的位置，减少网络传输成本，提高处理效率。</li>
+<li>负载均衡：框架内置了负载均衡机制，确保各个节点的任务分配相对均匀，避免某些节点过载而其他节点空闲。</li>
+<li>故障恢复和慢机处理：具备强大的容错能力，可以自动检测和重试失败的任务，并通过投机执行等手段应对慢速机器，保证作业顺利完成。</li>
+</ul>
+</li>
+<li><p>“大数据”分析的简化：</p>
+<ul>
+<li>MapReduce 为大规模数据集的处理提供了一个简单且有效的模型，使得开发者可以专注于业务逻辑而不是分布式系统的复杂性。</li>
+<li>它允许用户在不需要深入了解分布式系统内部工作原理的情况下，利用大量计算资源来处理海量数据。</li>
+</ul>
+</li>
+</ol>
+</li>
+<li><p><strong>MapReduce 的缺点</strong></p>
+<ol>
+<li><p>程序结构限制：</p>
+<ul>
+<li>简单的程序结构：MapReduce 只支持一种非常基本的程序结构，即先进行 Map 操作，然后对结果按键进行 Reduce 操作。这种模式对于一些更复杂的算法或应用来说可能不够灵活。</li>
+<li>迭代算法的效率问题：对于需要多次迭代的算法（如机器学习中的梯度下降、图处理中的PageRank等），MapReduce 每次迭代都需要从磁盘重新加载数据，这会导致大量的I&#x2F;O开销，影响性能。</li>
+</ul>
+</li>
+<li><p>多阶段应用程序的支持不足：</p>
+<ul>
+<li>复杂应用的需求：随着用户需求的增长，越来越多的应用程序需要更复杂的、多阶段的处理流程，例如迭代式的机器学习算法和图处理。MapReduce 的简单模型难以高效地支持这些需求。</li>
+<li>交互式查询的局限性：对于需要快速响应的交互式查询，MapReduce 的批量处理特性显得过于笨重，无法满足实时性要求。</li>
+</ul>
+</li>
+<li><p>缺乏对DAG的支持：</p>
+<ul>
+<li>固定的工作流：MapReduce 的工作流是线性的，只能表示 map 和 reduce 两个阶段。对于需要表达更复杂依赖关系的应用（如有向无环图 DAG），MapReduce 显得力不从心。相比之下，像 DryadLINQ 这样的系统提供了对 DAG 的支持，更适合复杂的多阶段处理。</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<h1 id="4-Spark"><a href="#4-Spark" class="headerlink" title="4 Spark"></a>4 Spark</h1><p><code>Spark</code>的设计目标就是解决<code>MapReduce</code>的缺点, 特别是针对那些需要频繁重用中间数据集的集群规模计算任务。这些任务包括迭代式的机器学习算法、图处理算法以及交互式数据挖掘等。为了提高效率，开发者希望避免将中间结果写入持久化分布式文件系统（如 HDFS），而是尽量保持在内存中。<code>Spark</code>也在这个场景下实现了容错机制。</p>
+<h2 id="4-1-容错机制"><a href="#4-1-容错机制" class="headerlink" title="4.1 容错机制"></a>4.1 容错机制</h2><p><code>Spark</code> 通过多种方式实现了内存计算的容错性。包含:</p>
+<ol>
+<li><p><strong>数据分区与弹性分布式数据集（RDD）</strong></p>
+<ul>
+<li><strong>RDD 的不可变性</strong>：在 Spark 中，所有数据都被组织成弹性分布式数据集（Resilient Distributed Datasets, RDD）。RDD 是一种不可变的、分区的数据集合，支持并行操作。由于 RDD 是不可变的，任何转换操作都会创建一个新的 RDD，而不会修改原始数据。这种设计使得 Spark 可以轻松地追踪数据的依赖关系，并在需要时重新计算丢失的数据。</li>
+<li><strong>血缘关系（Lineage）</strong>：每个 RDD 都记录了它的“血缘关系”，即它是如何从其他 RDD 通过一系列转换操作生成的。当某个分区的数据丢失时，Spark 可以根据血缘信息重新计算该分区，而不需要重新执行整个程序。这大大减少了恢复的成本和时间。</li>
+</ul>
+</li>
+<li><p><strong>检查点（Checkpointing）</strong></p>
+<ul>
+<li><strong>定期保存状态</strong>：为了防止频繁的重新计算，Spark 提供了检查点机制。用户可以选择将某些重要的 RDD 持久化到可靠的存储系统（如 HDFS）中。这样，在节点故障时，可以从最近的检查点恢复数据，而不是从头开始重新计算整个血缘链。</li>
+<li><strong>自动检查点</strong>：对于迭代式算法或长时间运行的任务，Spark 还可以自动触发检查点，确保中间结果被定期保存，从而减少恢复时的工作量。</li>
+</ul>
+</li>
+<li><p><strong>日志记录与增量更新</strong></p>
+<ul>
+<li><strong>窄依赖与宽依赖</strong>：Spark 区分了两种类型的依赖关系——窄依赖和宽依赖。窄依赖指的是每个父 RDD 的分区只被一个子 RDD 的分区所使用，而宽依赖则涉及多个父 RDD 的分区被多个子 RDD 的分区使用。对于窄依赖，Spark 可以通过简单的重新计算来恢复丢失的数据；而对于宽依赖，通常会触发检查点或更复杂的恢复策略。</li>
+<li><strong>日志记录</strong>：虽然 Spark 不像某些系统那样维护详细的更新日志，但它可以通过记录任务的执行状态和依赖关系来实现类似的功能。例如，调度器会跟踪每个任务的执行情况，包括哪些任务已经完成、哪些还在进行中。如果某个任务失败，调度器可以根据这些信息决定是否重试该任务或从最近的检查点重新开始。</li>
+</ul>
+</li>
+<li><p><strong>任务级别的容错</strong></p>
+<ul>
+<li><strong>任务重试</strong>：当某个任务（如 Map 或 Reduce 任务）失败时，Spark 会自动尝试在其他节点上重新执行该任务。由于 Spark 的任务是细粒度的，单个任务的失败不会影响整个作业的执行，只需重新执行失败的任务即可。</li>
+<li><strong>投机执行（Speculative Execution）</strong>：为了应对慢速机器或临时故障，Spark 还支持投机执行。如果某个任务执行时间过长，调度器会在其他节点上启动该任务的副本。一旦任意一个副本完成，另一个副本会被终止。这种方法不仅提高了容错性，还加快了整体处理速度。</li>
+</ul>
+</li>
+<li><p><strong>持久化与缓存</strong></p>
+<ul>
+<li><strong>内存中的持久化</strong>：Spark 允许用户将 RDD 持久化到内存中，以便后续操作可以直接访问这些数据，而无需重新计算。持久化的 RDD 可以选择不同的存储级别，如仅内存、内存和磁盘、仅磁盘等，以适应不同的性能和容错需求。</li>
+<li><strong>容错与性能平衡</strong>：通过合理设置持久化策略，用户可以在性能和容错性之间找到最佳平衡。例如，对于那些频繁访问但不太可能丢失的数据，可以选择仅内存存储；而对于关键数据，则可以选择内存和磁盘混合存储，以确保即使内存中的数据丢失，也可以从磁盘中恢复。</li>
+</ul>
+</li>
+</ol>
+<h3 id="结合传统-MapReduce-容错机制"><a href="#结合传统-MapReduce-容错机制" class="headerlink" title="结合传统 MapReduce 容错机制"></a>结合传统 MapReduce 容错机制</h3><ul>
+<li><strong>检查点与日志</strong>：类似于 MapReduce，Spark 也会在每个阶段结束时将结果写入文件系统，作为检查点。此外，调度器会维护一个未完成任务的列表，类似于 MapReduce 中的日志，用于在节点故障时重新调度任务。</li>
+<li><strong>功能结构的优势</strong>：由于 Spark 程序通常是函数式的，任务可以以细粒度的方式重启。这意味着即使某个节点失败，也只需要重新执行该节点上的特定任务，而不需要重启整个程序。这大大提高了容错效率，减少了恢复时间。</li>
+</ul>
+<h2 id="4-2-RDD操作"><a href="#4-2-RDD操作" class="headerlink" title="4.2 RDD操作"></a>4.2 RDD操作</h2><p><img src="/../../images/CS149/Lec09/rdd_operation.png" alt="rdd_operation"></p>
+<p><code>RDD</code>首先通过文件输入仅创建, 其可以通过算子不停得生成新的<code>RDD</code>, 这些算子包括<code>map</code>, <code>filter</code>, <code>flatMap</code>, <code>union</code>, <code>intersection</code>, <code>distinct</code>, <code>groupByKey</code>, <code>reduceByKey</code>, <code>aggregateByKey</code>, <code>sortByKey</code>, <code>join</code>, <code>cogroup</code>等。这些算子不具体介绍了, 使用过<code>Numpy</code>的同学应该对这些算子非常熟悉, 并且这些算子基本上称得上见名知意。</p>
+<h2 id="4-3-内存持久化"><a href="#4-3-内存持久化" class="headerlink" title="4.3 内存持久化"></a>4.3 内存持久化</h2><p><img src="/../../images/CS149/Lec09/rdd_persist.png" alt="rdd_persist"></p>
+<p>这个案例代码中, <code>persist</code>算子用于将<code>RDD</code>持久化到内存中, 这样在后续的计算中可以直接使用内存中的数据, 而不需要重新计算。</p>
+<h2 id="4-4-RDD的机制"><a href="#4-4-RDD的机制" class="headerlink" title="4.4 RDD的机制"></a>4.4 RDD的机制</h2><h3 id="4-4-1-惰性"><a href="#4-4-1-惰性" class="headerlink" title="4.4.1 惰性"></a>4.4.1 惰性</h3><p>在<code>Spark</code>中，<code>RDD</code>是一个惰性求值的概念，类似于视图, 其特点如下:</p>
+<ol>
+<li><p><strong>惰性求值</strong>：</p>
+<ul>
+<li>RDD的操作分为两类：转换（Transformation）和行动（Action）。</li>
+<li>转换操作（如<code>map</code>、<code>filter</code>）是惰性的，它们只是定义了数据的转换方式，并不立即执行计算。</li>
+<li>只有当行动操作（如<code>collect</code>、<code>count</code>）被调用时，<code>Spark</code>才会触发实际的计算。</li>
+</ul>
+</li>
+<li><p><strong>计算流程的定义</strong>：</p>
+<ul>
+<li><code>RDD</code>通过一系列转换操作定义了数据的处理流程。</li>
+<li>这些转换操作会生成一个逻辑执行计划，<code>Spark</code>在需要时才会根据这个计划执行计算。</li>
+</ul>
+</li>
+<li><p><strong>优化执行</strong>：</p>
+<ul>
+<li>惰性求值允许<code>Spark</code>在执行前对整个计算流程进行优化。</li>
+<li><code>Spark</code>可以通过合并多个转换操作来减少数据的传输和计算开销。</li>
+</ul>
+</li>
+<li><p><strong>血缘关系（Lineage）</strong>：</p>
+<ul>
+<li><code>RDD</code>记录了其生成过程的血缘关系，这使得<code>Spark</code>可以在数据丢失时通过重新计算来恢复数据。失败时, 只需要在最接近失败位置处发生<code>Action</code>操作的算子开始重新计算。</li>
+</ul>
+</li>
+</ol>
+<p>这种惰性求值的机制使得<code>Spark</code>能够高效地处理大规模数据集，并在执行前进行优化。通过这种方式，<code>Spark</code>可以在保证性能的同时提供灵活的数据处理能力。</p>
+<h3 id="4-4-2-依赖"><a href="#4-4-2-依赖" class="headerlink" title="4.4.2 依赖"></a>4.4.2 依赖</h3><p><code>RDD</code>的依赖关系分为两种:</p>
+<p><strong>窄依赖</strong></p>
+<ul>
+<li>窄依赖是指一个父<code>RDD</code>的每个分区最多只被一个子<code>RDD</code>的分区所使用。</li>
+<li>例如，<code>map</code>、<code>filter</code>、<code>flatMap</code>等操作都是窄依赖，因为它们只对每个分区进行一对一的转换。</li>
+</ul>
+<p><img src="/../../images/CS149/Lec09/narrow_dependency.png" alt="narrow_dependency"></p>
+<p><strong>宽依赖</strong></p>
+<ul>
+<li>宽依赖是指一个父<code>RDD</code>的每个分区被多个子<code>RDD</code>的分区所使用。</li>
+<li>例如，<code>groupByKey</code>、<code>reduceByKey</code>等操作都是宽依赖，因为它们需要对多个分区进行合并。</li>
+</ul>
+<p><img src="/../../images/CS149/Lec09/wide_dependency.png" alt="wide_dependency"></p>
+<blockquote>
+<p>这里提到的分区, 指的是<code>RDD</code>的<code>partition</code>。分区是<code>RDD</code>的物理分片，是数据在集群中分布的基本单位。每个分区包含<code>RDD</code>的一部分数据，<code>Spark</code>在每个分区上并行执行计算。</p>
+</blockquote>
+<h3 id="4-4-3-Partition"><a href="#4-4-3-Partition" class="headerlink" title="4.4.3 Partition"></a>4.4.3 Partition</h3><p><img src="/../../images/CS149/Lec09/partition.png" alt="partition"></p>
+<p>根据前面的分析, 计算速度的瓶颈在于分区之间的通信, 因此<code>Partition</code>的策略非常重要。<code>Spark</code>允许用户自定义<code>Partition</code>的策略, 例如<code>HashPartitioner</code>, <code>RangePartitioner</code>, <code>RandomPartitioner</code>等。</p>
+<p><img src="/../../images/CS149/Lec09/partition_strategy.png" alt="partition_strategy"></p>
+<h1 id="5-小节-分布式不一定是最优解"><a href="#5-小节-分布式不一定是最优解" class="headerlink" title="5 小节: 分布式不一定是最优解"></a>5 小节: 分布式不一定是最优解</h1><p><img src="/../../images/CS149/Lec09/distributed_not_always_optimal.png" alt="distributed_not_always_optimal"></p>
+<p>课程给出了一个测试, 利用多机(scale out)完成<code>PageRank</code>算法, 结果显示, 在某些情况下, 单机(scale in)的性能比分布式系统更好。这里的原因就在于, 分布式计算加速的部分能不能抵消掉网络通信的延迟。</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E8%AE%A1"><span class="toc-number">1.</span> <span class="toc-text">1 分布式系统的设计</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GFS%E5%92%8CHDFS"><span class="toc-number">2.</span> <span class="toc-text">2 GFS和HDFS</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-MapReduce"><span class="toc-number">3.</span> <span class="toc-text">3 MapReduce</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Spark"><span class="toc-number">4.</span> <span class="toc-text">4 Spark</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 容错机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E5%90%88%E4%BC%A0%E7%BB%9F-MapReduce-%E5%AE%B9%E9%94%99%E6%9C%BA%E5%88%B6"><span class="toc-number">4.1.1.</span> <span class="toc-text">结合传统 MapReduce 容错机制</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-RDD%E6%93%8D%E4%BD%9C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 RDD操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E5%86%85%E5%AD%98%E6%8C%81%E4%B9%85%E5%8C%96"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 内存持久化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-RDD%E7%9A%84%E6%9C%BA%E5%88%B6"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 RDD的机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-1-%E6%83%B0%E6%80%A7"><span class="toc-number">4.4.1.</span> <span class="toc-text">4.4.1 惰性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-2-%E4%BE%9D%E8%B5%96"><span class="toc-number">4.4.2.</span> <span class="toc-text">4.4.2 依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-3-Partition"><span class="toc-number">4.4.3.</span> <span class="toc-text">4.4.3 Partition</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%B0%8F%E8%8A%82-%E5%88%86%E5%B8%83%E5%BC%8F%E4%B8%8D%E4%B8%80%E5%AE%9A%E6%98%AF%E6%9C%80%E4%BC%98%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 小节: 分布式不一定是最优解</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&text=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&is_video=false&description=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec09-spark&body=Check out this article: http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&title=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&name=Stanford-CS149-并行计算-Lec09-spark&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/09/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec09-spark/&t=Stanford-CS149-并行计算-Lec09-spark"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

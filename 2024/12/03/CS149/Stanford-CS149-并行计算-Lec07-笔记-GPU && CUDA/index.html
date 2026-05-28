@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="这节课的内容非常多, 包括GPU的组成和CUDA编程入门与实现原理, 但理解了之后会对GPU的架构和CUDA编程有更深入的理解。部分内容是我结合PPT和网上资料整理的自己的个人理解, 如果理解有误, 欢迎指正。 课程主页: https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 图形学和GPU简介 这里的介绍只是大体上让大家知道显卡和图形学的工作内容, 而不涉">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA">
+<meta property="og:url" content="http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&&%20CUDA/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="这节课的内容非常多, 包括GPU的组成和CUDA编程入门与实现原理, 但理解了之后会对GPU的架构和CUDA编程有更深入的理解。部分内容是我结合PPT和网上资料整理的自己的个人理解, 如果理解有误, 欢迎指正。 课程主页: https:&#x2F;&#x2F;gfxcourses.stanford.edu&#x2F;cs149&#x2F;fall24 1 图形学和GPU简介 这里的介绍只是大体上让大家知道显卡和图形学的工作内容, 而不涉">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/gpu-history.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/gpu-architecture.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-programming.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-matrix-add.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-internal-function.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-memory.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-memory-model.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-memory-locality.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-memory-locality-normal.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-memory-locality-optimized.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-hardware-scheduling.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-warp.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-hardware-execution.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-full-architecture.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/cuda-full-v100.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec07/0155522C.gif">
+<meta property="article:published_time" content="2024-12-03T08:58:43.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.663Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec07/gpu-history.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/12/04/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec08-%E7%AC%94%E8%AE%B0-%E6%95%B0%E6%8D%AE%E5%B9%B6%E8%A1%8C/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec06-%E7%AC%94%E8%AE%B0-%E5%B1%80%E9%83%A8%E6%80%A7-%E9%80%9A%E4%BF%A1-%E7%AB%9E%E4%BA%89/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&text=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&is_video=false&description=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA&body=Check out this article: http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&name=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&t=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9B%BE%E5%BD%A2%E5%AD%A6%E5%92%8CGPU%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 图形学和GPU简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%BD%91%E6%A0%BC%E5%88%92%E5%88%86"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 网格划分</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GPU%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 GPU架构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CUDA%E7%BC%96%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3 CUDA编程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础程序结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 内存模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-CUDA%E5%86%85%E5%AD%98%E5%B1%80%E9%83%A8%E6%80%A7%E7%9A%84%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 CUDA内存局部性的优化方案</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E8%B0%83%E5%BA%A6%E5%92%8C%E6%89%A7%E8%A1%8C"><span class="toc-number">4.</span> <span class="toc-text">4 CUDA在硬件上的调度和执行</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 CUDA在硬件上的调度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 CUDA在硬件上的执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E6%9B%B4%E5%AE%8C%E6%95%B4%E7%9A%84GPU%E6%9E%B6%E6%9E%84"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 更完整的GPU架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-kernel%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 kernel的执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-12-03T08:58:43.000Z" class="dt-published" itemprop="datePublished">2024-12-03</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/CUDA/" rel="tag">CUDA</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>这节课的内容非常多, 包括<code>GPU</code>的组成和<code>CUDA</code>编程入门与实现原理, 但理解了之后会对GPU的架构和CUDA编程有更深入的理解。部分内容是我结合PPT和网上资料整理的自己的个人理解, 如果理解有误, 欢迎指正。</p>
+<p>课程主页: <a target="_blank" rel="noopener" href="https://gfxcourses.stanford.edu/cs149/fall24">https://gfxcourses.stanford.edu/cs149/fall24</a></p>
+<h1 id="1-图形学和GPU简介"><a href="#1-图形学和GPU简介" class="headerlink" title="1 图形学和GPU简介"></a>1 图形学和GPU简介</h1><blockquote>
+<p>这里的介绍只是大体上让大家知道显卡和图形学的工作内容, 而不涉及更专业的知识。</p>
+</blockquote>
+<h2 id="1-1-网格划分"><a href="#1-1-网格划分" class="headerlink" title="1.1 网格划分"></a>1.1 网格划分</h2><p>通常一个3D模型会划分为多个三角形(称为三角形网格), 每个三角形可以表示为三个顶点。这种划分方式是现代计算机图形学中最基础和常用的几何表示方法。</p>
+<p>在游戏场景中, 显卡的主要渲染流程是: 在指定的摄像机位置下, 通过几何变换将3D空间中的三角形网格投影到2D屏幕空间, 确定这些三角形覆盖了屏幕上的哪些像素。然后对每个被覆盖的像素点进行着色计算, 考虑材质、光照、纹理等各种参数来决定最终的颜色。这个过程通常称为光栅化(Rasterization)。</p>
+<p>下图给定了一个简单的计算案例, 说明了计算中涉及的参数:</p>
+<ul>
+<li>贴图(myTexture)</li>
+<li>光源方向(LightDir)</li>
+<li>像素的法线向量(norm)</li>
+<li>像素的坐标(uv)</li>
+</ul>
+<p><img src="/../../images/CS149/Lec07/gpu-history.png" alt="gpu-history"></p>
+<p>这个案例中, 每个像素点都需要计算一次光照, 且每个像素点之间是独立的, 因此非常适合并行计算。而我们之前学习的CPU进行并行计算时, 核心数乘上<code>SIMD</code>的通道数最多也就是几百这个数量级, 远远小于屏幕的像素点数量。而GPU的架构就是为了并行计算而设计的, 其核心数和<code>SIMD</code>的通道数远远大于CPU, 因此GPU非常适合进行光栅化计算。</p>
+<h1 id="2-GPU架构"><a href="#2-GPU架构" class="headerlink" title="2 GPU架构"></a>2 GPU架构</h1><p><img src="/../../images/CS149/Lec07/gpu-architecture.png" alt="gpu-architecture"></p>
+<blockquote>
+<p>如果你对下面的内容看得一脸懵逼, 请不要担心, 后面会详细介绍, 这里只是先让大家有个印象。我在这里用之前课程中的<code>SIMD</code>的概念来类比GPU的架构, 如果你忘记了<code>SIMD</code>的概念, 请参考<a target="_blank" rel="noopener" href="https://vanilla-beauty.github.io/2024/11/19/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec02-%E7%AC%94%E8%AE%B0/">Stanford-CS149-并行计算-Lec02-笔记-多核&amp;&amp;超线程&amp;&amp;SIMD</a>。</p>
+</blockquote>
+<p>上面这幅图是GPU的简要架构, 每个GPU核心(官方称为<code>SM</code>单元)包含非常多的执行单元, 采用SIMD方式执行指令。</p>
+<ul>
+<li><strong>SM单元</strong>：全称是<code>Streaming Multiprocessors</code>, 是GPU的主要计算单元, 类似于CPU的一个核心。每个SM包含多个执行单元，可以同时处理多个线程。</li>
+<li><strong>Warp</strong>：GPU中的基本执行单位。通常由32个<code>CUDA线程</code>组成(好比<code>SIMD</code>中一次加载的8个32位浮点数的集合)，这些线程以SIMD方式执行相同的指令。每个<code>Warp</code>中的32个<code>CUDA</code>线程拥有对应的上下文寄存器。</li>
+<li><strong>Grid</strong>：是CUDA程序的最高层次组织单位，由多个<code>Block</code>组成的二维或三维数组。一个kernel启动时会创建一个Grid，Grid中的<code>Block</code>可以分配到不同的SM上并行执行。</li>
+<li><strong>Block</strong>：<code>CUDA线程</code>的集合，是GPU编程中的一个逻辑概念。<strong>一个Block中的线程会被分配到同一个SM上执行，但Block本身不直接对应硬件资源。</strong></li>
+<li><strong>CUDA线程</strong>：最小的执行单位。需要注意的是，GPU实际上是以Warp为单位调度和执行线程的，而不是单独执行每个线程。</li>
+</ul>
+<h1 id="3-CUDA编程"><a href="#3-CUDA编程" class="headerlink" title="3 CUDA编程"></a>3 CUDA编程</h1><h2 id="3-1-基础程序结构"><a href="#3-1-基础程序结构" class="headerlink" title="3.1 基础程序结构"></a>3.1 基础程序结构</h2><p><img src="/../../images/CS149/Lec07/cuda-programming.png" alt="cuda-programming"></p>
+<p>上图介绍了CUDA程序的基本结构。主要包括以下几个要点:</p>
+<ol>
+<li>CUDA程序采用层次化的线程组织结构：<code>Grid</code>(网格) -&gt; <code>Block</code>(块) -&gt; <code>Thread</code>(线程)。其中<code>Grid</code>和<code>Block</code>都可以是最多3维的(下图给出了2D的例子)。这种多维结构对于处理图像处理、矩阵运算等自然呈N维的问题很方便。</li>
+<li>图中展示了一个2D的<code>Block</code>网格(<code>Grid</code>)，每个<code>Block</code>中又包含2D排列的<code>CUDA线程</code>。这种层次化的网格结构便于任务的并行化和数据的映射。</li>
+<li>代码片段演示了如何启动72个<code>CUDA线程</code>，将其组织成6个<code>Block</code>（每个<code>Block</code>包含12个线程）。这是通过调用kernel函数<code>matrixAdd</code>完成的，该函数接受3个输入数组(A、B、C)，并在GPU上并行执行计算。</li>
+<li>核心要点是CUDA程序通过这种层次化的线程组织结构来实现高效的并行计算。多维的<code>Grid</code>&#x2F;<code>Block</code>&#x2F;<code>Thread</code>结构提供了一种直观的方式，将问题自然地映射到GPU架构上。</li>
+</ol>
+<p>接下来看<code>matrixAdd</code>函数:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-matrix-add.png" alt="cuda-matrix-add"></p>
+<ol>
+<li>批量启动大量CUDA线程: 调用<code>matrixAdd</code>会在GPU上启动一个网格结构的线程,并等待所有线程执行完毕后返回。</li>
+<li>SPMD执行 - “Single Program, Multiple Data”的缩写。这表示每个CUDA线程都执行相同的内核代码,但使用不同的数据。线程ID可用于确定每个线程应该处理哪些数据。</li>
+<li>CUDA内核定义 CUDA内核使用<code>__global__</code>修饰符定义,表示该函数在GPU上执行。内核函数可以访问特殊的内存区域,如全局内存中的数组A、B、C。</li>
+<li>线程ID计算 - 每个CUDA线程根据自己在块中的位置(threadIdx)和块在网格中的位置(blockIdx)计算出自己的全局线程ID。这使得每个线程都能访问对应的数据元素。</li>
+<li>预定义变量:<ul>
+<li><code>blockIdx</code>是一个内置的3D向量变量(blockIdx.x, blockIdx.y, blockIdx.z)，用来表示当前线程所在的块在整个网格中的位置。</li>
+<li><code>blockDim</code>也是一个3D向量变量(blockDim.x, blockDim.y, blockDim.z)，用来表示当前块中的线程数量。</li>
+</ul>
+</li>
+</ol>
+<p>这里再来看<code>CUDA</code>内部函数之间的调用案例:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-internal-function.png" alt="cuda-internal-function"></p>
+<p>这里的<code>double_value</code>函数用<code>__device__</code>关键字修饰, 表示该函数只能在GPU设备上运行, 且不能从主机(CPU)代码中直接访问, 只能在GPU内核函数中使用。</p>
+<h2 id="3-2-内存模型"><a href="#3-2-内存模型" class="headerlink" title="3.2 内存模型"></a>3.2 内存模型</h2><p><code>CUDA</code>的内存通常与<code>CPU</code>的内存分开, 申请方式如下:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-memory.png" alt="cuda-memory"></p>
+<p>CUDA的内存模型如图所示:<br><img src="/../../images/CS149/Lec07/cuda-memory-model.png" alt="cuda-memory-model"></p>
+<p><code>CUDA</code>有三种不同类型的地址空间:</p>
+<ul>
+<li>每个块内所有线程可读写的<strong>块内共享内存</strong></li>
+<li>每个线程私有的<strong>线程私有内存</strong></li>
+<li>整个设备全局可访问的<strong>设备全局内存</strong></li>
+</ul>
+<h3 id="3-2-1-CUDA内存局部性的优化方案"><a href="#3-2-1-CUDA内存局部性的优化方案" class="headerlink" title="3.2.1 CUDA内存局部性的优化方案"></a>3.2.1 CUDA内存局部性的优化方案</h3><p>以一维卷积为例:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-memory-locality.png" alt="cuda-memory-locality"></p>
+<p>常规的程序设计如下:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-memory-locality-normal.png" alt="cuda-memory-locality-normal"></p>
+<p>问题在于每个<code>CUDA线程</code>都是在全局内存中读取数据, 而全局内存的读取速度远远低于块内共享内存的读取速度。</p>
+<p>优化方案如下:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-memory-locality-optimized.png" alt="cuda-memory-locality-optimized"></p>
+<ul>
+<li><code>__shared__</code>关键字修饰的变量存储在块内共享内存中, 因此可以大大提高访问速度。</li>
+<li><code>__syncthreads()</code>函数用于同步块内所有线程, 确保所有线程都完成共享内存的写入操作后再进行后续操作。</li>
+</ul>
+<blockquote>
+<p>CUDA也支持原子操作, 这里不再赘述。</p>
+</blockquote>
+<h1 id="4-CUDA在硬件上的调度和执行"><a href="#4-CUDA在硬件上的调度和执行" class="headerlink" title="4 CUDA在硬件上的调度和执行"></a>4 CUDA在硬件上的调度和执行</h1><h2 id="4-1-CUDA在硬件上的调度"><a href="#4-1-CUDA在硬件上的调度" class="headerlink" title="4.1 CUDA在硬件上的调度"></a>4.1 CUDA在硬件上的调度</h2><p><img src="/../../images/CS149/Lec07/cuda-hardware-scheduling.png" alt="cuda-hardware-scheduling"></p>
+<p>上图展示了<code>CUDA</code>在硬件上的调度方式的一种可能的实现。每个<code>block</code>会被分配到不同的<code>SM</code>(图中的<code>Core</code>)上执行, 每个<code>SM</code>包含多个<code>Warp</code>。图中右下角蓝色方块中每一个由粗实线分隔的方块表示一个<code>Warp</code>。</p>
+<p>这里引出了<code>Warp</code>这个概念, 结合下图进行阐释:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-warp.png" alt="cuda-warp"></p>
+<p><code>Warp</code>简单说就是寄存器的集合, 同时也是调度执行的单位。如图中右下角所示, 横排0-31表示32个<code>CUDA线程</code>的序号, 每一列的R0-R31表示每个<code>CUDA线程</code>上下文的32个寄存器。</p>
+<blockquote>
+<p>这里需要说明的是, 一个<code>Warp</code>中的32个<code>CUDA线程</code>在执行时, 是同时执行的, 因此一个<code>Warp</code>中的32个<code>CUDA线程</code>的执行速度是相同的。换句话说, 一个<code>SM</code>单元加载数据是以<code>Warp</code>为单位进行的, 因此一个<code>Warp</code>中所有<code>CUDA线程</code>的执行速度是相同的。</p>
+</blockquote>
+<blockquote>
+<p>这里的<code>sub-core</code>可以理解为<code>SM</code>单元中的计算模块, 例如<code>tensor core</code>这些都可以看成是<code>sub-core</code>。</p>
+</blockquote>
+<p><strong><code>block</code>与<code>Warp</code>的关系</strong>:<br>之前说过了, <code>block</code>是<code>CUDA</code>编程中的一个逻辑概念, 一个<code>block</code>中的线程会被分配到同一个<code>SM</code>单元上执行, 但<code>block</code>本身不直接对应硬件资源。一个<code>block</code>中的线程会被组织成一个或多个<code>Warp</code>。例如256个线程的<code>block</code>会被组织成8个<code>Warp</code>。</p>
+<p>这里可以与CPU的<code>SIMD</code>进行类比:</p>
+<ul>
+<li>CPU的<code>SIMD</code>是以<code>线程</code>为单位, 一个<code>线程</code>中的32个<code>SIMD</code>通道是同时执行的。</li>
+<li>GPU的<code>Warp</code>是以<code>Warp</code>为单位, 一个<code>Warp</code>中的32个（假设是32*8的情况）<code>CUDA线程</code>是同时执行的。</li>
+<li>GPU在实际<code>Warp</code>这个调度单位上还多了一个<code>block</code>的概念, 一个<code>block</code>中的多个<code>CUDA线程</code>会被分配到不同的<code>Warp</code>, 进而被<code>sub-core</code>调度执行</li>
+<li><strong>如果<code>Block</code>的<code>CUDA线程</code>数量超过一个<code>SM</code>的容量，CUDA运行时会拒绝执行该内核，这是不被允许的。相反, 此时应该增加<code>block</code>的数量, <code>block</code>是允许跨<code>SM</code>调度执行的。</strong></li>
+<li>图中的每个<code>sub-core</code>将以<code>Warp</code>为单位, 交错调度执行。</li>
+</ul>
+<h2 id="4-2-CUDA在硬件上的执行"><a href="#4-2-CUDA在硬件上的执行" class="headerlink" title="4.2 CUDA在硬件上的执行"></a>4.2 CUDA在硬件上的执行</h2><p><img src="/../../images/CS149/Lec07/cuda-hardware-execution.png" alt="cuda-hardware-execution"></p>
+<p>上图是<code>V100</code>的执行示意, 其和CPU类似, 也包含<code>Fetch</code>、<code>Decode</code>过程和数据加载的过程。指的注意的是，这里的<code>ALU</code>只有16个, 因此一个<code>Warp</code>的32个<code>CUDA线程</code>需要2个<code>clock</code>才能完成计算。</p>
+<h2 id="4-3-更完整的GPU架构"><a href="#4-3-更完整的GPU架构" class="headerlink" title="4.3 更完整的GPU架构"></a>4.3 更完整的GPU架构</h2><p><img src="/../../images/CS149/Lec07/cuda-full-architecture.png" alt="cuda-full-architecture"></p>
+<p>上图展示了<code>V100</code>的4个<code>SM</code>单元, 架构梳理如下</p>
+<p><strong>Warp选择器</strong></p>
+<ul>
+<li><strong>Warp Selector</strong>: 每个<code>SM</code>包含多个<code>Warp</code>选择器，每个<code>Warp</code>选择器负责选择和调度<code>Warp</code>。</li>
+<li><strong>Fetch&#x2F;Decode</strong>: 每个<code>Warp</code>选择器包含<code>Fetch/Decode</code>单元，负责获取和解码指令。</li>
+</ul>
+<p><strong>功能单元</strong></p>
+<ul>
+<li><strong>SIMD fp32 functional unit</strong>: 黄色方框表示SIMD浮点32位功能单元，控制共享在16个单元之间，每时钟周期执行16次MUL-ADD操作。</li>
+<li><strong>SIMD int functional unit</strong>: 橙色方框表示SIMD整数功能单元，控制共享在16个单元之间，每时钟周期执行16次MUL-ADD操作。</li>
+<li><strong>SIMD fp64 functional unit</strong>: 紫色方框表示SIMD浮点64位功能单元，控制共享在8个单元之间，每时钟周期执行8次MUL-ADD操作。</li>
+<li><strong>Tensor core unit</strong>: 红色方框表示Tensor核心单元，用于深度学习中的矩阵运算。</li>
+<li><strong>Load&#x2F;store unit</strong>: 绿色方框表示Load&#x2F;store单元，负责数据的加载和存储操作。</li>
+</ul>
+<p><strong>Warp</strong></p>
+<ul>
+<li>之前详细说过, 略</li>
+</ul>
+<p><strong>共享内存和L1缓存</strong></p>
+<ul>
+<li><strong>“Shared” memory + L1 cache storage (128 KB)</strong>: 每个<code>SM</code>包含128 KB的共享内存和L1缓存存储。</li>
+</ul>
+<p><strong>时钟周期操作</strong></p>
+<ul>
+<li><strong>one 32-wide SIMD operation every 2 clocks</strong>: 每两个时钟周期执行一次32位宽的SIMD操作。</li>
+<li><strong>one 32-wide SIMD operation every 4 clocks</strong>: 每四个时钟周期执行一次64位宽的SIMD操作。</li>
+</ul>
+<p>完整的<code>V100</code>:</p>
+<p><img src="/../../images/CS149/Lec07/cuda-full-v100.png" alt="cuda-full-v100"></p>
+<p>根据之前的学习, 感受到了老黄的强大了吧, 对核弹的理解又加深了没?<img src="/../../images/CS149/Lec07/0155522C.gif" alt="alt text"></p>
+<h2 id="4-4-kernel的执行"><a href="#4-4-kernel的执行" class="headerlink" title="4.4 kernel的执行"></a>4.4 kernel的执行</h2><p>这部分PPT有点长, 但有了前文的介绍已经很好理解了, 这里就不再赘述了, 可以去看PPT。</p>
+<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>这节课的容量非常大，因为<code>GPU</code>以前上计算机组成的没讲过, 所以这节课的内容理解起来有点难度, 不过这部分内容的理解很重要, 因为作业会涉及……</p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E5%9B%BE%E5%BD%A2%E5%AD%A6%E5%92%8CGPU%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">1 图形学和GPU简介</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%BD%91%E6%A0%BC%E5%88%92%E5%88%86"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 网格划分</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-GPU%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">2 GPU架构</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CUDA%E7%BC%96%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3 CUDA编程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E5%9F%BA%E7%A1%80%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 基础程序结构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 内存模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-1-CUDA%E5%86%85%E5%AD%98%E5%B1%80%E9%83%A8%E6%80%A7%E7%9A%84%E4%BC%98%E5%8C%96%E6%96%B9%E6%A1%88"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 CUDA内存局部性的优化方案</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E8%B0%83%E5%BA%A6%E5%92%8C%E6%89%A7%E8%A1%8C"><span class="toc-number">4.</span> <span class="toc-text">4 CUDA在硬件上的调度和执行</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E8%B0%83%E5%BA%A6"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 CUDA在硬件上的调度</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-CUDA%E5%9C%A8%E7%A1%AC%E4%BB%B6%E4%B8%8A%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 CUDA在硬件上的执行</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-%E6%9B%B4%E5%AE%8C%E6%95%B4%E7%9A%84GPU%E6%9E%B6%E6%9E%84"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 更完整的GPU架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-4-kernel%E7%9A%84%E6%89%A7%E8%A1%8C"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 kernel的执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&text=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&is_video=false&description=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA&body=Check out this article: http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&title=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&name=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/12/03/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec07-%E7%AC%94%E8%AE%B0-GPU%20&amp;&amp;%20CUDA/&t=Stanford-CS149-并行计算-Lec07-笔记-GPU &amp;&amp; CUDA"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

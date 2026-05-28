@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="之前我们已经完成了数据库内存中事务和崩溃恢复相关的功能实现, 这节课不出意外应该是LSM Tree核心组件的最后一节课, 即介绍SSTable Compact相关功能的实现。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++从零开始实现LSM-Tree-KV存储-19-SST压缩">
+<meta property="og:url" content="http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="之前我们已经完成了数据库内存中事务和崩溃恢复相关的功能实现, 这节课不出意外应该是LSM Tree核心组件的最后一节课, 即介绍SSTable Compact相关功能的实现。 代码仓库：Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP 感谢您的 Star! 欢迎支持本">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/Proj/LSM/LSM-Tree-Architecture.png">
+<meta property="article:published_time" content="2025-04-17T06:42:21.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.670Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="KV存储">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/Proj/LSM/LSM-Tree-Architecture.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>C++从零开始实现LSM-Tree-KV存储-19-SST压缩</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2025/04/22/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-20-Python-SDK%E5%BC%80%E5%8F%91/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2025/04/16/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-18-WAL%E4%B8%8E%E5%B4%A9%E6%BA%83%E6%81%A2%E5%A4%8D/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&text=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-19-SST压缩&body=Check out this article: http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&name=C++从零开始实现LSM-Tree-KV存储-19-SST压缩&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&t=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SST-Compact-%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">1. SST Compact 基本概念</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%BB%8F%E5%85%B8%E7%9A%84SST%E5%8E%8B%E7%BC%A9%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">2. 经典的SST压缩方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E4%BA%8E%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%88%86%E5%B1%82%E5%8E%8B%E7%BC%A9%EF%BC%88Size-Tiered-Compaction%EF%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 基于大小的分层压缩（Size-Tiered Compaction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%86%E5%B1%82%E5%8E%8B%E7%BC%A9%EF%BC%88Leveled-Compaction%EF%BC%89"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 分层压缩（Leveled Compaction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%B7%B7%E5%90%88%E5%8E%8B%E7%BC%A9%EF%BC%88Hybrid-Compacti2-3%EF%BC%89"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 混合压缩（Hybrid Compacti2.3）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9C%AC%E9%A1%B9%E7%9B%AE-SST-Compact-%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.</span> <span class="toc-text">3 本项目 SST Compact 设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%A7%A6%E5%8F%91%E5%8E%8B%E7%BC%A9%E7%9A%84%E6%97%B6%E6%9C%BA"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 触发压缩的时机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%80%92%E5%BD%92%E5%8E%8B%E7%BC%A9"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 递归压缩</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9C%AC%E9%A1%B9%E7%9B%AE-SST-Compact-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 本项目 SST Compact 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E8%A7%A6%E5%8F%91%E6%97%B6%E6%9C%BA"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 触发时机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%9B%B8%E9%82%BB%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 相邻层的压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-%E6%95%B4%E4%BD%93%E5%8E%8B%E7%BC%A9%E9%80%BB%E8%BE%91"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 整体压缩逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-L0-L1%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 L0-L1层的压缩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-Lx-Lx-1-%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 Lx-Lx+1 层的压缩</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-SST%E7%9A%84%E6%9E%84%E5%BB%BA"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 SST的构建</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Block%E7%BC%93%E5%AD%98%E6%B1%A0%E7%9A%84%E8%A2%AB%E5%8A%A8%E5%A4%B1%E6%95%88"><span class="toc-number">5.</span> <span class="toc-text">4 Block缓存池的被动失效</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        C++从零开始实现LSM-Tree-KV存储-19-SST压缩
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2025-04-17T06:42:21.000Z" class="dt-published" itemprop="datePublished">2025-04-17</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/">项目</a> › <a class="category-link" href="/categories/%E9%A1%B9%E7%9B%AE/Tiny-LSM/">Tiny-LSM</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/KV%E5%AD%98%E5%82%A8/" rel="tag">KV存储</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <p>之前我们已经完成了数据库内存中事务和崩溃恢复相关的功能实现, 这节课不出意外应该是<code>LSM Tree</code>核心组件的最后一节课, 即介绍<code>SSTable Compact</code>相关功能的实现。</p>
+<p>代码仓库：<a target="_blank" rel="noopener" href="https://github.com/Vanilla-Beauty/tiny-lsm">Vanilla-Beauty&#x2F;tiny-lsm: A KV storage engine based on LSM Tree, supporting Redis RESP</a> 感谢您的 <code>Star</code>!</p>
+<p>欢迎支持本项目同步更新的从零开始实现的视频教程：<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc</a></p>
+<p>欢迎加入讨论群：<a target="_blank" rel="noopener" href="https://qm.qq.com/q/lkIzCPvcdM">Tiny-LSM项目交流群</a></p>
+<h1 id="1-SST-Compact-基本概念"><a href="#1-SST-Compact-基本概念" class="headerlink" title="1. SST Compact 基本概念"></a>1. SST Compact 基本概念</h1><p>首先, 让我们再次回顾<code>LSM Tree</code>的架构：</p>
+<p><img src="/../../../images/Proj/LSM/LSM-Tree-Architecture.png" alt="LSM-Tree-Architecture"></p>
+<p>在LSM（Log-Structured Merge）树中，数据最初写入一个称为 <strong>memtable</strong> 的内存结构。一旦 memtable 达到一定大小限制，其内容会被刷写到磁盘上作为 SSTable（Sorted String Table）。随着时间的推移，可能会在 LSM 树的不同层级积累多个 SSTable。这些 SSTable 可能会导致以下问题：</p>
+<ul>
+<li><strong>读放大</strong>：查询一个键时，系统可能需要搜索多个不同层级的 SSTable。这会增加 I&#x2F;O 操作次数，从而降低读取性能。</li>
+<li><strong>写放大</strong>：频繁的写操作生成新的 SSTable，最终需要与现有 SSTable 合并。如果没有压缩，这会导致过多的磁盘写入。</li>
+<li><strong>空间放大</strong>：被删除或覆盖的键可能仍然存在于旧的 SSTable 中，直到它们通过压缩被清除。这浪费了磁盘空间。</li>
+</ul>
+<p>为了解决这些问题，需要进行 <strong>压缩（compaction）</strong>。压缩将较小的 SSTable 合并成较大的 SSTable，移除过时的数据（如已删除或覆盖的键），并平衡各层级之间的数据分布。</p>
+<h1 id="2-经典的SST压缩方案"><a href="#2-经典的SST压缩方案" class="headerlink" title="2. 经典的SST压缩方案"></a>2. 经典的SST压缩方案</h1><p>这里先介绍一些经典的SST压缩方案。</p>
+<h2 id="2-1-基于大小的分层压缩（Size-Tiered-Compaction）"><a href="#2-1-基于大小的分层压缩（Size-Tiered-Compaction）" class="headerlink" title="2.1 基于大小的分层压缩（Size-Tiered Compaction）"></a>2.1 基于大小的分层压缩（Size-Tiered Compaction）</h2><p>这种方案按大小和层级对 SSTable 进行分组。每一层包含大致相同大小的 SSTable。当某一层的 SSTable 数量超过阈值时，它们会被合并成一个或多个 SSTable 并移动到下一层。</p>
+<ul>
+<li><p><strong>流程</strong>：</p>
+<ol>
+<li>将 Level L 的 SSTable 合并成一个或多个 SSTable 并移动到 Level L+1。</li>
+<li>如果必要，递归执行此过程。</li>
+</ol>
+</li>
+<li><p><strong>优点</strong>：</p>
+<ul>
+<li>实现简单。</li>
+<li>高效处理高写入吞吐量。</li>
+</ul>
+</li>
+<li><p><strong>缺点</strong>：</p>
+<ul>
+<li>可能导致显著的读放大，因为单次查询可能需要扫描多个层级。</li>
+</ul>
+</li>
+<li><p><strong>示意图</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Level 0: [SST1] [SST2] [SST3]</span><br><span class="line">Level 1: [SST4] [SST5]</span><br><span class="line">Level 2: [SST6]</span><br><span class="line"></span><br><span class="line">压缩后：</span><br><span class="line">Level 0: []</span><br><span class="line">Level 1: [Merged(SST1,SST2,SST3)]</span><br><span class="line">Level 2: [SST6]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="2-2-分层压缩（Leveled-Compaction）"><a href="#2-2-分层压缩（Leveled-Compaction）" class="headerlink" title="2.2 分层压缩（Leveled Compaction）"></a>2.2 分层压缩（Leveled Compaction）</h2><p>这种方案将 SSTable 分布在不同的层级，确保每个层级包含固定数量的数据。较低层级的数据以小块形式逐步移动到较高层级。</p>
+<ul>
+<li><p><strong>流程</strong>：</p>
+<ol>
+<li>将 Level L 的 SSTable 按键范围拆分成更小的部分，并与 Level L+1 中重叠的 SSTable 合并。</li>
+<li>每次压缩只影响 Level L+1 中的一小部分 SSTable。</li>
+</ol>
+</li>
+<li><p><strong>优点</strong>：</p>
+<ul>
+<li>相比基于大小的分层压缩，减少了读放大。</li>
+<li>确保每个层级的键范围不重叠。</li>
+</ul>
+</li>
+<li><p><strong>缺点</strong>：</p>
+<ul>
+<li>实现复杂度更高。</li>
+<li>频繁的小规模合并导致较高的写放大。</li>
+</ul>
+</li>
+<li><p><strong>示意图</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Level 0: [SST1] [SST2] [SST3]</span><br><span class="line">Level 1: [RangeA] [RangeB] [RangeC]</span><br><span class="line">Level 2: [RangeD] [RangeE]</span><br><span class="line"></span><br><span class="line">压缩后：</span><br><span class="line">Level 0: []</span><br><span class="line">Level 1: [Merged(SST1,RangeA)] [Merged(SST2,RangeB)] [Merged(SST3,RangeC)]</span><br><span class="line">Level 2: [RangeD] [RangeE]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h2 id="2-3-混合压缩（Hybrid-Compacti2-3）"><a href="#2-3-混合压缩（Hybrid-Compacti2-3）" class="headerlink" title="2.3 混合压缩（Hybrid Compacti2.3）"></a>2.3 混合压缩（Hybrid Compacti2.3）</h2><p>一些系统结合了基于大小的分层压缩和分层压缩的优点。例如，前几层使用基于大小的分层压缩，而较深层级切换到分层压缩。</p>
+<ul>
+<li><p><strong>优点</strong>：</p>
+<ul>
+<li>在读放大和写放大之间取得平衡。</li>
+<li>根据工作负载特性提供灵活性。</li>
+</ul>
+</li>
+<li><p><strong>缺点</strong>：</p>
+<ul>
+<li>管理多种压缩策略增加了复杂性。</li>
+</ul>
+</li>
+</ul>
+<h1 id="3-本项目-SST-Compact-设计"><a href="#3-本项目-SST-Compact-设计" class="headerlink" title="3 本项目 SST Compact 设计"></a>3 本项目 SST Compact 设计</h1><p>本项目的<code>compact</code>机制采用了一种混合方法，主要在第0层使用基于大小的分层压缩，而在更高层则转向分层压缩。以下是详细的设计说明：</p>
+<h2 id="3-1-触发压缩的时机"><a href="#3-1-触发压缩的时机" class="headerlink" title="3.1 触发压缩的时机"></a>3.1 触发压缩的时机</h2><ul>
+<li><strong>Level 0</strong>：如果 Level 0 的 SSTable 数量超过一个阈值 <code>LSM_SST_LEVEL_RATIO</code>，则触发全量压缩，将所有 Level 0 的 SSTable 移动到 Level 1。</li>
+<li><strong>更高层</strong>：如果某一层的 SSTable 数量超过 <code>LSM_SST_LEVEL_RATIO</code>，系统会递归检查下一层是否也需要压缩，然后继续执行。</li>
+</ul>
+<p>这里重点解释一下 <code>LSM_SST_LEVEL_RATIO</code>的含义, 它的含义是相邻两层的单个<code>SST</code>容量之比, 同时也是单层<code>SST</code>数量的阈值。这里我为了方便压缩触发的条件判断的便捷性, 规定每一个<code>Level</code>的<code>SST</code>数量阈值恒定。例如， 每层<code>SST</code>数量超过16时就需要进行<code>compact</code>, 这一层16个<code>SST</code>被合并为下一层的单个<code>SST</code>, 因此这个单个<code>SST</code>的容量是上一个<code>Level</code>中单个<code>SST</code>的容量的16倍。这个案例中, <code>LSM_SST_LEVEL_RATIO</code>就是16。</p>
+<h2 id="3-2-递归压缩"><a href="#3-2-递归压缩" class="headerlink" title="3.2 递归压缩"></a>3.2 递归压缩</h2><ol>
+<li><p><strong>确定源层和目标层</strong>：</p>
+<ul>
+<li>确定源层 (<code>src_level</code>) 和目标层 (<code>src_level + 1</code>)。</li>
+<li>获取这两层的 SSTable ID。</li>
+</ul>
+</li>
+<li><p><strong>判断是否进行递归压缩</strong></p>
+<ul>
+<li>由于<code>src_level</code>层是触发了这一次<code>compact</code>操作, 因此其<code>SST</code>数量肯定大于等于<code>LSM_SST_LEVEL_RATIO</code></li>
+<li>但还需要判断目标层(<code>src_level + 1</code>)的<code>SST</code>数量是否大于等于<code>LSM_SST_LEVEL_RATIO</code>。如果时, 则需要先将<code>src_level + 1</code>层的<code>SST</code>全部压缩到<code>src_level + 2</code>层</li>
+<li>上述的判断递归地在更高的<code>Level</code>中进行</li>
+</ul>
+</li>
+<li><p><strong>合并SSTable</strong>：</p>
+<ul>
+<li>对于 <code>Level 0</code>，由于其不同<code>SST</code>中的<code>key</code>有重叠, 需要使用 <code>full_l0_l1_compact</code> 处理键范围重叠的问题</li>
+<li>对于更高层， 其<code>key</code>本来就是从小大大排布的, 使用 <code>full_common_compact</code> 合并不重叠键范围的 <code>SSTable</code>。</li>
+</ul>
+</li>
+<li><p><strong>生成新SSTable</strong>：</p>
+<ul>
+<li>使用 <code>gen_sst_from_iter</code> 从合并后的迭代器结果生成新的 SSTable。</li>
+<li>确保新 SSTable 的大小符合 <code>get_sst_size</code> 定义的限制。</li>
+</ul>
+</li>
+<li><p><strong>更新元数据</strong>：</p>
+<ul>
+<li>删除旧的 SSTable（从内存和磁盘中移除）。</li>
+<li>将新的 SSTable 添加到适当的目标层。</li>
+<li>更新 <code>level_sst_ids</code> 并对其进行排序以便高效访问。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>这里的<code>full_l0_l1_compact</code>和<code>full_common_compact</code> 会在后文中介绍</p>
+</blockquote>
+<p><strong>关键特性</strong></p>
+<ul>
+<li><strong>事务处理</strong>：在压缩过程中，确保只将可见记录（基于事务ID）包含在新的 SSTable 中。</li>
+<li><strong>并发控制</strong>：使用锁（<code>std::shared_mutex</code>）防止在访问共享资源（如 <code>ssts_mtx</code>）时发生竞争条件。</li>
+<li><strong>高效迭代</strong>：利用迭代器（<code>TwoMergeIterator</code>、<code>HeapIterator</code>、<code>ConcactIterator</code>）高效遍历和合并来自多个 SSTable 的数据。</li>
+</ul>
+<p><strong>示例流程</strong></p>
+<p>假设初始状态如下：</p>
+<ul>
+<li><p><strong>压缩前</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Level 0: [SST1] [SST2] [SST3]</span><br><span class="line">Level 1: [SST4] [SST5]</span><br><span class="line">Level 2: [SST6]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>触发条件</strong>：Level 0 有三个 SSTable，超过了阈值（<code>LSM_SST_LEVEL_RATIO = 2</code>）。</p>
+</li>
+<li><p><strong>压缩过程</strong>：</p>
+<ol>
+<li>合并 <code>[SST1]</code>、<code>[SST2]</code> 和 <code>[SST3]</code> 成为一个迭代器。</li>
+<li>将该迭代器的结果与 <code>[SST4]</code> 和 <code>[SST5]</code> 从 Level 1 中合并。</li>
+<li>生成新的 SSTable 并将其分配到 Level 1。</li>
+</ol>
+</li>
+<li><p><strong>压缩后</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Level 0: []</span><br><span class="line">Level 1: [NewSST1] [NewSST2]</span><br><span class="line">Level 2: [SST6]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h1 id="4-本项目-SST-Compact-代码实现"><a href="#4-本项目-SST-Compact-代码实现" class="headerlink" title="4 本项目 SST Compact 代码实现"></a>4 本项目 SST Compact 代码实现</h1><p>在介绍完之前的流程后, 本项目<code>compact</code>部分的代码就很好理解了</p>
+<h2 id="4-1-触发时机"><a href="#4-1-触发时机" class="headerlink" title="4.1 触发时机"></a>4.1 触发时机</h2><p>由于本项目是一个教学项目, 教学项目最好是便于学习者进行<code>Debug</code>, 因此, 我将<code>compact</code>触发设计为惰性的同步触发机制, 这样最便于大家单步调试。因此，我们需要再每次<code>SST</code>刷盘时进行<code>compact</code>的触发检查:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line"><span class="function"><span class="type">uint64_t</span> <span class="title">LSMEngine::flush</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span> (memtable.<span class="built_in">get_total_size</span>() == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="function">std::unique_lock&lt;std::shared_mutex&gt; <span class="title">lock</span><span class="params">(ssts_mtx)</span></span>; <span class="comment">// 写锁</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 1. 先判断 l0 sst 是否数量超限需要concat到 l1</span></span><br><span class="line">  <span class="keyword">if</span> (level_sst_ids.<span class="built_in">find</span>(<span class="number">0</span>) != level_sst_ids.<span class="built_in">end</span>() &amp;&amp;</span><br><span class="line">      level_sst_ids[<span class="number">0</span>].<span class="built_in">size</span>() &gt;= LSM_SST_LEVEL_RATIO) &#123;</span><br><span class="line">    <span class="built_in">full_compact</span>(<span class="number">0</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 2. 创建新的 SST ID</span></span><br><span class="line">  <span class="type">size_t</span> new_sst_id = next_sst_id++;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 3. 准备 SSTBuilder</span></span><br><span class="line">  <span class="function">SSTBuilder <span class="title">builder</span><span class="params">(LSM_BLOCK_SIZE, <span class="literal">true</span>)</span></span>; <span class="comment">// 4KB block size</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 4. 将 memtable 中最旧的表写入 SST</span></span><br><span class="line">  <span class="keyword">auto</span> sst_path = <span class="built_in">get_sst_path</span>(new_sst_id, <span class="number">0</span>);</span><br><span class="line">  <span class="keyword">auto</span> new_sst =</span><br><span class="line">      memtable.<span class="built_in">flush_last</span>(builder, sst_path, new_sst_id, block_cache);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 5. 更新内存索引</span></span><br><span class="line">  ssts[new_sst_id] = new_sst;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 6. 更新 sst_ids</span></span><br><span class="line">  level_sst_ids[<span class="number">0</span>].<span class="built_in">push_front</span>(new_sst_id);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 返回新刷入的 sst 的最大的 tranc_id</span></span><br><span class="line">  <span class="keyword">return</span> new_sst-&gt;<span class="built_in">get_tranc_id_range</span>().second;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里当然存在一个并发问题, 就是刷盘时我们获取了一把锁<code>ssts_mtx</code>, 这里是对读写锁获取写锁, 因此, 在我们目前的实现中, <code>sst</code>压缩时, 其他<code>SST</code>的查询是被阻塞的。这里其实可以用如下的方案来解决这个并发问题：</p>
+<ol>
+<li><code>compact</code>时, 先将<code>ssts_mtx</code>锁换成读锁, 这样其他线程可以查询<code>SST</code></li>
+<li>刷盘后的<code>sst</code>文件进行原子重命名, 因此只在文件重命名时需要获取锁</li>
+</ol>
+<p>这样就解决了并发问题, 不过需要注意的就是, 这里的压缩函数会递归地进行, 因此这里重命名的过程较为琐碎。介于目前的项目主要是作为教学项目存在，且本人实在精力有限， 因此我没有实现这个优化，感兴趣的朋友可尝试下，欢迎来提<code>PR</code></p>
+<h2 id="4-2-相邻层的压缩"><a href="#4-2-相邻层的压缩" class="headerlink" title="4.2 相邻层的压缩"></a>4.2 相邻层的压缩</h2><h3 id="4-2-1-整体压缩逻辑"><a href="#4-2-1-整体压缩逻辑" class="headerlink" title="4.2.1 整体压缩逻辑"></a>4.2.1 整体压缩逻辑</h3><p><code>full_compact</code>处理相邻层压缩的整体逻辑, 即遍历相邻层的迭代器, 将键值对打到新的<code>SST</code>中:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">LSMEngine::full_compact</span><span class="params">(<span class="type">size_t</span> src_level)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// 将 src_level 的 sst 全体压缩到 src_level + 1</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 递归地判断下一级 level 是否需要 full compact</span></span><br><span class="line">  <span class="keyword">if</span> (level_sst_ids[src_level + <span class="number">1</span>].<span class="built_in">size</span>() &gt;= LSM_SST_LEVEL_RATIO) &#123;</span><br><span class="line">    <span class="built_in">full_compact</span>(src_level + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 获取源level和目标level的 sst_id</span></span><br><span class="line">  <span class="keyword">auto</span> old_level_id_x = level_sst_ids[src_level];</span><br><span class="line">  <span class="keyword">auto</span> old_level_id_y = level_sst_ids[src_level + <span class="number">1</span>];</span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; new_ssts;</span><br><span class="line">  <span class="function">std::vector&lt;<span class="type">size_t</span>&gt; <span class="title">lx_ids</span><span class="params">(old_level_id_x.begin(), old_level_id_x.end())</span></span>;</span><br><span class="line">  <span class="function">std::vector&lt;<span class="type">size_t</span>&gt; <span class="title">ly_ids</span><span class="params">(old_level_id_y.begin(), old_level_id_y.end())</span></span>;</span><br><span class="line">  <span class="keyword">if</span> (src_level == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="comment">// l0这一层不同sst的key有重叠, 需要额外处理</span></span><br><span class="line">    new_ssts = <span class="built_in">full_l0_l1_compact</span>(lx_ids, ly_ids);</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    new_ssts = <span class="built_in">full_common_compact</span>(lx_ids, ly_ids, src_level + <span class="number">1</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 完成 compact 后移除旧的sst记录</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;old_sst_id : old_level_id_x) &#123;</span><br><span class="line">    ssts[old_sst_id]-&gt;<span class="built_in">del_sst</span>();</span><br><span class="line">    ssts.<span class="built_in">erase</span>(old_sst_id);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;old_sst_id : old_level_id_y) &#123;</span><br><span class="line">    ssts[old_sst_id]-&gt;<span class="built_in">del_sst</span>();</span><br><span class="line">    ssts.<span class="built_in">erase</span>(old_sst_id);</span><br><span class="line">  &#125;</span><br><span class="line">  level_sst_ids[src_level].<span class="built_in">clear</span>();</span><br><span class="line">  level_sst_ids[src_level + <span class="number">1</span>].<span class="built_in">clear</span>();</span><br><span class="line"></span><br><span class="line">  cur_max_level = std::<span class="built_in">max</span>(cur_max_level, src_level + <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 添加新的sst</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;new_sst : new_ssts) &#123;</span><br><span class="line">    level_sst_ids[src_level + <span class="number">1</span>].<span class="built_in">push_back</span>(new_sst-&gt;<span class="built_in">get_sst_id</span>());</span><br><span class="line">    ssts[new_sst-&gt;<span class="built_in">get_sst_id</span>()] = new_sst;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 此处没必要reverse了</span></span><br><span class="line">  std::<span class="built_in">sort</span>(level_sst_ids[src_level + <span class="number">1</span>].<span class="built_in">begin</span>(),</span><br><span class="line">            level_sst_ids[src_level + <span class="number">1</span>].<span class="built_in">end</span>());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>具体而言, <code>LSMEngine::full_compact</code> 函数的目标是将指定层级 <code>src_level</code> 的所有 SSTable 压缩到下一层级 <code>src_level + 1</code>，并通过合并和优化减少冗余数据，提升读写性能。其步骤为:</p>
+<p><strong>a. 递归检查下一层是否需要压缩</strong></p>
+<ul>
+<li>在对当前层级（<code>src_level</code>）进行全量压缩之前，先检查下一层级（<code>src_level + 1</code>）是否也需要进行全量压缩。</li>
+<li>如果 <code>src_level + 1</code> 层的 SSTable 数量超过阈值（<code>LSM_SST_LEVEL_RATIO</code>），则递归调用 <code>full_compact(src_level + 1)</code> 对下一层进行压缩。</li>
+<li>这种递归机制确保了在压缩当前层之前，目标层已经处于优化状态。</li>
+</ul>
+<p><strong>b. 获取源层级和目标层级的 SSTable ID</strong></p>
+<ul>
+<li>从 <code>level_sst_ids[src_level]</code> 和 <code>level_sst_ids[src_level + 1]</code> 中分别获取当前层级和目标层级的所有 SSTable ID。</li>
+<li>将这些 ID 转换为两个向量：<code>lx_ids</code>（源层级）和 <code>ly_ids</code>（目标层级），便于后续处理。</li>
+</ul>
+<p><strong>c. 根据层级选择不同的压缩方式</strong></p>
+<ul>
+<li>根据 <code>src_level</code> 是否为 Level 0，选择不同的压缩方法：<ul>
+<li><strong>Level 0</strong>：由于 Level 0 的 SSTable 可能存在键范围重叠，调用 <code>full_l0_l1_compact(lx_ids, ly_ids)</code> 处理。</li>
+<li><strong>其他层级</strong>：调用 <code>full_common_compact(lx_ids, ly_ids, src_level + 1)</code> 处理，这些层级的 SSTable 键范围不重叠。</li>
+</ul>
+</li>
+</ul>
+<p><strong>d. 移除旧的 SSTable</strong></p>
+<ul>
+<li>压缩完成后，删除源层级和目标层级中所有旧的 SSTable：<ul>
+<li>调用 <code>del_sst()</code> 方法释放磁盘资源。</li>
+<li>从 <code>ssts</code> 映射中移除这些 SSTable。</li>
+</ul>
+</li>
+<li>清空 <code>level_sst_ids[src_level]</code> 和 <code>level_sst_ids[src_level + 1]</code>，为新生成的 SSTable 准备空间。</li>
+</ul>
+<p><strong>e. 更新最大层级</strong></p>
+<ul>
+<li>更新 <code>cur_max_level</code>，确保其始终表示当前 LSM 树中的最大层级。</li>
+</ul>
+<p><strong>f. 添加新的 SSTable</strong></p>
+<ul>
+<li>将新生成的 SSTable 添加到目标层级（<code>src_level + 1</code>）：<ul>
+<li>将新 SSTable 的 ID 插入到 <code>level_sst_ids[src_level + 1]</code>。</li>
+<li>将新 SSTable 本身插入到 <code>ssts</code> 映射中。</li>
+</ul>
+</li>
+<li>对 <code>level_sst_ids[src_level + 1]</code> 进行排序，确保 SSTable 按顺序存储，便于高效访问。</li>
+</ul>
+<h3 id="4-2-2-L0-L1层的压缩"><a href="#4-2-2-L0-L1层的压缩" class="headerlink" title="4.2.2 L0-L1层的压缩"></a>4.2.2 L0-L1层的压缩</h3><p><code>full_l0_l1_compact</code>函数处理Level 0层和Level 1层之间的压缩，Level 0层和Level 1层之间的SSTable的<code>key</code>有重叠，因此需要处理键范围重叠的问题:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line">std::vector&lt;std::shared_ptr&lt;SST&gt;&gt;</span><br><span class="line">LSMEngine::<span class="built_in">full_l0_l1_compact</span>(std::vector&lt;<span class="type">size_t</span>&gt; &amp;l0_ids,</span><br><span class="line">                              std::vector&lt;<span class="type">size_t</span>&gt; &amp;l1_ids) &#123;</span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> 这里需要补全的是对已经完成事务的删除</span></span><br><span class="line">  std::vector&lt;SstIterator&gt; l0_iters;</span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; l1_ssts;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> id : l0_ids) &#123;</span><br><span class="line">    <span class="keyword">auto</span> sst_it = ssts[id]-&gt;<span class="built_in">begin</span>(<span class="number">0</span>);</span><br><span class="line">    l0_iters.<span class="built_in">push_back</span>(sst_it);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> id : l1_ids) &#123;</span><br><span class="line">    l1_ssts.<span class="built_in">push_back</span>(ssts[id]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// l0 的sst之间的key有重叠, 需要合并</span></span><br><span class="line">  <span class="keyword">auto</span> [l0_begin, l0_end] = SstIterator::<span class="built_in">merge_sst_iterator</span>(l0_iters, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  std::shared_ptr&lt;HeapIterator&gt; l0_begin_ptr = std::<span class="built_in">make_shared</span>&lt;HeapIterator&gt;();</span><br><span class="line">  *l0_begin_ptr = l0_begin;</span><br><span class="line"></span><br><span class="line">  std::shared_ptr&lt;ConcactIterator&gt; old_l1_begin_ptr =</span><br><span class="line">      std::<span class="built_in">make_shared</span>&lt;ConcactIterator&gt;(l1_ssts, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  <span class="function">TwoMergeIterator <span class="title">l0_l1_begin</span><span class="params">(l0_begin_ptr, old_l1_begin_ptr, <span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">gen_sst_from_iter</span>(l0_l1_begin,</span><br><span class="line">                           LSM_PER_MEM_SIZE_LIMIT * LSM_SST_LEVEL_RATIO, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里, 我们又复用了<code>HeapIterator</code>对<code>Level 0</code>不同的<code>sst</code>进行相同<code>key</code>的去重; 然后再与<code>Level 1</code>的<code>sst</code>的迭代器进行遍历, 随遍历流程构建新的<code>SST</code>(<code>gen_sst_from_iter</code>的处理)。需要注意的是，这里两个迭代器的遍历过程中，使用了<code>TwoMergeIterator</code>, 这里的迭代器泛型是<code>HeapIterator</code>和<code>ConcactIterator</code>的组合，实现了两个迭代器的按照不同优先级的遍历。</p>
+<p>从这里也可以看出，我们为什么要在之前进行迭代器的统一， 就是为了借助<code>C++</code>的多态特性实现算法的高效复用。</p>
+<h3 id="4-2-3-Lx-Lx-1-层的压缩"><a href="#4-2-3-Lx-Lx-1-层的压缩" class="headerlink" title="4.2.3 Lx-Lx+1 层的压缩"></a>4.2.3 Lx-Lx+1 层的压缩</h3><p><code>full_common_compact</code>函数完成其他层级的压缩, 其他的每一层, 不同<code>sst</code>之间的<code>key</code>都是从小大大排序的, 且无重叠。因此，则需要简单地迭代遍历即可：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line">std::vector&lt;std::shared_ptr&lt;SST&gt;&gt;</span><br><span class="line">LSMEngine::<span class="built_in">full_common_compact</span>(std::vector&lt;<span class="type">size_t</span>&gt; &amp;lx_ids,</span><br><span class="line">                               std::vector&lt;<span class="type">size_t</span>&gt; &amp;ly_ids, <span class="type">size_t</span> level_y) &#123;</span><br><span class="line">  <span class="comment">// TODO 需要补全已完成事务的滤除</span></span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; lx_iters;</span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; ly_iters;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> id : lx_ids) &#123;</span><br><span class="line">    lx_iters.<span class="built_in">push_back</span>(ssts[id]);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">auto</span> id : ly_ids) &#123;</span><br><span class="line">    ly_iters.<span class="built_in">push_back</span>(ssts[id]);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  std::shared_ptr&lt;ConcactIterator&gt; old_lx_begin_ptr =</span><br><span class="line">      std::<span class="built_in">make_shared</span>&lt;ConcactIterator&gt;(lx_iters, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  std::shared_ptr&lt;ConcactIterator&gt; old_ly_begin_ptr =</span><br><span class="line">      std::<span class="built_in">make_shared</span>&lt;ConcactIterator&gt;(ly_iters, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  <span class="function">TwoMergeIterator <span class="title">lx_ly_begin</span><span class="params">(old_lx_begin_ptr, old_ly_begin_ptr, <span class="number">0</span>)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span>如果目标 level 的下一级 level+1 不存在, 则为底层的level,</span></span><br><span class="line">  <span class="comment">// 可以清理掉删除标记</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="built_in">gen_sst_from_iter</span>(lx_ly_begin, LSMEngine::<span class="built_in">get_sst_size</span>(level_y),</span><br><span class="line">                           level_y);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里要做的, 就是使用<code>TwoMergeIterator</code>, 按照低层级优先的规则, 迭代遍历<code>lx_iters</code>(<code>Level x</code>层的迭代器)和<code>ly_iters</code>(<code>Level y</code>层的迭代器, <code>y = x + 1</code>)。</p>
+<h2 id="4-3-SST的构建"><a href="#4-3-SST的构建" class="headerlink" title="4.3 SST的构建"></a>4.3 SST的构建</h2><p>最后， 就是遍历迭代器时新<code>SST</code>的构建:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// src/lsm/engine.cpp</span></span><br><span class="line">std::vector&lt;std::shared_ptr&lt;SST&gt;&gt;</span><br><span class="line">LSMEngine::<span class="built_in">gen_sst_from_iter</span>(BaseIterator &amp;iter, <span class="type">size_t</span> target_sst_size,</span><br><span class="line">                             <span class="type">size_t</span> target_level) &#123;</span><br><span class="line">  <span class="comment">// <span class="doctag">TODO:</span> 这里需要补全的是对已经完成事务的删除</span></span><br><span class="line"></span><br><span class="line">  std::vector&lt;std::shared_ptr&lt;SST&gt;&gt; new_ssts;</span><br><span class="line">  <span class="keyword">auto</span> new_sst_builder = <span class="built_in">SSTBuilder</span>(LSM_BLOCK_SIZE, <span class="literal">true</span>);</span><br><span class="line">  <span class="keyword">while</span> (iter.<span class="built_in">is_valid</span>() &amp;&amp; !iter.<span class="built_in">is_end</span>()) &#123;</span><br><span class="line"></span><br><span class="line">    new_sst_builder.<span class="built_in">add</span>((*iter).first, (*iter).second, <span class="number">0</span>);</span><br><span class="line">    ++iter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (new_sst_builder.<span class="built_in">estimated_size</span>() &gt;= target_sst_size) &#123;</span><br><span class="line">      <span class="type">size_t</span> sst_id = next_sst_id++; <span class="comment">// <span class="doctag">TODO:</span> 后续优化并发性</span></span><br><span class="line">      std::string sst_path = <span class="built_in">get_sst_path</span>(sst_id, target_level);</span><br><span class="line">      <span class="keyword">auto</span> new_sst = new_sst_builder.<span class="built_in">build</span>(sst_id, sst_path, <span class="keyword">this</span>-&gt;block_cache);</span><br><span class="line">      new_ssts.<span class="built_in">push_back</span>(new_sst);</span><br><span class="line">      new_sst_builder = <span class="built_in">SSTBuilder</span>(LSM_BLOCK_SIZE, <span class="literal">true</span>); <span class="comment">// 重置builder</span></span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">if</span> (new_sst_builder.<span class="built_in">estimated_size</span>() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="type">size_t</span> sst_id = next_sst_id++; <span class="comment">// <span class="doctag">TODO:</span> 后续优化并发性</span></span><br><span class="line">    std::string sst_path = <span class="built_in">get_sst_path</span>(sst_id, target_level);</span><br><span class="line">    <span class="keyword">auto</span> new_sst = new_sst_builder.<span class="built_in">build</span>(sst_id, sst_path, <span class="keyword">this</span>-&gt;block_cache);</span><br><span class="line">    new_ssts.<span class="built_in">push_back</span>(new_sst);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> new_ssts;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里构建<code>SST</code>没有什么别的好讲的, 就是不断地将键值对插入到<code>SSTBuilder</code>中, 当超出阈值后就刷盘形成<code>SST</code></p>
+<h1 id="4-Block缓存池的被动失效"><a href="#4-Block缓存池的被动失效" class="headerlink" title="4 Block缓存池的被动失效"></a>4 Block缓存池的被动失效</h1><p>这里大家可能注意到一个非常有意思的事情:<code>SST_id</code>的分配是单调递增的</p>
+<p>也就是说, <code>SST_0</code>被压缩后, 其新合并的<code>SST</code>的<code>id</code>不会复用之前的<code>SST</code>的<code>id</code>, 举个例子:<br>假设初始时, 有三个<code>Level 0</code>的<code>SST</code>和一个<code>Level 1</code>的<code>SST</code>, 且<code>LSM_SST_LEVEL_RATIO=3</code>, 那么压缩前, 其状态为:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">L0: SST_6, SST_5, SST_4</span><br><span class="line">L1: SST_3</span><br></pre></td></tr></table></figure>
+<p>压缩后, 其状态为:</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">L1: SST_8, SST_7</span><br></pre></td></tr></table></figure>
+<p>这里, <code>SST_6, SST_5, SST_4</code>和<code>SST_3</code>一起被压缩, 其新合并的<code>SST</code>的<code>id</code>为<code>SST_8, SST_7</code>, 他们不会复用之前的<code>SST_id</code>, 为什么如此设计呢? 主要是考虑到缓存池失效的问题, 这里回顾一下我的的缓存池设计:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">std::shared_ptr&lt;Block&gt; <span class="title">SST::read_block</span><span class="params">(<span class="type">size_t</span> block_idx)</span> </span>&#123;</span><br><span class="line">  <span class="comment">// ... 其他逻辑</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// 先从缓存中查找</span></span><br><span class="line">  <span class="keyword">if</span> (block_cache != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">    <span class="keyword">auto</span> cache_ptr = block_cache-&gt;<span class="built_in">get</span>(<span class="keyword">this</span>-&gt;sst_id, block_idx);</span><br><span class="line">    <span class="keyword">if</span> (cache_ptr != <span class="literal">nullptr</span>) &#123;</span><br><span class="line">      <span class="keyword">return</span> cache_ptr;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">throw</span> std::<span class="built_in">runtime_error</span>(<span class="string">&quot;Block cache not set&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// ... 其他逻辑</span></span><br><span class="line">  <span class="keyword">return</span> block_res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里, 从缓存池中查找时, 唯一标识<code>block</code>的信息就是<code>sst_id</code>和<code>block_idx</code>。 因此, 如果我们<code>compact</code>后复用之前的<code>SST_id</code>, 且<code>block_cache</code>中就存在了<code>compact</code>前的<code>SST</code>相同的<code>SST_id</code>, 在<code>compact</code>后<code>SST_id</code>已经发生了变化, 这是缓存池中的<code>block</code>就会索引到已经被删掉的<code>compact</code>前的<code>SST</code>中的<code>block</code>, 导致得到过时的缓存<code>block</code>。</p>
+<p>为了解决这里缓存失效的问题，我将<code>sst_id</code>设计为单调递增的, 这样, 在<code>compact</code>后, <code>SST_id</code>不会复用之前的<code>SST_id</code>, 随着缓存池的访问, 之前已经被<code>compact</code>的<code>SST</code>的无效缓存记录逐渐被清空， 同时，没有<code>compact</code>部分的<code>SST</code>的缓存<code>block</code>依然有效。</p>
+<p>假设我们复用<code>sst_id</code>的话, 那么在<code>compact</code>后我们需要手动清理掉旧<code>SST</code>的无效缓存, 这不但需要我们记录哪些<code>SST</code>已经被<code>compact</code>了, 且需要对我们的<code>Block Cache</code>进行侵入式的代码修改, 并且主动修改缓存的设计本来就不够优雅, 且耗费性能。</p>
+<h1 id="5-总结"><a href="#5-总结" class="headerlink" title="5 总结"></a>5 总结</h1><p>本章主要讲了<code>LSM Tree</code>的<code>SST</code>压缩算法的设计, 并且实现了一个简单的<code>LSM Tree</code>的<code>SST</code>压缩算法。到此为止，我们的<code>LSM Tree</code>的所有组件都已经完成了， 本项目已经接近尾声了， 接下来可能会补充一点细节优化和<code>bug</code>修复的内容。如果大家感兴趣，可能也会更一些利用本项目进行简历包装的指导。</p>
+<p>写到这里，本项目已经有20篇文章了（<code>Lec00-Lec19</code>），一开始自己只是打算对自己过往几年对存储和数据库领域学习的知识进行简单整理, 但没想到逐渐写出来一个较为复杂的项目, 也耗费了自己不少的心血， 项目统计代码行数都接近1W了：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">✗ cloc .</span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">Language                     files          blank        comment           code</span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">C++                             36           1487           1237           6660</span><br><span class="line">C/C++ Header                    23            287            211           1113</span><br><span class="line">Markdown                         2             91              0            557</span><br><span class="line">D                               25              0              0            545</span><br><span class="line">JSON                             4              0              0            382</span><br><span class="line">Lua                              1             29              8            157</span><br><span class="line">Python                           5             51             26            132</span><br><span class="line">Text                             6              1              0             77</span><br><span class="line">Bourne Shell                     1              3              0              8</span><br><span class="line">-------------------------------------------------------------------------------</span><br><span class="line">SUM:                           103           1949           1482           9631</span><br><span class="line">-------------------------------------------------------------------------------</span><br></pre></td></tr></table></figure>
+
+<p>在此也非常感谢各位网友的支持, 如果你对本项目感兴趣, 欢迎点个<code>Star</code>, 也欢迎你将本项目推荐给更多的网友, 让更多人了解这个项目。同时, 将本项目用在自己实习或秋招的简历上也是可以的。如果想进一步支持一下一贫如洗的作者， 可以购买作者录制的付费版<a target="_blank" rel="noopener" href="https://avo6166ew2u.feishu.cn/docx/LXmVdezdsoTBRaxC97WcHwGunOc">视频课程</a></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-SST-Compact-%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">1. SST Compact 基本概念</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E7%BB%8F%E5%85%B8%E7%9A%84SST%E5%8E%8B%E7%BC%A9%E6%96%B9%E6%A1%88"><span class="toc-number">2.</span> <span class="toc-text">2. 经典的SST压缩方案</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E5%9F%BA%E4%BA%8E%E5%A4%A7%E5%B0%8F%E7%9A%84%E5%88%86%E5%B1%82%E5%8E%8B%E7%BC%A9%EF%BC%88Size-Tiered-Compaction%EF%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 基于大小的分层压缩（Size-Tiered Compaction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%86%E5%B1%82%E5%8E%8B%E7%BC%A9%EF%BC%88Leveled-Compaction%EF%BC%89"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 分层压缩（Leveled Compaction）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-3-%E6%B7%B7%E5%90%88%E5%8E%8B%E7%BC%A9%EF%BC%88Hybrid-Compacti2-3%EF%BC%89"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 混合压缩（Hybrid Compacti2.3）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9C%AC%E9%A1%B9%E7%9B%AE-SST-Compact-%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.</span> <span class="toc-text">3 本项目 SST Compact 设计</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%A7%A6%E5%8F%91%E5%8E%8B%E7%BC%A9%E7%9A%84%E6%97%B6%E6%9C%BA"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 触发压缩的时机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E9%80%92%E5%BD%92%E5%8E%8B%E7%BC%A9"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 递归压缩</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9C%AC%E9%A1%B9%E7%9B%AE-SST-Compact-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">4.</span> <span class="toc-text">4 本项目 SST Compact 代码实现</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E8%A7%A6%E5%8F%91%E6%97%B6%E6%9C%BA"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 触发时机</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E7%9B%B8%E9%82%BB%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 相邻层的压缩</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-1-%E6%95%B4%E4%BD%93%E5%8E%8B%E7%BC%A9%E9%80%BB%E8%BE%91"><span class="toc-number">4.2.1.</span> <span class="toc-text">4.2.1 整体压缩逻辑</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-2-L0-L1%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.2.</span> <span class="toc-text">4.2.2 L0-L1层的压缩</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-3-Lx-Lx-1-%E5%B1%82%E7%9A%84%E5%8E%8B%E7%BC%A9"><span class="toc-number">4.2.3.</span> <span class="toc-text">4.2.3 Lx-Lx+1 层的压缩</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-3-SST%E7%9A%84%E6%9E%84%E5%BB%BA"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 SST的构建</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-Block%E7%BC%93%E5%AD%98%E6%B1%A0%E7%9A%84%E8%A2%AB%E5%8A%A8%E5%A4%B1%E6%95%88"><span class="toc-number">5.</span> <span class="toc-text">4 Block缓存池的被动失效</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">5 总结</span></a></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&text=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&is_video=false&description=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=C++从零开始实现LSM-Tree-KV存储-19-SST压缩&body=Check out this article: http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&title=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&name=C++从零开始实现LSM-Tree-KV存储-19-SST压缩&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2025/04/17/%E9%A1%B9%E7%9B%AE/Tiny-LSM/C++%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AE%9E%E7%8E%B0LSM-Tree-KV%E5%AD%98%E5%82%A8-19-SST%E5%8E%8B%E7%BC%A9/&t=C++从零开始实现LSM-Tree-KV存储-19-SST压缩"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>

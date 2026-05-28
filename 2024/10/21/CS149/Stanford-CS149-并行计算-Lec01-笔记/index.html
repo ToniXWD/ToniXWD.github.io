@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang=zh>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="1 简化的处理器模型分析这张图片展示了一个简单处理器的基本结构，处理器包含三个主要部分：  取指&#x2F;解码（Fetch&#x2F;Decode）  位于顶部的橙色方框 功能是确定下一条要执行的指令   ALU（算术逻辑单元）&#x2F;执行单元  位于中间的黄色方框 负责执行指令描述的操作 可以修改处理器寄存器中的值或计算机内存   执行上下文（Execution Context）  位于底">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Stanford-CS149-并行计算-Lec01-笔记-超标量">
+<meta property="og:url" content="http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
+<meta property="og:description" content="1 简化的处理器模型分析这张图片展示了一个简单处理器的基本结构，处理器包含三个主要部分：  取指&#x2F;解码（Fetch&#x2F;Decode）  位于顶部的橙色方框 功能是确定下一条要执行的指令   ALU（算术逻辑单元）&#x2F;执行单元  位于中间的黄色方框 负责执行指令描述的操作 可以修改处理器寄存器中的值或计算机内存   执行上下文（Execution Context）  位于底">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/images/CS149/Lec01/processor.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec01/example-1.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec01/ILP.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec01/superscalar-processor.png">
+<meta property="og:image" content="http://example.com/images/CS149/Lec01/cache-line.png">
+<meta property="article:published_time" content="2024-10-21T09:58:29.000Z">
+<meta property="article:modified_time" content="2026-05-28T07:37:46.662Z">
+<meta property="article:author" content="Vanilla-Beauty">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="并行计算">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/CS149/Lec01/processor.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Stanford-CS149-并行计算-Lec01-笔记-超标量</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 7.0.0"><link rel="alternate" href="/atom.xml" title="Vanilla-Beauty's Blog" type="application/atom+xml">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="目录"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="顶部" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        <li><a class="icon" aria-label="上一篇" href="/2024/11/09/%E9%9A%8F%E7%AC%94/2025%E5%B1%8A%E7%A7%8B%E6%8B%9B%E4%B8%AA%E4%BA%BA%E6%80%BB%E7%BB%93%E4%B8%8E%E7%BB%8F%E9%AA%8C%E6%A2%B3%E7%90%86/"><i class="fa-solid fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+        
+        
+        <li><a class="icon" aria-label="下一篇" href="/2024/10/16/%E5%88%86%E5%B8%83%E5%BC%8F/opentelementry%E5%85%A5%E9%97%A8-1-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%E4%B8%8Edemo/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="返回顶部" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="分享文章" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">上一篇</span>
+      <span id="i-next" class="info" style="display:none;">下一篇</span>
+      <span id="i-top" class="info" style="display:none;">返回顶部</span>
+      <span id="i-share" class="info" style="display:none;">分享文章</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&text=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&is_video=false&description=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec01-笔记-超标量&body=Check out this article: http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&name=Stanford-CS149-并行计算-Lec01-笔记-超标量&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&t=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%AE%80%E5%8C%96%E7%9A%84%E5%A4%84%E7%90%86%E5%99%A8%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">1 简化的处理器模型分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%B8%80%E4%B8%AA%E5%B9%B6%E8%A1%8C%E5%8A%A0%E9%80%9F%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">2.</span> <span class="toc-text">2 一个并行加速的例子</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%881-%E8%B6%85%E6%A0%87%E9%87%8F%E5%A4%84%E7%90%86%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">3 并行方案1-超标量处理器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%882-%E5%A4%9A%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 并行方案2-多核处理器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%85%B6%E4%BB%96%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="toc-number">5.</span> <span class="toc-text">5 其他知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%A4%84%E7%90%86%E5%99%A8%E5%81%9C%E9%A1%BF"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 处理器停顿</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E7%BC%93%E5%AD%98"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 缓存</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Stanford-CS149-并行计算-Lec01-笔记-超标量
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">Vanilla-Beauty</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2024-10-21T09:58:29.000Z" class="dt-published" itemprop="datePublished">2024-10-21</time>
+        
+      
+    </div>
+
+
+      
+    <div class="article-category">
+        <i class="fa-solid fa-archive"></i>
+        <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/">CS课程笔记</a> › <a class="category-link" href="/categories/CS%E8%AF%BE%E7%A8%8B%E7%AC%94%E8%AE%B0/CS149/">CS149</a>
+    </div>
+
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/C/" rel="tag">C++</a>, <a class="p-category" href="/tags/%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97/" rel="tag">并行计算</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="1-简化的处理器模型分析"><a href="#1-简化的处理器模型分析" class="headerlink" title="1 简化的处理器模型分析"></a>1 简化的处理器模型分析</h1><p><img src="/../../images/CS149/Lec01/processor.png" alt="processor"><br>这张图片展示了一个简单处理器的基本结构，处理器包含三个主要部分：</p>
+<ol>
+<li><p><strong>取指&#x2F;解码（Fetch&#x2F;Decode）</strong></p>
+<ul>
+<li>位于顶部的橙色方框</li>
+<li>功能是确定下一条要执行的指令</li>
+</ul>
+</li>
+<li><p><strong>ALU（算术逻辑单元）&#x2F;执行单元</strong></p>
+<ul>
+<li>位于中间的黄色方框</li>
+<li>负责执行指令描述的操作</li>
+<li>可以修改处理器寄存器中的值或计算机内存</li>
+</ul>
+</li>
+<li><p><strong>执行上下文（Execution Context）</strong></p>
+<ul>
+<li>位于底部的灰色方框</li>
+<li>包含4个寄存器（R0到R3）</li>
+<li>寄存器用于维护程序状态</li>
+<li>存储用作操作输入和输出的变量值</li>
+</ul>
+</li>
+</ol>
+<p>结合处理器的构造, CPU的运算流程如下:</p>
+<ol>
+<li><p><strong>取指阶段 (Fetch)</strong></p>
+<ul>
+<li>CPU从内存中读取下一条要执行的指令</li>
+<li>程序计数器(PC)指向当前要执行的指令地址</li>
+<li>指令被加载到CPU的指令寄存器中</li>
+</ul>
+</li>
+<li><p><strong>解码阶段 (Decode)</strong></p>
+<ul>
+<li>CPU解析指令的内容，确定：<ul>
+<li>需要执行什么操作</li>
+<li>需要使用哪些寄存器</li>
+<li>是否需要访问内存</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>执行阶段 (Execute)</strong></p>
+<ul>
+<li>ALU（算术逻辑单元）执行指令指定的操作</li>
+<li>可能的操作包括：<ul>
+<li>算术运算（加、减、乘、除等）</li>
+<li>逻辑运算（与、或、非等）</li>
+<li>数据传输</li>
+<li>控制转移</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>数据存储&#x2F;更新阶段</strong></p>
+<ul>
+<li>执行结果被存储到指定的位置：<ul>
+<li>可能是寄存器（R0-R3）</li>
+<li>可能是内存</li>
+</ul>
+</li>
+<li>更新程序计数器，指向下一条指令</li>
+</ul>
+</li>
+</ol>
+<p>这就是所谓的”指令周期”（Instruction Cycle），CPU会不断重复这个过程来执行程序。这是一个简化的模型，现代CPU实际上更复杂，包含流水线、分支预测、缓存等优化机制。</p>
+<p>上面的处理器很原始, 如果想要实现并行加速的话, 有什么办法呢? </p>
+<h1 id="2-一个并行加速的例子"><a href="#2-一个并行加速的例子" class="headerlink" title="2 一个并行加速的例子"></a>2 一个并行加速的例子</h1><p><img src="/../../images/CS149/Lec01/example-1.png" alt="example-1"></p>
+<p>这个例子展示的核心思路就是将前后没有依赖关系的指令分配到不同的执行上下文中执行, 从而实现并行加速。</p>
+<p>这里还引入了ILP的概念, 即<code>Instruction Level Parallelism</code>, ILP表示在同一时刻可以并行执行的指令数量。上述例子的<code>ILP</code>如下:<br><img src="/../../images/CS149/Lec01/ILP.png" alt="ILP"></p>
+<h1 id="3-并行方案1-超标量处理器"><a href="#3-并行方案1-超标量处理器" class="headerlink" title="3 并行方案1-超标量处理器"></a>3 并行方案1-超标量处理器</h1><p>基于之前并行加速的例子的原理, 可以设计一种超标量处理器<code>Superscalar execution</code>, 其核心思想是:</p>
+<ul>
+<li>能够自动发现指令序列中的独立指令</li>
+<li>可以在多个执行单元上并行执行这些指令</li>
+<li>在保证程序正确性的前提下实现并行</li>
+</ul>
+<p>下面是这类处理器的简易结构图:<br><img src="/../../images/CS149/Lec01/superscalar-processor.png" alt="superscalar-processor"></p>
+<p>这里的<code>Out-of-order control logic</code>是现代处理器中的一个关键组件，负责管理指令的乱序执行。功能是分析指令间的依赖关系、识别可以并行执行的指令并动态调度指令的执行顺序。</p>
+<h1 id="4-并行方案2-多核处理器"><a href="#4-并行方案2-多核处理器" class="headerlink" title="4 并行方案2-多核处理器"></a>4 并行方案2-多核处理器</h1><p>这个方案应该没学过并行计算的同学都有所耳闻，就不过多介绍了。</p>
+<h1 id="5-其他知识点"><a href="#5-其他知识点" class="headerlink" title="5 其他知识点"></a>5 其他知识点</h1><h2 id="5-1-处理器停顿"><a href="#5-1-处理器停顿" class="headerlink" title="5.1 处理器停顿"></a>5.1 处理器停顿</h2><ol>
+<li><p><strong>什么是处理器停顿</strong></p>
+<ul>
+<li>当处理器无法执行指令流中的下一条指令时发生</li>
+<li>原因是后续指令依赖于尚未完成的前序指令的结果</li>
+<li>这种情况会导致处理器暂时无法继续执行</li>
+</ul>
+</li>
+<li><p><strong>内存访问是主要停顿源</strong></p>
+<ul>
+<li>示例代码展示了典型的内存依赖：<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ld r0 mem[r2]    # 从内存加载数据到r0</span><br><span class="line">ld r1 mem[r3]    # 从内存加载数据到r1</span><br><span class="line">add r0, r0, r1   # 需要等待前两条加载指令完成</span><br></pre></td></tr></table></figure></li>
+<li>add指令必须等待两个内存加载操作完成才能执行</li>
+</ul>
+</li>
+<li><p><strong>内存访问延迟问题</strong></p>
+<ul>
+<li>内存访问时间约为数百个时钟周期</li>
+<li>“访问时间”是衡量延迟的指标</li>
+<li>这种长延迟会导致严重的性能损失</li>
+</ul>
+</li>
+<li><p><strong>影响</strong></p>
+<ul>
+<li>降低处理器效率</li>
+<li>影响指令级并行的效果</li>
+<li>是处理器性能优化需要重点考虑的问题</li>
+</ul>
+</li>
+</ol>
+<p>这个问题也是为什么现代处理器设计中会采用多级缓存、预取等技术来减少内存访问造成的停顿。</p>
+<h2 id="5-2-缓存"><a href="#5-2-缓存" class="headerlink" title="5.2 缓存"></a>5.2 缓存</h2><p>对于缓存的基本概念，学过CSAPP的同学应该对缓存有所了解, 这里就不多介绍了。<br>这里主要介绍以下什么是缓存行（Cache Line）:</p>
+<p><img src="/../../images/CS149/Lec01/cache-line.png" alt="cache-line"></p>
+<p>缓存行（Cache Line）是缓存系统的基本操作单位，其主要包含以下几个要点：</p>
+<ol>
+<li><p><strong>基本概念</strong></p>
+<ul>
+<li>是缓存中数据传输的最小单位</li>
+<li>由连续的内存地址组成</li>
+<li>通常大小是2的幂次字节（如32字节、64字节、128字节等）</li>
+</ul>
+</li>
+<li><p><strong>组成部分</strong></p>
+<ul>
+<li><strong>标记（Tag）</strong>：用于标识数据来自哪个内存块</li>
+<li><strong>数据（Data）</strong>：实际存储的内存数据</li>
+<li><strong>状态位</strong>：如有效位（Valid bit）、脏位（Dirty bit）等</li>
+</ul>
+</li>
+<li><p><strong>示例中的缓存行特点</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Line Address | Values in line</span><br><span class="line">0x4         | 0 0 6 0</span><br><span class="line">0xC         | 255 0 0 0</span><br></pre></td></tr></table></figure>
+<ul>
+<li>每行存储4字节数据</li>
+<li>按照内存地址对齐</li>
+<li>一次加载&#x2F;存储整个缓存行</li>
+</ul>
+</li>
+</ol>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">首页</a></li>
+        
+          <li><a href="/about/">关于</a></li>
+        
+          <li><a href="/archives/">归档</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E7%AE%80%E5%8C%96%E7%9A%84%E5%A4%84%E7%90%86%E5%99%A8%E6%A8%A1%E5%9E%8B%E5%88%86%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">1 简化的处理器模型分析</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%B8%80%E4%B8%AA%E5%B9%B6%E8%A1%8C%E5%8A%A0%E9%80%9F%E7%9A%84%E4%BE%8B%E5%AD%90"><span class="toc-number">2.</span> <span class="toc-text">2 一个并行加速的例子</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%881-%E8%B6%85%E6%A0%87%E9%87%8F%E5%A4%84%E7%90%86%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">3 并行方案1-超标量处理器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%B9%B6%E8%A1%8C%E6%96%B9%E6%A1%882-%E5%A4%9A%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8"><span class="toc-number">4.</span> <span class="toc-text">4 并行方案2-多核处理器</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%85%B6%E4%BB%96%E7%9F%A5%E8%AF%86%E7%82%B9"><span class="toc-number">5.</span> <span class="toc-text">5 其他知识点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E5%A4%84%E7%90%86%E5%99%A8%E5%81%9C%E9%A1%BF"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 处理器停顿</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E7%BC%93%E5%AD%98"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 缓存</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&text=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&is_video=false&description=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Stanford-CS149-并行计算-Lec01-笔记-超标量&body=Check out this article: http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&title=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&name=Stanford-CS149-并行计算-Lec01-笔记-超标量&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2024/10/21/CS149/Stanford-CS149-%E5%B9%B6%E8%A1%8C%E8%AE%A1%E7%AE%97-Lec01-%E7%AC%94%E8%AE%B0/&t=Stanford-CS149-并行计算-Lec01-笔记-超标量"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> 菜单</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> 目录</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> 分享</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> 返回顶部</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2026
+    Vanilla-Beauty
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">首页</a></li><!--
+     --><!--
+       --><li><a href="/about/">关于</a></li><!--
+     --><!--
+       --><li><a href="/archives/">归档</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">项目</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"复制到粘贴板！\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "复制成功！");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
