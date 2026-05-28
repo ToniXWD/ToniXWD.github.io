@@ -6,15 +6,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。 1 概述CURP（Cons">
+    <meta name="description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论，帮助读者理解为什么 CURP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="CURP共识算法详解-00-CURP理论">
 <meta property="og:url" content="http://example.com/2026/05/28/%E9%A1%B9%E7%9B%AE/tiny-distributed-kv/CURP%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3-00-CURP%E7%90%86%E8%AE%BA/index.html">
 <meta property="og:site_name" content="Vanilla-Beauty&#39;s Blog">
-<meta property="og:description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。 1 概述CURP（Cons">
+<meta property="og:description" content="论文来源: Exploiting Commutativity For Practical Fast Replication作者: Seo Jin Park, John Ousterhout (Stanford University)会议: NSDI ‘19  本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论，帮助读者理解为什么 CURP">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-05-28T07:45:00.000Z">
-<meta property="article:modified_time" content="2026-05-28T07:41:54.318Z">
+<meta property="article:modified_time" content="2026-05-28T08:15:09.278Z">
 <meta property="article:author" content="Vanilla-Beauty">
 <meta property="article:tag" content="C++">
 <meta property="article:tag" content="分布式系统">
@@ -118,7 +118,7 @@
     
     
       <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%B8%E5%BF%83%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 核心目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%EF%BC%88%E8%AE%BA%E6%96%87%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 性能提升（论文实测）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.</span> <span class="toc-text">2 核心思想：分离持久性与排序</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统复制的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-CURP-%E7%9A%84%E5%88%9B%E6%96%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 CURP 的创新</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9E%B6%E6%9E%84%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">3 架构组件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 节点角色</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%B9%E9%94%99%E8%83%BD%E5%8A%9B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 容错能力</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%AD%A3%E5%B8%B8%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 正常操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Witness-%E8%AF%A6%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 Witness 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Witness-%E7%9A%84%E8%81%8C%E8%B4%A3"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Witness 的职责</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 可交换性检查</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Master-%E8%AF%A6%E8%A7%A3"><span class="toc-number">6.</span> <span class="toc-text">6 Master 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%8E%A8%E6%B5%8B%E6%89%A7%E8%A1%8C%EF%BC%88Speculative-Execution%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 推测执行（Speculative Execution）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%EF%BC%88Async-Sync%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 异步同步（Async Sync）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">7.</span> <span class="toc-text">7 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">8.</span> <span class="toc-text">8 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-Raft-%E5%88%B0-CURP-%E7%9A%84%E6%BC%94%E8%BF%9B%E6%80%9D%E8%B7%AF"><span class="toc-number">8.0.1.</span> <span class="toc-text">从 Raft 到 CURP 的演进思路</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">10.</span> <span class="toc-text">参考资料</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-CURP%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 为什么需要 CURP？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84-CAP-%E6%9D%83%E8%A1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 分布式系统的 CAP 权衡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E5%BB%B6%E8%BF%9F%E7%93%B6%E9%A2%88"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 传统复制的延迟瓶颈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-2-RTT-%E8%83%BD%E6%8E%A5%E5%8F%97%E5%90%97%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 2 RTT 能接受吗？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-CURP-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%B4%9E%E5%AF%9F"><span class="toc-number">2.</span> <span class="toc-text">2 CURP 的核心洞察</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%80%E4%B8%AA%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98%EF%BC%9A%E9%A1%BA%E5%BA%8F%E7%9C%9F%E7%9A%84%E9%82%A3%E4%B9%88%E9%87%8D%E8%A6%81%E5%90%97%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 一个关键问题：顺序真的那么重要吗？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 分离持久性与排序</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CURP-%E6%9E%B6%E6%9E%84%E8%AF%A6%E8%A7%A3"><span class="toc-number">3.</span> <span class="toc-text">3 CURP 架构详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-Witness%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 为什么需要 Witness？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2%E4%B8%8E%E8%81%8C%E8%B4%A3"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 节点角色与职责</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-f-%E4%B8%AA-Witness%EF%BC%9F"><span class="toc-number">3.2.1.</span> <span class="toc-text">为什么需要 f 个 Witness？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 整体架构图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%86%99%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 写操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6"><span class="toc-number">4.1.1.</span> <span class="toc-text">前置条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B"><span class="toc-number">4.1.2.</span> <span class="toc-text">详细流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%A0%B7%E5%81%9A%E6%98%AF%E5%AE%89%E5%85%A8%E7%9A%84%EF%BC%9F"><span class="toc-number">4.1.3.</span> <span class="toc-text">为什么这样做是安全的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6"><span class="toc-number">4.2.1.</span> <span class="toc-text">触发条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B-1"><span class="toc-number">4.2.2.</span> <span class="toc-text">详细流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%85%A2%E8%B7%AF%E5%BE%84%E7%9A%84%E6%80%A7%E8%83%BD%E5%BD%B1%E5%93%8D"><span class="toc-number">4.2.3.</span> <span class="toc-text">慢路径的性能影响</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90"><span class="toc-number">5.</span> <span class="toc-text">5 可交换性深入分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%BB%80%E4%B9%88%E6%98%AF%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%EF%BC%9F"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 什么是可交换性？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#KV-%E5%AD%98%E5%82%A8%E4%B8%AD%E7%9A%84%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7"><span class="toc-number">5.1.1.</span> <span class="toc-text">KV 存储中的可交换性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E5%A4%8D%E6%9D%82%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">5.1.2.</span> <span class="toc-text">更复杂的场景</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-Witness-%E7%9A%84%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5%E5%AE%9E%E7%8E%B0"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 Witness 的可交换性检查实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">6.</span> <span class="toc-text">6 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%81%A2%E5%A4%8D%E7%9A%84%E6%8C%91%E6%88%98"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 恢复的挑战</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 两阶段恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E6%94%BE%E9%A1%BA%E5%BA%8F%E4%B8%8D%E9%87%8D%E8%A6%81%EF%BC%9F"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 为什么重放顺序不重要？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">7.</span> <span class="toc-text">7 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5%E5%AF%B9%E6%AF%94"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 设计理念对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 性能对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E5%AE%9E%E7%8E%B0%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="toc-number">7.3.</span> <span class="toc-text">7.3 实现复杂度</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90"><span class="toc-number">8.</span> <span class="toc-text">8 适用场景分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#8-1-%E9%80%82%E5%90%88-CURP-%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">8.1.</span> <span class="toc-text">8.1 适合 CURP 的场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-2-%E4%B8%8D%E9%80%82%E5%90%88-CURP-%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">8.2.</span> <span class="toc-text">8.2 不适合 CURP 的场景</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-%E6%9C%AC%E7%B3%BB%E5%88%97%E6%96%87%E7%AB%A0%E8%A7%84%E5%88%92"><span class="toc-number">10.</span> <span class="toc-text">10 本系列文章规划</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">11.</span> <span class="toc-text">参考资料</span></a></li></ol>
       </div>
     
   </span>
@@ -171,192 +171,268 @@
     <blockquote>
 <p><strong>论文来源</strong>: <em>Exploiting Commutativity For Practical Fast Replication</em><br><strong>作者</strong>: Seo Jin Park, John Ousterhout (Stanford University)<br><strong>会议</strong>: NSDI ‘19</p>
 </blockquote>
-<p>本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论。</p>
-<h1 id="1-概述"><a href="#1-概述" class="headerlink" title="1 概述"></a>1 概述</h1><p>CURP（Consistent Unordered Replication Protocol）是一种创新的复制协议，<strong>将大多数写操作的延迟从 2 RTT 降低到 1 RTT</strong>。</p>
-<h2 id="1-1-核心目标"><a href="#1-1-核心目标" class="headerlink" title="1.1 核心目标"></a>1.1 核心目标</h2><ul>
-<li><strong>线性一致性</strong>：保证强一致性</li>
-<li><strong>低延迟</strong>：正常情况下 1 RTT 完成</li>
-<li><strong>容错性</strong>：支持 f 个节点故障</li>
-<li><strong>通用性</strong>：可应用于 primary-backup 和 consensus 系统</li>
-</ul>
-<h2 id="1-2-性能提升（论文实测）"><a href="#1-2-性能提升（论文实测）" class="headerlink" title="1.2 性能提升（论文实测）"></a>1.2 性能提升（论文实测）</h2><table>
+<p>本系列文章记录我基于现有 Raft 实现扩展为 CURP 共识协议的过程。这一节先介绍 CURP 的核心理论，帮助读者理解为什么 CURP 能够实现 1 RTT 的写操作延迟。</p>
+<hr>
+<h1 id="1-为什么需要-CURP？"><a href="#1-为什么需要-CURP？" class="headerlink" title="1 为什么需要 CURP？"></a>1 为什么需要 CURP？</h1><p>在深入 CURP 的细节之前，我们先思考一个问题：<strong>为什么传统复制协议的写延迟至少是 2 RTT？</strong></p>
+<h2 id="1-1-分布式系统的-CAP-权衡"><a href="#1-1-分布式系统的-CAP-权衡" class="headerlink" title="1.1 分布式系统的 CAP 权衡"></a>1.1 分布式系统的 CAP 权衡</h2><p>分布式系统设计中最著名的原则之一是 CAP 定理：一个分布式系统最多只能同时满足一致性（Consistency）、可用性（Availability）和分区容错性（Partition tolerance）中的两项。</p>
+<p>对于需要强一致性的系统（如金融交易、配置管理等），我们通常选择 CP 架构，牺牲部分可用性来保证一致性。Raft、Paxos、ZAB 等共识协议就是这类系统的代表。</p>
+<p><strong>但强一致性的代价是什么？是延迟。</strong></p>
+<h2 id="1-2-传统复制的延迟瓶颈"><a href="#1-2-传统复制的延迟瓶颈" class="headerlink" title="1.2 传统复制的延迟瓶颈"></a>1.2 传统复制的延迟瓶颈</h2><p>让我们以 Raft 为例，分析一个写操作需要多少时间：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                Leader                Follower</span><br><span class="line">  │                     │                      │</span><br><span class="line">  │─── 写请求 ─────────→│                      │</span><br><span class="line">  │                     │                      │</span><br><span class="line">  │                     │─── AppendEntries ───→│</span><br><span class="line">  │                     │                      │</span><br><span class="line">  │                     │←─── ACK ────────────│  (等待多数派确认)</span><br><span class="line">  │                     │                      │</span><br><span class="line">  │                     │─── 提交并执行 ──────→│</span><br><span class="line">  │                     │                      │</span><br><span class="line">  │←─── 响应客户端 ─────│                      │</span><br><span class="line"></span><br><span class="line">总延迟 = Client→Leader (1 RTT) + Leader→Follower (1 RTT) = 2 RTT</span><br></pre></td></tr></table></figure>
+
+<p>这里的瓶颈在于：<strong>必须先确定操作的顺序（排序），才能执行并响应客户端。</strong></p>
+<p>为什么必须先排序？因为：</p>
+<ol>
+<li>多个客户端可能并发发起写操作</li>
+<li>这些操作可能作用于相同的数据</li>
+<li>不同的执行顺序可能导致不同的最终状态</li>
+<li>为了保证所有副本最终状态一致，必须先达成顺序共识</li>
+</ol>
+<p><strong>这就是传统复制协议的核心约束：排序和持久化是耦合的。</strong></p>
+<h2 id="1-3-2-RTT-能接受吗？"><a href="#1-3-2-RTT-能接受吗？" class="headerlink" title="1.3 2 RTT 能接受吗？"></a>1.3 2 RTT 能接受吗？</h2><p>这取决于应用场景：</p>
+<table>
 <thead>
 <tr>
-<th>系统</th>
-<th>无复制</th>
-<th>传统复制</th>
-<th>CURP 复制</th>
+<th>场景</th>
+<th>RTT 要求</th>
+<th>传统复制是否满足</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>RAMCloud 写延迟</td>
-<td>6.1 µs</td>
-<td>14 µs</td>
-<td><strong>7.1 µs</strong></td>
+<td>跨数据中心（100ms RTT）</td>
+<td>写延迟 200ms+</td>
+<td>❌ 用户可感知延迟</td>
 </tr>
 <tr>
-<td>Redis</td>
-<td>非持久化</td>
-<td>高开销持久化</td>
-<td><strong>低开销持久化</strong></td>
+<td>同数据中心（1ms RTT）</td>
+<td>写延迟 2ms+</td>
+<td>✅ 可接受</td>
+</tr>
+<tr>
+<td>内存数据库（µs 级）</td>
+<td>写延迟受限于 RTT</td>
+<td>❌ 性能瓶颈</td>
 </tr>
 </tbody></table>
+<p>对于需要跨数据中心部署或对延迟敏感的应用，2 RTT 的代价是昂贵的。这正是 CURP 试图解决的问题。</p>
 <hr>
-<h1 id="2-核心思想：分离持久性与排序"><a href="#2-核心思想：分离持久性与排序" class="headerlink" title="2 核心思想：分离持久性与排序"></a>2 核心思想：分离持久性与排序</h1><h2 id="2-1-传统复制的问题"><a href="#2-1-传统复制的问题" class="headerlink" title="2.1 传统复制的问题"></a>2.1 传统复制的问题</h2><p>传统复制协议（Raft、Paxos、primary-backup）必须：</p>
-<ol>
-<li><strong>先排序</strong>：确定操作的执行顺序</li>
-<li><strong>再持久化</strong>：将有序操作复制到副本</li>
-</ol>
-<p>这导致 <strong>至少 2 RTT</strong>：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Client → Master (1 RTT)</span><br><span class="line">Master → Backup (1 RTT)</span><br></pre></td></tr></table></figure>
+<h1 id="2-CURP-的核心洞察"><a href="#2-CURP-的核心洞察" class="headerlink" title="2 CURP 的核心洞察"></a>2 CURP 的核心洞察</h1><p>CURP（Consistent Unordered Replication Protocol）的名字本身就揭示了其核心思想：<strong>Consistent（一致） + Unordered（无序）</strong>。</p>
+<h2 id="2-1-一个关键问题：顺序真的那么重要吗？"><a href="#2-1-一个关键问题：顺序真的那么重要吗？" class="headerlink" title="2.1 一个关键问题：顺序真的那么重要吗？"></a>2.1 一个关键问题：顺序真的那么重要吗？</h2><p>让我们重新审视排序的必要性。考虑以下两个操作：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">操作 A: SET key1 = value1</span><br><span class="line">操作 B: SET key2 = value2</span><br></pre></td></tr></table></figure>
 
-<h2 id="2-2-CURP-的创新"><a href="#2-2-CURP-的创新" class="headerlink" title="2.2 CURP 的创新"></a>2.2 CURP 的创新</h2><p>CURP 发现：<strong>如果操作是可交换的（commutative），它们的执行顺序就不重要！</strong></p>
-<p>因此：</p>
+<p>问题：A 和 B 哪个先执行，结果有区别吗？</p>
+<p>答案：<strong>没有区别</strong>。因为 A 和 B 操作的是不同的 key，它们是<strong>可交换的（commutative）</strong>。</p>
+<p>再考虑：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">操作 A: SET key1 = value1</span><br><span class="line">操作 B: SET key1 = value2</span><br></pre></td></tr></table></figure>
+
+<p>问题：A 和 B 哪个先执行，结果有区别吗？</p>
+<p>答案：<strong>有区别</strong>。最终值取决于执行顺序。它们是<strong>不可交换的</strong>。</p>
+<p><strong>CURP 的核心洞察：</strong></p>
+<blockquote>
+<p>如果操作是可交换的，那么执行顺序就不重要。如果顺序不重要，我们就不需要等待排序完成。</p>
+</blockquote>
+<h2 id="2-2-分离持久性与排序"><a href="#2-2-分离持久性与排序" class="headerlink" title="2.2 分离持久性与排序"></a>2.2 分离持久性与排序</h2><p>传统复制协议中，持久化依赖于排序：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">传统流程：客户端请求 → 排序 → 复制（持久化）→ 执行 → 响应</span><br></pre></td></tr></table></figure>
+
+<p>CURP 将持久化和排序解耦：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">CURP 流程：客户端请求 → 持久化（Witness） + 执行（Master）→ 响应</span><br><span class="line">                              ↓</span><br><span class="line">                        异步排序和复制到 Backup</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键点：持久化可以在排序之前完成！</strong></p>
+<p>这样一来，客户端只需要等待 1 RTT（请求到达 Master 和 Witness），就可以收到响应。</p>
+<hr>
+<h1 id="3-CURP-架构详解"><a href="#3-CURP-架构详解" class="headerlink" title="3 CURP 架构详解"></a>3 CURP 架构详解</h1><p>CURP 在传统 primary-backup 架构基础上引入了一个新角色：<strong>Witness（见证者）</strong>。</p>
+<h2 id="3-1-为什么需要-Witness？"><a href="#3-1-为什么需要-Witness？" class="headerlink" title="3.1 为什么需要 Witness？"></a>3.1 为什么需要 Witness？</h2><p>问题：如果 Master 在执行操作后、同步到 Backup 前崩溃，数据会丢失吗？</p>
+<p>传统复制：会丢失。所以必须先同步到 Backup 再响应。</p>
+<p>CURP 的解决方案：让 Witness 记录操作。Witness 是一个轻量级的存储节点：</p>
 <ul>
-<li><strong>持久性可以独立完成</strong>（无需等待排序）</li>
-<li><strong>排序可以延迟执行</strong>（异步进行）</li>
+<li>只存储操作的元数据和请求数据</li>
+<li>不执行操作</li>
+<li>不需要维护完整的数据副本</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Client → Master + Witness (并行，1 RTT)</span><br><span class="line">Master → Backup (异步，不影响客户端)</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="3-架构组件"><a href="#3-架构组件" class="headerlink" title="3 架构组件"></a>3 架构组件</h1><p>CURP 在传统 primary-backup 基础上引入 <strong>Witness（见证者）</strong>。</p>
-<h2 id="3-1-节点角色"><a href="#3-1-节点角色" class="headerlink" title="3.1 节点角色"></a>3.1 节点角色</h2><table>
+<p><strong>Witness 的成本远低于 Backup，但提供了等价的持久性保证。</strong></p>
+<h2 id="3-2-节点角色与职责"><a href="#3-2-节点角色与职责" class="headerlink" title="3.2 节点角色与职责"></a>3.2 节点角色与职责</h2><table>
 <thead>
 <tr>
 <th>角色</th>
 <th>数量</th>
-<th>功能</th>
+<th>存储内容</th>
+<th>职责</th>
 </tr>
 </thead>
 <tbody><tr>
 <td><strong>Master</strong></td>
 <td>1</td>
+<td>完整数据</td>
 <td>接收请求、执行操作、协调复制</td>
 </tr>
 <tr>
 <td><strong>Backup</strong></td>
 <td>f</td>
-<td>存储有序数据，用于恢复</td>
+<td>完整数据</td>
+<td>存储有序数据，用于恢复和服务读请求</td>
 </tr>
 <tr>
 <td><strong>Witness</strong></td>
 <td>f</td>
-<td>临时存储未排序请求，保证持久性</td>
+<td>请求记录</td>
+<td>临时存储未同步请求，保证持久性</td>
 </tr>
 </tbody></table>
-<h2 id="3-2-容错能力"><a href="#3-2-容错能力" class="headerlink" title="3.2 容错能力"></a>3.2 容错能力</h2><ul>
-<li><strong>f + 1 replicas</strong>（Master + f Backups）</li>
-<li><strong>f witnesses</strong></li>
-<li>系统可容忍 <strong>f 个任意节点故障</strong></li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">            ┌─────────────┐</span><br><span class="line">            │   Witness   │ × f  (无序持久化)</span><br><span class="line">            └─────────────┘</span><br><span class="line">                  ↓</span><br><span class="line">┌─────────────────────────────────────┐</span><br><span class="line">│              Client                 │</span><br><span class="line">└─────────────────────────────────────┘</span><br><span class="line">          ↓               ↓</span><br><span class="line">    ┌──────────┐    ┌──────────┐</span><br><span class="line">    │  Master  │ →  │  Backup  │ × f  (有序持久化)</span><br><span class="line">    └──────────┘    └──────────┘</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="4-正常操作流程"><a href="#4-正常操作流程" class="headerlink" title="4 正常操作流程"></a>4 正常操作流程</h1><h2 id="4-1-快速路径（Fast-Path）-1-RTT"><a href="#4-1-快速路径（Fast-Path）-1-RTT" class="headerlink" title="4.1 快速路径（Fast Path）- 1 RTT"></a>4.1 快速路径（Fast Path）- 1 RTT</h2><p><strong>条件</strong>：操作与所有未同步操作可交换</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Witness</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── update request ────→│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │───── record request ───────────────────────────→│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── execute (speculative) │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── response ─────────│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←─── ACCEPTED ───────────────────────────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │  ✓ 操作完成             │                         │</span><br><span class="line">  │                         │─── async sync ─────────→│ Backup</span><br></pre></td></tr></table></figure>
-
-<p><strong>步骤</strong>：</p>
-<ol>
-<li>Client <strong>并行发送</strong>请求到 Master 和所有 Witness</li>
-<li>Witness 检查可交换性，接受则返回 ACCEPTED</li>
-<li>Master <strong>推测执行</strong>（speculative execution），立即响应</li>
-<li>Client 收到 Master 响应 + 所有 Witness ACCEPTED → <strong>完成</strong></li>
-<li>Master <strong>异步同步</strong>到 Backup</li>
-</ol>
-<h2 id="4-2-慢速路径（Slow-Path）-2-RTT"><a href="#4-2-慢速路径（Slow-Path）-2-RTT" class="headerlink" title="4.2 慢速路径（Slow Path）- 2 RTT"></a>4.2 慢速路径（Slow Path）- 2 RTT</h2><p><strong>触发条件</strong>：</p>
+<h3 id="为什么需要-f-个-Witness？"><a href="#为什么需要-f-个-Witness？" class="headerlink" title="为什么需要 f 个 Witness？"></a>为什么需要 f 个 Witness？</h3><p>容错能力的要求：系统需要容忍 f 个任意节点故障。</p>
 <ul>
-<li>Witness 拒绝（可交换性冲突或空间不足）</li>
-<li>Master 发现冲突（操作与未同步操作不可交换）</li>
+<li>如果只有 f 个 Backup（无 Witness），Master 崩溃后可以从 Backup 恢复，但如果某个 Backup 也同时故障，可能丢失数据</li>
+<li>增加 f 个 Witness 后，即使 Master 和部分 Backup 同时故障，仍然可以从剩余 Backup + Witness 恢复</li>
 </ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Backup</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── update request ────→│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── CONFLICT ─────────│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │────── sync request ────→│                         │</span><br><span class="line">  │                         │──── sync ──────────────→│</span><br><span class="line">  │                         │←─── ack ───────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←───── synced response ──│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │  ✓ 操作完成             │                         │</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">容错配置示例（f=1）:</span><br><span class="line">─────────────────────────────────────</span><br><span class="line">Master (1) + Backup (1) + Witness (1)</span><br><span class="line">可容忍任意 1 个节点故障</span><br><span class="line"></span><br><span class="line">容错配置示例（f=2）:</span><br><span class="line">─────────────────────────────────────</span><br><span class="line">Master (1) + Backup (2) + Witness (2)</span><br><span class="line">可容忍任意 2 个节点故障</span><br></pre></td></tr></table></figure>
+
+<h2 id="3-3-整体架构图"><a href="#3-3-整体架构图" class="headerlink" title="3.3 整体架构图"></a>3.3 整体架构图</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">                        ┌─────────────┐</span><br><span class="line">                        │  Witness 1  │</span><br><span class="line">                        └─────────────┘</span><br><span class="line">                              ↑</span><br><span class="line">                        ┌─────────────┐</span><br><span class="line">                        │  Witness f  │  ← 轻量级，只存请求</span><br><span class="line">                        └─────────────┘</span><br><span class="line">                              ↑</span><br><span class="line">┌──────────────────────────────────────────────────────────┐</span><br><span class="line">│                        Client                            │</span><br><span class="line">└──────────────────────────────────────────────────────────┘</span><br><span class="line">          │                               │</span><br><span class="line">          ↓                               ↓</span><br><span class="line">    ┌──────────┐              ┌──────────────┐</span><br><span class="line">    │  Master  │──────────────│   Backup 1   │</span><br><span class="line">    │ (执行)   │   异步同步    └──────────────┘</span><br><span class="line">    └──────────┘              ┌──────────────┐</span><br><span class="line">                              │   Backup f   │  ← 完整数据副本</span><br><span class="line">                              └──────────────┘</span><br><span class="line"></span><br><span class="line">快速路径：Client → Master + Witness（并行，1 RTT）</span><br><span class="line">异步路径：Master → Backup（后台进行，不影响客户端）</span><br></pre></td></tr></table></figure>
 
 <hr>
-<h1 id="5-Witness-详解"><a href="#5-Witness-详解" class="headerlink" title="5 Witness 详解"></a>5 Witness 详解</h1><h2 id="5-1-Witness-的职责"><a href="#5-1-Witness-的职责" class="headerlink" title="5.1 Witness 的职责"></a>5.1 Witness 的职责</h2><p>Witness 是 <strong>轻量级的临时持久化存储</strong>：</p>
+<h1 id="4-写操作流程"><a href="#4-写操作流程" class="headerlink" title="4 写操作流程"></a>4 写操作流程</h1><h2 id="4-1-快速路径（Fast-Path）-1-RTT"><a href="#4-1-快速路径（Fast-Path）-1-RTT" class="headerlink" title="4.1 快速路径（Fast Path）- 1 RTT"></a>4.1 快速路径（Fast Path）- 1 RTT</h2><p>快速路径是 CURP 的核心优化，实现了 1 RTT 的写操作。</p>
+<h3 id="前置条件"><a href="#前置条件" class="headerlink" title="前置条件"></a>前置条件</h3><p>操作必须与所有未同步的操作可交换。对于 KV 存储：</p>
+<ul>
+<li>新操作的 key 与所有未同步操作的 key 都不同 → 可交换</li>
+<li>否则 → 不可交换，走慢速路径</li>
+</ul>
+<h3 id="详细流程"><a href="#详细流程" class="headerlink" title="详细流程"></a>详细流程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">时间线（假设 f=1，即 1 个 Witness）:</span><br><span class="line">─────────────────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Witness</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── 1. 写请求 ─────────→│                         │</span><br><span class="line">  │     (SET key1=val1)     │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── 2. 记录请求 ─────────────────────────────────→│</span><br><span class="line">  │     (并行发送)           │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 3. 检查可交换性 ─────→│</span><br><span class="line">  │                         │   (key1 不在记录中)      │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │←── ACCEPTED ────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 4. 推测执行 ──────────→│ (本地执行)</span><br><span class="line">  │                         │   key1 = val1           │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←──── 5. 响应 ───────────│                         │</span><br><span class="line">  │     &quot;写入成功&quot;           │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │  ✓ 客户端收到响应        │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 6. 异步同步 ─────────→│ Backup</span><br><span class="line">  │                         │   (后台进行)             │</span><br></pre></td></tr></table></figure>
+
+<p><strong>关键点：</strong></p>
+<ol>
+<li><strong>并行发送</strong>：客户端同时向 Master 和所有 Witness 发送请求</li>
+<li><strong>Witness 检查</strong>：Witness 检查新请求是否与已存储的请求可交换</li>
+<li><strong>推测执行</strong>：Master 不等待 Backup 同步，直接执行并响应</li>
+<li><strong>条件完成</strong>：客户端收到 Master 响应 + 所有 Witness ACCEPTED &#x3D; 操作完成</li>
+</ol>
+<h3 id="为什么这样做是安全的？"><a href="#为什么这样做是安全的？" class="headerlink" title="为什么这样做是安全的？"></a>为什么这样做是安全的？</h3><ol>
+<li><strong>持久性保证</strong>：请求已记录在 f 个 Witness 中，即使 Master 崩溃也能恢复</li>
+<li><strong>一致性保证</strong>：可交换操作的执行顺序不影响最终结果</li>
+<li><strong>容错保证</strong>：f 个 Witness + f 个 Backup 可以恢复任意 f 个节点的故障</li>
+</ol>
+<h2 id="4-2-慢速路径（Slow-Path）-2-RTT"><a href="#4-2-慢速路径（Slow-Path）-2-RTT" class="headerlink" title="4.2 慢速路径（Slow Path）- 2 RTT"></a>4.2 慢速路径（Slow Path）- 2 RTT</h2><p>当操作不可交换时，CURP 退回到类似传统复制的 2 RTT 流程。</p>
+<h3 id="触发条件"><a href="#触发条件" class="headerlink" title="触发条件"></a>触发条件</h3><ol>
+<li><strong>Witness 拒绝</strong>：新请求与已存储请求冲突（操作相同 key）</li>
+<li><strong>空间不足</strong>：Witness 存储空间已满</li>
+<li><strong>Master 检测到冲突</strong>：新请求与 Master 本地未同步的操作冲突</li>
+</ol>
+<h3 id="详细流程-1"><a href="#详细流程-1" class="headerlink" title="详细流程"></a>详细流程</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">时间线:</span><br><span class="line">─────────────────────────────────────────────────────────────→</span><br><span class="line"></span><br><span class="line">Client                    Master                   Backup</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── 1. 写请求 ─────────→│                         │</span><br><span class="line">  │     (SET key1=val2)     │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 检测到 key1 未同步 ───│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←──── 2. NEED_SYNC ──────│                         │</span><br><span class="line">  │     (触发慢路径)         │                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │──── 3. Sync 请求 ───────→│                         │</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 4. 同步到 Backup ────→│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │←── 5. ACK ─────────────│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │                         │── 6. 执行操作 ─────────→│</span><br><span class="line">  │                         │                         │</span><br><span class="line">  │←──── 7. 响应 ───────────│                         │</span><br><span class="line">  │                         │                         │</span><br></pre></td></tr></table></figure>
+
+<h3 id="慢路径的性能影响"><a href="#慢路径的性能影响" class="headerlink" title="慢路径的性能影响"></a>慢路径的性能影响</h3><p>慢路径虽然需要 2 RTT，但在实际系统中：</p>
+<ul>
+<li>如果应用具有良好的访问局部性（热点 key 少），大部分操作走快速路径</li>
+<li>论文数据显示，快速路径成功率可达 90%+</li>
+</ul>
+<hr>
+<h1 id="5-可交换性深入分析"><a href="#5-可交换性深入分析" class="headerlink" title="5 可交换性深入分析"></a>5 可交换性深入分析</h1><p>可交换性是 CURP 的核心概念，理解它对于实现和优化都至关重要。</p>
+<h2 id="5-1-什么是可交换性？"><a href="#5-1-什么是可交换性？" class="headerlink" title="5.1 什么是可交换性？"></a>5.1 什么是可交换性？</h2><p>两个操作 A 和 B 是可交换的，当且仅当：<strong>无论先执行 A 还是先执行 B，最终状态都相同。</strong></p>
+<h3 id="KV-存储中的可交换性"><a href="#KV-存储中的可交换性" class="headerlink" title="KV 存储中的可交换性"></a>KV 存储中的可交换性</h3><p>对于简单的 KV 存储（只支持 GET&#x2F;SET）：</p>
 <table>
 <thead>
 <tr>
-<th>操作</th>
-<th>说明</th>
+<th>操作 A</th>
+<th>操作 B</th>
+<th>可交换？</th>
+<th>原因</th>
 </tr>
 </thead>
 <tbody><tr>
-<td><strong>record</strong></td>
-<td>接收并存储客户端请求（检查可交换性）</td>
+<td>SET k1&#x3D;v1</td>
+<td>SET k2&#x3D;v2</td>
+<td>✅ 是</td>
+<td>不同 key</td>
 </tr>
 <tr>
-<td><strong>gc</strong></td>
-<td>清理已同步到 Backup 的请求</td>
+<td>SET k1&#x3D;v1</td>
+<td>GET k2</td>
+<td>✅ 是</td>
+<td>不同 key</td>
 </tr>
 <tr>
-<td><strong>getRecoveryData</strong></td>
-<td>恢复时返回所有存储的请求</td>
+<td>SET k1&#x3D;v1</td>
+<td>SET k1&#x3D;v2</td>
+<td>❌ 否</td>
+<td>相同 key，结果取决于顺序</td>
+</tr>
+<tr>
+<td>SET k1&#x3D;v1</td>
+<td>GET k1</td>
+<td>❌ 否</td>
+<td>相同 key，GET 返回值取决于顺序</td>
+</tr>
+<tr>
+<td>GET k1</td>
+<td>GET k1</td>
+<td>✅ 是</td>
+<td>只读操作总是可交换</td>
 </tr>
 </tbody></table>
-<h2 id="5-2-可交换性检查"><a href="#5-2-可交换性检查" class="headerlink" title="5.2 可交换性检查"></a>5.2 可交换性检查</h2><p><strong>Witness 只接受与已存储操作可交换的新操作</strong>。</p>
-<p>对于 KV 存储：</p>
-<ul>
-<li>操作不同 key → 可交换 ✓</li>
-<li>操作相同 key → 不可交换 ✗</li>
-</ul>
-<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 示例：Witness 检查逻辑</span></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">Witness::canAccept</span><span class="params">(<span class="type">const</span> Request&amp; new_req)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; saved : saved_requests) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">isCommutative</span>(new_req, saved)) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// 拒绝</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;  <span class="comment">// 接受</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">bool</span> <span class="title">isCommutative</span><span class="params">(<span class="type">const</span> Request&amp; a, <span class="type">const</span> Request&amp; b)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 不同 key 的写操作可交换</span></span><br><span class="line">    <span class="keyword">return</span> a.keys != b.keys;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<hr>
-<h1 id="6-Master-详解"><a href="#6-Master-详解" class="headerlink" title="6 Master 详解"></a>6 Master 详解</h1><h2 id="6-1-推测执行（Speculative-Execution）"><a href="#6-1-推测执行（Speculative-Execution）" class="headerlink" title="6.1 推测执行（Speculative Execution）"></a>6.1 推测执行（Speculative Execution）</h2><p>Master 可以 <strong>在同步 Backup 之前响应客户端</strong>。</p>
-<p><strong>安全条件</strong>：</p>
-<ul>
-<li>该操作与所有未同步（unsynced）操作可交换</li>
-<li>否则必须先 sync</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">未同步操作队列（unsynced）:</span><br><span class="line">[op1, op2, op3, ..., op_n] ← 尾部是未同步的</span><br><span class="line"></span><br><span class="line">新操作 op_new:</span><br><span class="line">- 如果 op_new 与 [op1...op_n] 全部可交换 → 推测执行 ✓</span><br><span class="line">- 否则 → 先 sync，再执行</span><br></pre></td></tr></table></figure>
-
-<h2 id="6-2-异步同步（Async-Sync）"><a href="#6-2-异步同步（Async-Sync）" class="headerlink" title="6.2 异步同步（Async Sync）"></a>6.2 异步同步（Async Sync）</h2><p>Master <strong>批量同步</strong>到 Backup，提高吞吐量：</p>
-<ul>
-<li>减少 RPC 数量</li>
-<li>避免 CPU 空转等待</li>
-</ul>
-<hr>
-<h1 id="7-恢复机制"><a href="#7-恢复机制" class="headerlink" title="7 恢复机制"></a>7 恢复机制</h1><h2 id="7-1-恢复流程"><a href="#7-1-恢复流程" class="headerlink" title="7.1 恢复流程"></a>7.1 恢复流程</h2><p>Master 崩溃后，新 Master 恢复：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Phase 1: 从 Backup 恢复有序数据</span><br><span class="line">───────────────────────────────────</span><br><span class="line">New Master ← Backup (传统恢复机制)</span><br><span class="line"></span><br><span class="line">Phase 2: 从 Witness 重放无序请求</span><br><span class="line">───────────────────────────────────</span><br><span class="line">1. 选择一个可用 Witness</span><br><span class="line">2. 停止该 Witness 接收新请求</span><br><span class="line">3. 获取所有存储的请求</span><br><span class="line">4. 重放请求（任意顺序，因为可交换）</span><br><span class="line">5. 同步到 Backup</span><br><span class="line">6. 重置 Witness</span><br></pre></td></tr></table></figure>
-
-<h2 id="7-2-防止重复执行"><a href="#7-2-防止重复执行" class="headerlink" title="7.2 防止重复执行"></a>7.2 防止重复执行</h2><p>问题：部分请求可能已同步到 Backup，但也在 Witness 中。</p>
-<p>解决方案：<strong>RIFL（Exactly-Once 语义）</strong></p>
-<ul>
-<li>每个请求有唯一 RPC ID</li>
-<li>检测并过滤已执行的请求</li>
-</ul>
-<hr>
-<h1 id="8-与-Raft-的对比"><a href="#8-与-Raft-的对比" class="headerlink" title="8 与 Raft 的对比"></a>8 与 Raft 的对比</h1><table>
+<h3 id="更复杂的场景"><a href="#更复杂的场景" class="headerlink" title="更复杂的场景"></a>更复杂的场景</h3><p>对于支持更多操作的 KV 存储：</p>
+<table>
 <thead>
 <tr>
-<th>特性</th>
+<th>操作类型</th>
+<th>可交换条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INCR key</td>
+<td>与任何同 key 操作都不可交换</td>
+</tr>
+<tr>
+<td>LPUSH key value</td>
+<td>与任何同 key 操作都不可交换</td>
+</tr>
+<tr>
+<td>SADD key member</td>
+<td>与同 key 的 SADD 可交换（集合幂等）</td>
+</tr>
+</tbody></table>
+<p><strong>实现提示：</strong> 简单起见，教学版实现可以采用最保守的策略——只有操作不同 key 才认为可交换。</p>
+<h2 id="5-2-Witness-的可交换性检查实现"><a href="#5-2-Witness-的可交换性检查实现" class="headerlink" title="5.2 Witness 的可交换性检查实现"></a>5.2 Witness 的可交换性检查实现</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Witness</span> &#123;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="comment">// 存储已接受请求的 key 集合</span></span><br><span class="line">    std::unordered_set&lt;std::string&gt; recorded_keys_;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 存储完整的请求记录</span></span><br><span class="line">    std::unordered_map&lt;std::string, WitnessRecord&gt; records_;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function">RecordResult <span class="title">record</span><span class="params">(<span class="type">const</span> std::string&amp; key, </span></span></span><br><span class="line"><span class="params"><span class="function">                        <span class="type">uint64_t</span> rpc_id,</span></span></span><br><span class="line"><span class="params"><span class="function">                        <span class="type">const</span> std::vector&lt;<span class="type">uint8_t</span>&gt;&amp; request_data)</span> </span>&#123;</span><br><span class="line">        <span class="function">std::lock_guard&lt;std::mutex&gt; <span class="title">lock</span><span class="params">(mtx_)</span></span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 可交换性检查：key 是否已被记录？</span></span><br><span class="line">        <span class="keyword">if</span> (recorded_keys_.<span class="built_in">count</span>(key) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 存在冲突，走慢路径</span></span><br><span class="line">            <span class="keyword">return</span> RecordResult::REJECTED_NOT_COMMUTATIVE;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 接受请求</span></span><br><span class="line">        recorded_keys_.<span class="built_in">insert</span>(key);</span><br><span class="line">        records_[key] = WitnessRecord&#123;rpc_id, key, request_data, <span class="built_in">now</span>()&#125;;</span><br><span class="line">        <span class="keyword">return</span> RecordResult::ACCEPTED;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p><strong>注意：</strong> 这是一个简化实现。论文中的完整实现使用 hash 分桶来提高并发性能。</p>
+<hr>
+<h1 id="6-恢复机制"><a href="#6-恢复机制" class="headerlink" title="6 恢复机制"></a>6 恢复机制</h1><p>当 Master 崩溃后，需要从 Backup 和 Witness 恢复数据。CURP 的恢复过程保证了不丢失任何已确认的写操作。</p>
+<h2 id="6-1-恢复的挑战"><a href="#6-1-恢复的挑战" class="headerlink" title="6.1 恢复的挑战"></a>6.1 恢复的挑战</h2><p>恢复面临的核心问题是：<strong>数据分散在多个地方</strong></p>
+<ol>
+<li><strong>Backup</strong>：存储有序的、已同步的数据</li>
+<li><strong>Witness</strong>：存储无序的、未同步的请求</li>
+<li><strong>Master 本地</strong>：已执行但未同步的数据（崩溃后丢失）</li>
+</ol>
+<p><strong>问题：</strong> 如何确保恢复后的数据包含所有已确认的操作？</p>
+<h2 id="6-2-两阶段恢复流程"><a href="#6-2-两阶段恢复流程" class="headerlink" title="6.2 两阶段恢复流程"></a>6.2 两阶段恢复流程</h2><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">Phase 1: 从 Backup 恢复有序数据</span><br><span class="line">───────────────────────────────────</span><br><span class="line">New Master ← Backup (复制最新的有序数据)</span><br><span class="line"></span><br><span class="line">这步复用传统 primary-backup 的恢复机制。</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">Phase 2: 从 Witness 重放无序请求</span><br><span class="line">───────────────────────────────────</span><br><span class="line">1. 选择一个可用的 Witness</span><br><span class="line">2. 停止该 Witness 接收新请求</span><br><span class="line">3. 获取所有存储的请求</span><br><span class="line">4. 重放请求（顺序不重要，因为可交换）</span><br><span class="line">5. 同步到 Backup</span><br><span class="line">6. 重置 Witness</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-3-为什么重放顺序不重要？"><a href="#6-3-为什么重放顺序不重要？" class="headerlink" title="6.3 为什么重放顺序不重要？"></a>6.3 为什么重放顺序不重要？</h2><p>因为 Witness 只接受可交换的操作。如果两个操作记录在同一个 Witness 中，它们必然是可交换的。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Witness 中记录的请求：</span><br><span class="line">- SET key1 = v1</span><br><span class="line">- SET key2 = v2</span><br><span class="line">- SET key3 = v3</span><br><span class="line"></span><br><span class="line">重放顺序可以是任意排列，最终结果相同。</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-4-防止重复执行"><a href="#6-4-防止重复执行" class="headerlink" title="6.4 防止重复执行"></a>6.4 防止重复执行</h2><p><strong>问题：</strong> 某个请求可能已经同步到 Backup，但 Witness 中还有记录。如果重放会导致重复执行。</p>
+<p><strong>解决方案：</strong> RIFL（Reusable Infrastructure for Linearizability）</p>
+<p>每个请求分配唯一的 RPC ID：</p>
+<ul>
+<li>客户端生成递增的 RPC ID</li>
+<li>Master 记录已执行的 RPC ID</li>
+<li>恢复时检查 RPC ID，跳过已执行的请求</li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">CurpMaster::alreadyExecuted</span><span class="params">(<span class="type">uint64_t</span> rpc_id)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> executed_rpc_ids_.<span class="built_in">count</span>(rpc_id) &gt; <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">CurpMaster::replayFromWitness</span><span class="params">(Witness* witness)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> records = witness-&gt;<span class="built_in">getRecoveryData</span>();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (<span class="type">const</span> <span class="keyword">auto</span>&amp; record : records) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="built_in">alreadyExecuted</span>(record.rpc_id)) &#123;</span><br><span class="line">            <span class="built_in">execute</span>(record.request);</span><br><span class="line">            executed_rpc_ids_.<span class="built_in">insert</span>(record.rpc_id);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+<h1 id="7-与-Raft-的对比"><a href="#7-与-Raft-的对比" class="headerlink" title="7 与 Raft 的对比"></a>7 与 Raft 的对比</h1><p>CURP 和 Raft 都提供线性一致性，但设计理念不同。</p>
+<h2 id="7-1-设计理念对比"><a href="#7-1-设计理念对比" class="headerlink" title="7.1 设计理念对比"></a>7.1 设计理念对比</h2><table>
+<thead>
+<tr>
+<th>方面</th>
 <th>Raft</th>
 <th>CURP</th>
 </tr>
 </thead>
 <tbody><tr>
-<td><strong>延迟</strong></td>
-<td>2 RTT</td>
-<td>1 RTT（快速路径）</td>
+<td><strong>核心思想</strong></td>
+<td>先排序，再执行</td>
+<td>先执行，排序延迟</td>
 </tr>
 <tr>
-<td><strong>排序时机</strong></td>
-<td>先排序</td>
-<td>排序延迟&#x2F;异步</td>
-</tr>
-<tr>
-<td><strong>持久性</strong></td>
-<td>排序后持久化</td>
-<td>排序前持久化</td>
-</tr>
-<tr>
-<td><strong>可交换性</strong></td>
-<td>不利用</td>
-<td>核心依赖</td>
-</tr>
-<tr>
-<td><strong>额外组件</strong></td>
-<td>无</td>
-<td>Witness</td>
+<td><strong>延迟优化</strong></td>
+<td>优化故障恢复时间</td>
+<td>优化正常操作延迟</td>
 </tr>
 <tr>
 <td><strong>适用场景</strong></td>
@@ -364,20 +440,85 @@
 <td>操作可判断可交换性</td>
 </tr>
 </tbody></table>
-<h3 id="从-Raft-到-CURP-的演进思路"><a href="#从-Raft-到-CURP-的演进思路" class="headerlink" title="从 Raft 到 CURP 的演进思路"></a>从 Raft 到 CURP 的演进思路</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Raft:</span><br><span class="line">Client → Leader → Log → Majority → Execute → Response</span><br><span class="line"></span><br><span class="line">CURP:</span><br><span class="line">Client → Master + Witness → Execute → Response</span><br><span class="line">       ↓</span><br><span class="line">       (异步) Master → Backup</span><br></pre></td></tr></table></figure>
-
+<h2 id="7-2-性能对比"><a href="#7-2-性能对比" class="headerlink" title="7.2 性能对比"></a>7.2 性能对比</h2><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>Raft</th>
+<th>CURP</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>写延迟（正常）</td>
+<td>2 RTT</td>
+<td>1 RTT（90%+ 情况）</td>
+</tr>
+<tr>
+<td>写延迟（冲突）</td>
+<td>2 RTT</td>
+<td>2 RTT</td>
+</tr>
+<tr>
+<td>读延迟</td>
+<td>1 RTT（从 Leader）</td>
+<td>1 RTT（从 Master）或更低（从 Backup）</td>
+</tr>
+<tr>
+<td>节点数量</td>
+<td>2f+1</td>
+<td>2f+1（f Backups + f Witnesses）</td>
+</tr>
+</tbody></table>
+<h2 id="7-3-实现复杂度"><a href="#7-3-实现复杂度" class="headerlink" title="7.3 实现复杂度"></a>7.3 实现复杂度</h2><p>CURP 相比 Raft 增加了：</p>
+<ul>
+<li>Witness 组件</li>
+<li>可交换性检查逻辑</li>
+<li>推测执行管理</li>
+<li>更复杂的恢复流程</li>
+</ul>
+<p>但对于 KV 存储这类天然支持可交换性检查的系统，这些额外复杂度是值得的。</p>
 <hr>
-<h1 id="9-总结"><a href="#9-总结" class="headerlink" title="9 总结"></a>9 总结</h1><p>CURP 的关键洞察：</p>
+<h1 id="8-适用场景分析"><a href="#8-适用场景分析" class="headerlink" title="8 适用场景分析"></a>8 适用场景分析</h1><p>CURP 不是银弹，它有特定的适用场景。</p>
+<h2 id="8-1-适合-CURP-的场景"><a href="#8-1-适合-CURP-的场景" class="headerlink" title="8.1 适合 CURP 的场景"></a>8.1 适合 CURP 的场景</h2><ol>
+<li><strong>KV 存储</strong>：天然支持 key 级别的可交换性检查</li>
+<li><strong>高并发写</strong>：大量写操作可以并行进行</li>
+<li><strong>跨数据中心部署</strong>：RTT 较大时收益明显</li>
+<li><strong>内存数据库</strong>：性能瓶颈在 RTT 而非磁盘 I&#x2F;O</li>
+</ol>
+<h2 id="8-2-不适合-CURP-的场景"><a href="#8-2-不适合-CURP-的场景" class="headerlink" title="8.2 不适合 CURP 的场景"></a>8.2 不适合 CURP 的场景</h2><ol>
+<li><strong>热点 key 频繁更新</strong>：大量操作冲突，走慢路径</li>
+<li><strong>复杂事务</strong>：难以判断可交换性</li>
+<li><strong>读多写少</strong>：优化写延迟收益有限</li>
+<li><strong>磁盘数据库</strong>：磁盘延迟主导，RTT 优化收益有限</li>
+</ol>
+<hr>
+<h1 id="9-总结"><a href="#9-总结" class="headerlink" title="9 总结"></a>9 总结</h1><p>CURP 的核心贡献是发现了一个被忽视的机会：</p>
 <blockquote>
-<p><strong>如果操作可交换，顺序不重要；如果顺序不重要，持久化可以提前完成。</strong></p>
+<p><strong>传统复制协议假设所有操作都需要排序，但实际上很多操作是可交换的，不需要等待排序。</strong></p>
 </blockquote>
-<p>这打破了传统复制协议中 “排序 → 持久化” 的耦合，实现了 <strong>1 RTT 的线性一致性写操作</strong>。</p>
-<p>对于 KV 存储这类天然支持可交换性检查的系统，CURP 是理想的复制协议选择。</p>
+<p>通过引入 Witness 节点和推测执行机制，CURP 实现了：</p>
+<ul>
+<li><strong>1 RTT 的写延迟</strong>（对于可交换操作）</li>
+<li><strong>线性一致性</strong>（不牺牲正确性）</li>
+<li><strong>容错能力</strong>（支持 f 个节点故障）</li>
+</ul>
+<p>对于 KV 存储这类系统，CURP 是一个值得考虑的优化方案。</p>
+<hr>
+<h1 id="10-本系列文章规划"><a href="#10-本系列文章规划" class="headerlink" title="10 本系列文章规划"></a>10 本系列文章规划</h1><p>接下来的文章将介绍 CURP 的具体实现：</p>
+<ol>
+<li><strong>实现计划</strong>：基于现有 Raft 代码扩展为 CURP</li>
+<li><strong>测试框架</strong>：如何验证 CURP 的正确性和性能</li>
+<li><strong>Witness 实现</strong>：详细讲解 Witness 的设计和实现</li>
+<li><strong>CurpMaster 实现</strong>：推测执行和异步同步</li>
+<li><strong>恢复机制实现</strong>：崩溃恢复的正确性保证</li>
+</ol>
 <hr>
 <h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><ul>
-<li>论文 PDF: <code>doc/curp-nsdi19.pdf</code></li>
-<li>论文文本: <code>doc/curp-nsdi19.txt</code></li>
-<li>NSDI ‘19 视频: <a target="_blank" rel="noopener" href="https://www.usenix.org/conference/nsdi19/presentation/park">https://www.usenix.org/conference/nsdi19/presentation/park</a></li>
+<li><strong>论文</strong>：<em>Exploiting Commutativity For Practical Fast Replication</em>, NSDI ‘19</li>
+<li><strong>论文 PDF</strong>：<code>doc/curp-nsdi19.pdf</code></li>
+<li><strong>论文文本</strong>：<code>doc/curp-nsdi19.txt</code></li>
+<li><strong>NSDI ‘19 视频</strong>：<a target="_blank" rel="noopener" href="https://www.usenix.org/conference/nsdi19/presentation/park">https://www.usenix.org/conference/nsdi19/presentation/park</a></li>
+<li><strong>Raft 论文</strong>：<em>In Search of an Understandable Consensus Algorithm</em>, ATC ‘14</li>
 </ul>
 
   </div>
@@ -406,7 +547,7 @@
     
     
       <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">1 概述</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%A0%B8%E5%BF%83%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 核心目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%80%A7%E8%83%BD%E6%8F%90%E5%8D%87%EF%BC%88%E8%AE%BA%E6%96%87%E5%AE%9E%E6%B5%8B%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 性能提升（论文实测）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.</span> <span class="toc-text">2 核心思想：分离持久性与排序</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 传统复制的问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-CURP-%E7%9A%84%E5%88%9B%E6%96%B0"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 CURP 的创新</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E6%9E%B6%E6%9E%84%E7%BB%84%E4%BB%B6"><span class="toc-number">3.</span> <span class="toc-text">3 架构组件</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 节点角色</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E5%AE%B9%E9%94%99%E8%83%BD%E5%8A%9B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 容错能力</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%AD%A3%E5%B8%B8%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 正常操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-Witness-%E8%AF%A6%E8%A7%A3"><span class="toc-number">5.</span> <span class="toc-text">5 Witness 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-Witness-%E7%9A%84%E8%81%8C%E8%B4%A3"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 Witness 的职责</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 可交换性检查</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-Master-%E8%AF%A6%E8%A7%A3"><span class="toc-number">6.</span> <span class="toc-text">6 Master 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%8E%A8%E6%B5%8B%E6%89%A7%E8%A1%8C%EF%BC%88Speculative-Execution%EF%BC%89"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 推测执行（Speculative Execution）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%EF%BC%88Async-Sync%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 异步同步（Async Sync）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">7.</span> <span class="toc-text">7 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">8.</span> <span class="toc-text">8 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%8E-Raft-%E5%88%B0-CURP-%E7%9A%84%E6%BC%94%E8%BF%9B%E6%80%9D%E8%B7%AF"><span class="toc-number">8.0.1.</span> <span class="toc-text">从 Raft 到 CURP 的演进思路</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">10.</span> <span class="toc-text">参考资料</span></a></li></ol>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-CURP%EF%BC%9F"><span class="toc-number">1.</span> <span class="toc-text">1 为什么需要 CURP？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E7%9A%84-CAP-%E6%9D%83%E8%A1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 分布式系统的 CAP 权衡</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E4%BC%A0%E7%BB%9F%E5%A4%8D%E5%88%B6%E7%9A%84%E5%BB%B6%E8%BF%9F%E7%93%B6%E9%A2%88"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 传统复制的延迟瓶颈</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-3-2-RTT-%E8%83%BD%E6%8E%A5%E5%8F%97%E5%90%97%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">1.3 2 RTT 能接受吗？</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-CURP-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%B4%9E%E5%AF%9F"><span class="toc-number">2.</span> <span class="toc-text">2 CURP 的核心洞察</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#2-1-%E4%B8%80%E4%B8%AA%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98%EF%BC%9A%E9%A1%BA%E5%BA%8F%E7%9C%9F%E7%9A%84%E9%82%A3%E4%B9%88%E9%87%8D%E8%A6%81%E5%90%97%EF%BC%9F"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 一个关键问题：顺序真的那么重要吗？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-2-%E5%88%86%E7%A6%BB%E6%8C%81%E4%B9%85%E6%80%A7%E4%B8%8E%E6%8E%92%E5%BA%8F"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 分离持久性与排序</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-CURP-%E6%9E%B6%E6%9E%84%E8%AF%A6%E8%A7%A3"><span class="toc-number">3.</span> <span class="toc-text">3 CURP 架构详解</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#3-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-Witness%EF%BC%9F"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 为什么需要 Witness？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-2-%E8%8A%82%E7%82%B9%E8%A7%92%E8%89%B2%E4%B8%8E%E8%81%8C%E8%B4%A3"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 节点角色与职责</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-f-%E4%B8%AA-Witness%EF%BC%9F"><span class="toc-number">3.2.1.</span> <span class="toc-text">为什么需要 f 个 Witness？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-3-%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E5%9B%BE"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 整体架构图</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E5%86%99%E6%93%8D%E4%BD%9C%E6%B5%81%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">4 写操作流程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E5%BF%AB%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Fast-Path%EF%BC%89-1-RTT"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 快速路径（Fast Path）- 1 RTT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6"><span class="toc-number">4.1.1.</span> <span class="toc-text">前置条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B"><span class="toc-number">4.1.2.</span> <span class="toc-text">详细流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%BF%99%E6%A0%B7%E5%81%9A%E6%98%AF%E5%AE%89%E5%85%A8%E7%9A%84%EF%BC%9F"><span class="toc-number">4.1.3.</span> <span class="toc-text">为什么这样做是安全的？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E6%85%A2%E9%80%9F%E8%B7%AF%E5%BE%84%EF%BC%88Slow-Path%EF%BC%89-2-RTT"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 慢速路径（Slow Path）- 2 RTT</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91%E6%9D%A1%E4%BB%B6"><span class="toc-number">4.2.1.</span> <span class="toc-text">触发条件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E6%B5%81%E7%A8%8B-1"><span class="toc-number">4.2.2.</span> <span class="toc-text">详细流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%85%A2%E8%B7%AF%E5%BE%84%E7%9A%84%E6%80%A7%E8%83%BD%E5%BD%B1%E5%93%8D"><span class="toc-number">4.2.3.</span> <span class="toc-text">慢路径的性能影响</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%B7%B1%E5%85%A5%E5%88%86%E6%9E%90"><span class="toc-number">5.</span> <span class="toc-text">5 可交换性深入分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#5-1-%E4%BB%80%E4%B9%88%E6%98%AF%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%EF%BC%9F"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 什么是可交换性？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#KV-%E5%AD%98%E5%82%A8%E4%B8%AD%E7%9A%84%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7"><span class="toc-number">5.1.1.</span> <span class="toc-text">KV 存储中的可交换性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9B%B4%E5%A4%8D%E6%9D%82%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">5.1.2.</span> <span class="toc-text">更复杂的场景</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-2-Witness-%E7%9A%84%E5%8F%AF%E4%BA%A4%E6%8D%A2%E6%80%A7%E6%A3%80%E6%9F%A5%E5%AE%9E%E7%8E%B0"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 Witness 的可交换性检查实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#6-%E6%81%A2%E5%A4%8D%E6%9C%BA%E5%88%B6"><span class="toc-number">6.</span> <span class="toc-text">6 恢复机制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#6-1-%E6%81%A2%E5%A4%8D%E7%9A%84%E6%8C%91%E6%88%98"><span class="toc-number">6.1.</span> <span class="toc-text">6.1 恢复的挑战</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-2-%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%81%A2%E5%A4%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">6.2.</span> <span class="toc-text">6.2 两阶段恢复流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-3-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%8D%E6%94%BE%E9%A1%BA%E5%BA%8F%E4%B8%8D%E9%87%8D%E8%A6%81%EF%BC%9F"><span class="toc-number">6.3.</span> <span class="toc-text">6.3 为什么重放顺序不重要？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-4-%E9%98%B2%E6%AD%A2%E9%87%8D%E5%A4%8D%E6%89%A7%E8%A1%8C"><span class="toc-number">6.4.</span> <span class="toc-text">6.4 防止重复执行</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#7-%E4%B8%8E-Raft-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="toc-number">7.</span> <span class="toc-text">7 与 Raft 的对比</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#7-1-%E8%AE%BE%E8%AE%A1%E7%90%86%E5%BF%B5%E5%AF%B9%E6%AF%94"><span class="toc-number">7.1.</span> <span class="toc-text">7.1 设计理念对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-2-%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94"><span class="toc-number">7.2.</span> <span class="toc-text">7.2 性能对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-3-%E5%AE%9E%E7%8E%B0%E5%A4%8D%E6%9D%82%E5%BA%A6"><span class="toc-number">7.3.</span> <span class="toc-text">7.3 实现复杂度</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#8-%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90"><span class="toc-number">8.</span> <span class="toc-text">8 适用场景分析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#8-1-%E9%80%82%E5%90%88-CURP-%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">8.1.</span> <span class="toc-text">8.1 适合 CURP 的场景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-2-%E4%B8%8D%E9%80%82%E5%90%88-CURP-%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-number">8.2.</span> <span class="toc-text">8.2 不适合 CURP 的场景</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#9-%E6%80%BB%E7%BB%93"><span class="toc-number">9.</span> <span class="toc-text">9 总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#10-%E6%9C%AC%E7%B3%BB%E5%88%97%E6%96%87%E7%AB%A0%E8%A7%84%E5%88%92"><span class="toc-number">10.</span> <span class="toc-text">10 本系列文章规划</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="toc-number">11.</span> <span class="toc-text">参考资料</span></a></li></ol>
       </div>
     
 
